@@ -130,31 +130,39 @@ function PreviewContent() {
           ))}
         </div>
 
-        {/* Claim CTA */}
+        {/* CTA */}
         <div className="rounded-2xl border-[1.5px] p-8 text-center" style={{ borderColor: primaryColor + '40', background: accentLight }}>
           <div className="w-10 h-10 rounded-xl mx-auto mb-4 flex items-center justify-center" style={{ background: primaryColor }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
-          <h2 className="text-[18px] font-bold tracking-tight mb-2">Claim your {brandName} brand portal</h2>
+          <h2 className="text-[18px] font-bold tracking-tight mb-2">Build your {brandName} brand hub</h2>
           <p className="text-[14px] text-[#6b6b66] mb-6 max-w-sm mx-auto">
-            Sign up to start uploading real assets. Your portal will live at <strong>{originalUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}/brand</strong>
+            Open source and free. Clone the repo, drop in your assets, deploy in minutes — or explore the demo hub now.
           </p>
-          <div className="flex gap-3 justify-center">
+          <div className="flex gap-3 justify-center flex-wrap">
             <a
-              href="/signup"
+              href="/hub"
               className="px-6 py-2.5 text-[14px] font-semibold rounded-xl text-white transition-opacity hover:opacity-90"
               style={{ background: primaryColor }}
             >
-              Claim your portal — it's free
+              Explore the hub →
+            </a>
+            <a
+              href="https://github.com/kleagogo/brandportal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-2.5 text-[14px] font-medium rounded-xl bg-white border border-[#e8e7e4] text-[#1a1a1a] hover:bg-[#f5f5f3] transition-colors"
+            >
+              Clone on GitHub
             </a>
             <button
               onClick={() => window.history.back()}
               className="px-6 py-2.5 text-[14px] font-medium rounded-xl bg-white border border-[#e8e7e4] text-[#8a8a85] hover:text-black transition-colors"
             >
-              Try a different URL
+              Try another URL
             </button>
           </div>
-          <p className="text-[12px] text-[#b0afa9] mt-4">No credit card required · €18/month after trial</p>
+          <p className="text-[12px] text-[#b0afa9] mt-4">Free and open source — MIT licence</p>
         </div>
       </div>
     </div>

@@ -9,7 +9,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const response = await fetch(fullUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BrandPortalBot/1.0)' },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; BrandPortalBot/1.0)',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
       signal: AbortSignal.timeout(8000),
     })
     const html = await response.text()
@@ -21,8 +24,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(brand)
 
   } catch {
-    // Network unavailable (sandbox/dev) — return a realistic demo result
-    // based on the hostname so each URL gives a different preview
     return NextResponse.json(generateDemoResult(hostname, fullUrl))
   }
 }
@@ -60,14 +61,24 @@ function generateDemoResult(hostname: string, url: string) {
 
 // ---------- Real extraction ----------
 function extractBrandFromHTML(html: string, url: string) {
-  const ogSiteName = html.match(/<meta[^>]*property="og:site_name"[^>]*content="([^"]+)"/i)?.[1]
-  const titleTag = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.replace(/\s*[|\-–]\s*.+$/, '').trim()
-  const brandName = ogSiteName || titleTag || new URL(url).hostname.replace('www.', '').split('.')[0]
+  const hostname = new URL(url).hostname.replace('www.', '')
 
+  // Brand name: og:site_name is most reliable, then title (strip suffix like "| Company")
+  const ogSiteName = html.match(/<meta[^>]*property="og:site_name"[^>]*content="([^"]+)"/i)?.[1]
+    || html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:site_name"/i)?.[1]
+  const titleTag = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]
+    ?.replace(/\s*[|\-–:]\s*.+$/, '').trim()
+  const hostnameBase = hostname.split('.')[0]
+  const brandName = (ogSiteName || titleTag || hostnameBase).trim()
+
+  // Tagline: prefer English og:description, then meta description
   const ogDesc = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/i)?.[1]
+    || html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:description"/i)?.[1]
   const metaDesc = html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/i)?.[1]
+    || html.match(/<meta[^>]*content="([^"]+)"[^>]*name="description"/i)?.[1]
   const tagline = (ogDesc || metaDesc || '').slice(0, 120)
 
+  // Primary color: CSS vars first, then theme-color meta
   const colorPatterns = [
     /--color-primary:\s*(#[0-9a-f]{3,8})/i,
     /--primary(?:-color)?:\s*(#[0-9a-f]{3,8})/i,
@@ -76,17 +87,29 @@ function extractBrandFromHTML(html: string, url: string) {
   ]
   let primaryColor = '#1a1a1a'
   for (const p of colorPatterns) { const m = html.match(p); if (m) { primaryColor = m[1]; break } }
-
-  const themeColor = html.match(/<meta[^>]*name="theme-color"[^>]*content="([^"]+)"/i)?.[1]
+  const themeColor = html.match(/<meta[^>]*name="theme-color"[^>]*content="(#[0-9a-fA-F]{3,8})"/i)?.[1]
+    || html.match(/<meta[^>]*content="(#[0-9a-fA-F]{3,8})"[^>]*name="theme-color"/i)?.[1]
   if (themeColor && primaryColor === '#1a1a1a') primaryColor = themeColor
 
+  // Font
   const googleFont = html.match(/fonts\.googleapis\.com\/css[^"']+family=([A-Za-z+]+)/)?.[1]?.replace(/\+/g, ' ')
   const fontFamily = googleFont || 'Inter'
 
+  // Favicon: try HTML first, fall back to Google's favicon service (always works)
   const faviconPath = html.match(/<link[^>]*rel="(?:shortcut )?icon"[^>]*href="([^"]+)"/i)?.[1]
-  const faviconUrl = faviconPath ? (faviconPath.startsWith('http') ? faviconPath : `${new URL(url).origin}${faviconPath}`) : ''
+    || html.match(/<link[^>]*rel="apple-touch-icon"[^>]*href="([^"]+)"/i)?.[1]
+  const faviconUrl = faviconPath
+    ? (faviconPath.startsWith('http') ? faviconPath : `${new URL(url).origin}${faviconPath.startsWith('/') ? '' : '/'}${faviconPath}`)
+    : `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`
 
-  return { brandName: brandName.charAt(0).toUpperCase() + brandName.slice(1), tagline, primaryColor, backgroundColor: '#ffffff', fontFamily, faviconUrl }
+  return {
+    brandName: brandName.charAt(0).toUpperCase() + brandName.slice(1),
+    tagline,
+    primaryColor,
+    backgroundColor: '#ffffff',
+    fontFamily,
+    faviconUrl,
+  }
 }
 
 async function enhanceWithClaude(html: string, fallback: ReturnType<typeof extractBrandFromHTML>) {
