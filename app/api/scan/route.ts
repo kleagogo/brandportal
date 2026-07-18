@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { buildConfigFromScan, type ScanResult } from '@/lib/brand-builder'
+import { savePreview } from '@/lib/store'
 
 export async function POST(req: NextRequest) {
   const { url } = await req.json()
   if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 })
 
-  const fullUrl = url.startsWith('http') ? url : `https://${url}`
-  const hostname = new URL(fullUrl).hostname.replace('www.', '')
+  let fullUrl: string
+  let hostname: string
+  try {
+    fullUrl = url.startsWith('http') ? url : `https://${url}`
+    hostname = new URL(fullUrl).hostname.replace('www.', '')
+  } catch {
+    return NextResponse.json({ error: 'That doesn’t look like a valid URL' }, { status: 400 })
+  }
 
+  let brand: ScanResult
   try {
     const response = await fetch(fullUrl, {
       headers: {
@@ -16,16 +25,19 @@ export async function POST(req: NextRequest) {
       signal: AbortSignal.timeout(8000),
     })
     const html = await response.text()
-    const brand = extractBrandFromHTML(html, fullUrl)
-
-    if (process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json(await enhanceWithClaude(html, brand))
-    }
-    return NextResponse.json(brand)
-
+    const extracted = extractBrandFromHTML(html, fullUrl)
+    brand = process.env.ANTHROPIC_API_KEY
+      ? { ...extracted, ...(await enhanceWithClaude(html, extracted)) }
+      : extracted
   } catch {
-    return NextResponse.json(generateDemoResult(hostname, fullUrl))
+    brand = generateDemoResult(hostname, fullUrl) as ScanResult
   }
+
+  // Build a complete hub config from the scan and store it as a preview.
+  const config = buildConfigFromScan({ ...brand, originalUrl: fullUrl })
+  const previewId = await savePreview(config)
+
+  return NextResponse.json({ previewId, ...brand })
 }
 
 // ---------- Demo fallback ----------

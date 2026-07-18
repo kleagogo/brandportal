@@ -2,11 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getHub, saveHub } from '@/lib/store'
 import type { BrandConfig } from '@/app/types/brand'
 
-export async function GET() {
-  return NextResponse.json(await getHub())
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params
+  const hub = await getHub(slug)
+  if (!hub) return NextResponse.json({ error: 'Hub not found' }, { status: 404 })
+  return NextResponse.json(hub)
 }
 
-export async function PUT(req: NextRequest) {
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params
+  const current = await getHub(slug)
+  if (!current) return NextResponse.json({ error: 'Hub not found' }, { status: 404 })
+
   let body: BrandConfig
   try {
     body = await req.json()
@@ -17,9 +30,7 @@ export async function PUT(req: NextRequest) {
   const problem = validate(body)
   if (problem) return NextResponse.json({ error: problem }, { status: 400 })
 
-  // The slug is the hub's address — it can't be changed from the editor (yet),
-  // so a stray payload can't move the hub out from under its share links.
-  const current = await getHub()
+  // The slug is the hub's address — the payload can't move the hub.
   const saved = await saveHub({ ...body, slug: current.slug })
   return NextResponse.json({ ok: true, updatedAt: saved.updatedAt })
 }

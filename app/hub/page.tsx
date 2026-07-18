@@ -1,10 +1,7 @@
 import { redirect } from 'next/navigation'
-import { getHub } from '@/lib/store'
+import seed from '@/brand.config'
 
-// Legacy route — the hub now lives at /<slug>.
-export const dynamic = 'force-dynamic'
-
-export default async function HubRedirect() {
-  const hub = await getHub()
-  redirect(`/${hub.slug}`)
+// Legacy route — hubs now live at /<slug>; send visitors to the demo hub.
+export default function HubRedirect() {
+  redirect(`/${seed.slug}`)
 }

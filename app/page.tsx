@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -19,6 +19,13 @@ export default function LandingPage() {
   const [stepIndex, setStepIndex] = useState(0)
   const [error, setError] = useState('')
   const router = useRouter()
+
+  // Arriving from an expired preview link.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has('expired')) {
+      setError('That preview expired — scan your site again to get a fresh one.')
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -41,16 +48,7 @@ export default function LandingPage() {
       if (!res.ok) throw new Error('Scan failed')
       const data = await res.json()
       clearInterval(ticker)
-      const params = new URLSearchParams({
-        brandName: data.brandName,
-        primaryColor: data.primaryColor,
-        backgroundColor: data.backgroundColor,
-        fontFamily: data.fontFamily,
-        tagline: data.tagline,
-        faviconUrl: data.faviconUrl || '',
-        originalUrl: url.trim(),
-      })
-      router.push(`/preview?${params.toString()}`)
+      router.push(`/preview/${data.previewId}`)
     } catch {
       clearInterval(ticker)
       setError("We couldn't read that URL. Try another, or check it's publicly accessible.")

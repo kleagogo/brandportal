@@ -12,15 +12,15 @@ import { GuidelinesSection } from './GuidelinesSection'
 import { BrandAgent } from './BrandAgent'
 import { ShareModal } from './ShareModal'
 
-export default function Hub({ initial }: { initial: BrandConfig }) {
+export default function Hub({ initial, previewId }: { initial: BrandConfig; previewId?: string }) {
   return (
     <HubProvider initial={initial}>
-      <HubShell />
+      <HubShell previewId={previewId} />
     </HubProvider>
   )
 }
 
-function HubShell() {
+function HubShell({ previewId }: { previewId?: string }) {
   const { config, editing, setEditing, saveState } = useHub()
   const [active, setActive] = useState(config.sections[0]?.id || 'logo')
   const [shareOpen, setShareOpen] = useState(false)
@@ -51,32 +51,37 @@ function HubShell() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f9f9f8] flex">
+    <div className="min-h-screen bg-[#f9f9f8] flex flex-col">
       {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
 
-      {/* Mobile nav backdrop */}
-      {navOpen && <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setNavOpen(false)} />}
+      {previewId && <ClaimBanner previewId={previewId} />}
 
-      <Sidebar
-        active={activeSection?.id || ''}
-        onSelect={id => { setActive(id); setNavOpen(false) }}
-        open={navOpen}
-      />
+      <div className="flex-1 flex">
+        {/* Mobile nav backdrop */}
+        {navOpen && <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setNavOpen(false)} />}
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <TopBar
-          onMenu={() => setNavOpen(o => !o)}
-          onShare={() => setShareOpen(true)}
-          editing={editing}
-          setEditing={setEditing}
-          saveState={saveState}
-          sectionLabel={activeSection?.label || ''}
+        <Sidebar
+          active={activeSection?.id || ''}
+          onSelect={id => { setActive(id); setNavOpen(false) }}
+          open={navOpen}
         />
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
-            {renderContent()}
-          </div>
-        </main>
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <TopBar
+            onMenu={() => setNavOpen(o => !o)}
+            onShare={() => setShareOpen(true)}
+            editing={editing}
+            setEditing={setEditing}
+            saveState={saveState}
+            sectionLabel={activeSection?.label || ''}
+            preview={Boolean(previewId)}
+          />
+          <main className="flex-1 overflow-y-auto">
+            <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
+              {renderContent()}
+            </div>
+          </main>
+        </div>
       </div>
 
       {shareOpen && <ShareModal onClose={() => setShareOpen(false)} />}
@@ -85,10 +90,53 @@ function HubShell() {
   )
 }
 
+// ─── Claim banner (scan previews only) ────────────────────────────────────────
+
+function ClaimBanner({ previewId }: { previewId: string }) {
+  const { config } = useHub()
+  const [claiming, setClaiming] = useState(false)
+  const [error, setError] = useState('')
+
+  async function claim() {
+    setClaiming(true)
+    setError('')
+    try {
+      const res = await fetch('/api/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ previewId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Something went wrong')
+      window.location.href = `/${data.slug}`
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong')
+      setClaiming(false)
+    }
+  }
+
+  return (
+    <div className="bg-[#1a1a1a] text-white px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap sticky top-0 z-50">
+      <p className="text-[13px] leading-snug flex-1 min-w-[200px]">
+        <span className="font-semibold">This is {config.name}&rsquo;s brand hub</span>
+        <span className="text-white/70"> — built from your website. Claim it to keep and edit it. Unclaimed previews expire in 24 hours.</span>
+        {error && <span className="text-red-300"> {error}</span>}
+      </p>
+      <button
+        onClick={claim}
+        disabled={claiming}
+        className="text-[13px] font-semibold bg-white text-[#1a1a1a] px-4 py-2 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-60 whitespace-nowrap"
+      >
+        {claiming ? 'Claiming…' : 'Claim this hub — free'}
+      </button>
+    </div>
+  )
+}
+
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
 function TopBar({
-  onMenu, onShare, editing, setEditing, saveState, sectionLabel,
+  onMenu, onShare, editing, setEditing, saveState, sectionLabel, preview,
 }: {
   onMenu: () => void
   onShare: () => void
@@ -96,6 +144,7 @@ function TopBar({
   setEditing: (v: boolean) => void
   saveState: 'idle' | 'saving' | 'saved' | 'error'
   sectionLabel: string
+  preview: boolean
 }) {
   return (
     <header className="h-14 shrink-0 bg-white border-b border-[#e8e7e4] flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
@@ -104,6 +153,11 @@ function TopBar({
       </button>
       <p className="text-[13px] font-medium text-[#8a8a85] truncate">{sectionLabel}</p>
 
+      {preview ? (
+        <div className="ml-auto">
+          <span className="text-[12px] font-medium text-[#b0afa9]">Preview — claim to edit and share</span>
+        </div>
+      ) : (
       <div className="ml-auto flex items-center gap-2.5">
         {editing && (
           <span className={`text-[12px] font-medium hidden sm:flex items-center gap-1.5 ${
@@ -137,6 +191,7 @@ function TopBar({
           {editing ? <><Icon name="check" size={13} /> Done</> : <><Icon name="edit" size={13} /> Edit</>}
         </button>
       </div>
+      )}
     </header>
   )
 }

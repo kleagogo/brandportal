@@ -39,7 +39,7 @@ export function HubProvider({ initial, children }: { initial: BrandConfig; child
     pending.current = null
     inFlight.current = true
     try {
-      const res = await fetch('/api/hub', {
+      const res = await fetch(`/api/hubs/${encodeURIComponent(body.slug)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
