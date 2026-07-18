@@ -1,0 +1,8 @@
+<svg width="220" height="48" viewBox="0 0 220 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="220" height="48" rx="8" fill="#1F3B2C"/>
+  <circle cx="24" cy="24" r="18" fill="#FAF8F4"/>
+  <path d="M24 8 C 17 18.5, 17 29.5, 24 40" stroke="#1F3B2C" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M24 8 C 31 18.5, 31 29.5, 24 40" stroke="#1F3B2C" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <circle cx="21" cy="19" r="2.6" fill="#D96E30"/>
+  <text x="56" y="31.5" font-family="Georgia, 'Times New Roman', serif" font-size="21" font-weight="600" letter-spacing="0.5" fill="#FAF8F4">MERIDIAN</text>
+</svg>

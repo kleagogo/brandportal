@@ -1,47 +1,49 @@
 /**
- * brand.config.ts — the single source of truth for your brand hub.
+ * brand.config.ts — the seed data for a fresh hub.
  *
- * Edit this file to customise every section, color, font, and asset.
- * Claude can read and update this file directly — just share the link and ask.
+ * On first run this config is loaded into the store (data/hub.json).
+ * After that, all edits happen in the hub's edit mode and are saved to the
+ * store — this file is only the starting point for new installations.
  *
- * Sections are fully configurable: add, remove, reorder, or rename anything.
+ * The seed brand is "Meridian", a fictional travel-gear company, so the demo
+ * hub looks real from the first visit.
  */
 
 import type { BrandConfig } from './app/types/brand'
 
 const config: BrandConfig = {
   // ─── Identity ───────────────────────────────────────────────────────────────
-  name: 'Brand Hub',
-  tagline: 'One source of truth for all brand assets.',
-  logoUrl: '/brand/logo.svg',          // put your logo in /public/brand/
-  faviconUrl: '/brand/favicon.png',
-  website: 'https://yourdomain.com',
+  slug: 'meridian',
+  name: 'Meridian',
+  tagline: 'Gear for the long way round.',
+  logoUrl: '/brand/meridian-mark.svg',
+  website: 'https://meridian.example',
 
   // ─── Colors ─────────────────────────────────────────────────────────────────
   colors: [
     {
       group: 'Primary',
       swatches: [
-        { name: 'Brand',     hex: '#1a1a1a', usage: 'Primary actions, headings' },
-        { name: 'Brand 80',  hex: '#3d3d3d', usage: 'Hover states' },
-        { name: 'Brand 20',  hex: '#d4d4d4', usage: 'Subtle backgrounds' },
+        { name: 'Pine',       hex: '#1F3B2C', usage: 'Primary surfaces, headlines, packaging' },
+        { name: 'Pine 80',    hex: '#3C5A48', usage: 'Hover states, secondary buttons' },
+        { name: 'Pine 20',    hex: '#D8E2DC', usage: 'Tints, subtle backgrounds' },
       ],
     },
     {
       group: 'Accent',
       swatches: [
-        { name: 'Accent',    hex: '#6366f1', usage: 'Links, highlights' },
-        { name: 'Accent 20', hex: '#e0e7ff', usage: 'Tag backgrounds' },
+        { name: 'Ember',      hex: '#D96E30', usage: 'Calls to action, highlights — use sparingly' },
+        { name: 'Ember 20',   hex: '#F7E1D3', usage: 'Tags, notice backgrounds' },
       ],
     },
     {
       group: 'Neutrals',
       swatches: [
-        { name: 'White',     hex: '#ffffff', usage: 'Backgrounds' },
-        { name: 'Grey 50',   hex: '#f9f9f8', usage: 'Page background' },
-        { name: 'Grey 200',  hex: '#e8e7e4', usage: 'Borders' },
-        { name: 'Grey 500',  hex: '#8a8a85', usage: 'Secondary text' },
-        { name: 'Black',     hex: '#1a1a1a', usage: 'Body text' },
+        { name: 'Paper',      hex: '#FAF8F4', usage: 'Page and app backgrounds' },
+        { name: 'Sand',       hex: '#EDE7DC', usage: 'Cards, dividers, borders' },
+        { name: 'Stone',      hex: '#8C877C', usage: 'Secondary text, captions' },
+        { name: 'Ink',        hex: '#23211C', usage: 'Body text, primary UI' },
+        { name: 'White',      hex: '#FFFFFF', usage: 'Text on dark surfaces' },
       ],
     },
   ],
@@ -49,19 +51,28 @@ const config: BrandConfig = {
   // ─── Typography ─────────────────────────────────────────────────────────────
   typography: [
     {
-      group: 'Brand',
+      group: 'Brand typefaces',
       fonts: [
         {
-          name: 'Inter',
-          role: 'Primary typeface',
-          weights: ['400', '500', '600', '700'],
-          usage: 'All UI text, headings, body copy',
-          importUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+          name: 'Fraunces',
+          role: 'Display typeface',
+          weights: ['500', '600'],
+          usage: 'Headlines, campaign work, packaging',
+          importUrl: 'https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&display=swap',
           specimens: [
-            { label: 'Display', size: '42px', weight: '700', sample: 'Your brand portal, in 30 seconds.' },
-            { label: 'Heading', size: '24px', weight: '600', sample: 'Brand Assets' },
-            { label: 'Body',    size: '15px', weight: '400', sample: 'Everything you need to represent your brand.' },
-            { label: 'Caption', size: '12px', weight: '500', sample: 'HOW IT WORKS' },
+            { label: 'Display', size: '40px', weight: '600', sample: 'The long way round.' },
+            { label: 'Heading', size: '24px', weight: '500', sample: 'Built to outlast the itinerary' },
+          ],
+        },
+        {
+          name: 'Inter',
+          role: 'Text typeface',
+          weights: ['400', '500', '600'],
+          usage: 'Body copy, UI, captions — everything that isn’t a headline',
+          importUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+          specimens: [
+            { label: 'Body',    size: '15px', weight: '400', sample: 'Every Meridian product is tested on the road for a full season before it ships.' },
+            { label: 'Caption', size: '12px', weight: '500', sample: 'FIELD-TESTED · GUARANTEED FOR LIFE' },
           ],
         },
       ],
@@ -69,54 +80,47 @@ const config: BrandConfig = {
   ],
 
   // ─── Sidebar sections ────────────────────────────────────────────────────────
-  // This drives the sidebar. Add, remove, reorder freely.
-  // Types: 'assets' | 'colors' | 'typography' | 'guidelines' | 'link' | 'tokens'
+  // This drives the sidebar. Sections can be added, renamed, and reordered in
+  // edit mode. Types: 'assets' | 'colors' | 'typography' | 'guidelines' | 'link'
   sections: [
-    { id: 'logo',         label: 'Logo',              type: 'assets',     icon: 'logo' },
-    { id: 'colors',       label: 'Colors',            type: 'colors',     icon: 'colors' },
-    { id: 'typography',   label: 'Typography',        type: 'typography', icon: 'type' },
-    { id: 'screenshots',  label: 'Screenshots',       type: 'assets',     icon: 'screenshots' },
-    { id: 'guidelines',   label: 'Guidelines',        type: 'guidelines', icon: 'guidelines' },
+    { id: 'logo',         label: 'Logo',        type: 'assets',     icon: 'logo' },
+    { id: 'colors',       label: 'Colors',      type: 'colors',     icon: 'colors' },
+    { id: 'typography',   label: 'Typography',  type: 'typography', icon: 'type' },
+    { id: 'photography',  label: 'Photography', type: 'assets',     icon: 'screenshots' },
+    { id: 'guidelines',   label: 'Guidelines',  type: 'guidelines', icon: 'guidelines' },
   ],
 
   // ─── Asset library ───────────────────────────────────────────────────────────
-  // Files should live in /public/brand/
   assets: {
     logo: [
-      { name: 'Logo — Primary',   file: '/brand/logo.svg',        format: ['SVG', 'PNG', 'PDF'], usage: 'Default usage on light backgrounds' },
-      { name: 'Logo — White',     file: '/brand/logo-white.svg',  format: ['SVG', 'PNG'],        usage: 'On dark backgrounds' },
-      { name: 'Logo — Black',     file: '/brand/logo-black.svg',  format: ['SVG', 'PNG'],        usage: 'Single colour usage' },
-      { name: 'Logomark',         file: '/brand/logomark.svg',    format: ['SVG', 'PNG'],        usage: 'App icon, avatar, favicon' },
+      { name: 'Logo — Primary', file: '/brand/meridian-logo.svg',      format: ['SVG'], usage: 'Default usage on light backgrounds' },
+      { name: 'Logo — Reverse', file: '/brand/meridian-logo-dark.svg', format: ['SVG'], usage: 'On Pine or photographic backgrounds' },
+      { name: 'Logomark',       file: '/brand/meridian-mark.svg',      format: ['SVG'], usage: 'App icon, avatar, favicon' },
     ],
-    screenshots: [
-      // { name: 'Dashboard', file: '/brand/screenshots/dashboard.png', platform: 'Web', description: 'Main dashboard view' },
-    ],
-    guidelines: [
-      // { name: 'Brand Guidelines', file: '/brand/guidelines.pdf', description: 'Full brand standards document' },
-    ],
+    photography: [],
   },
 
   // ─── Written guidelines ──────────────────────────────────────────────────────
   guidelines: {
     voice: {
-      title: 'Brand Voice',
-      description: 'How we speak and write.',
+      title: 'Brand voice',
+      description: 'Meridian speaks like a well-travelled friend: practical, honest, quietly enthusiastic.',
       principles: [
-        { name: 'Clear',      description: 'We say what we mean. No jargon, no fluff.' },
-        { name: 'Confident',  description: 'We know our stuff. We don\'t hedge.' },
-        { name: 'Human',      description: 'We\'re talking to people, not audiences.' },
+        { name: 'Grounded',  description: 'We talk about real use, real places, real wear-and-tear. No superlatives we can’t prove.' },
+        { name: 'Direct',    description: 'Short sentences. Concrete claims. We respect the reader’s time.' },
+        { name: 'Warm',      description: 'Travel is human. We write to a person, not a demographic.' },
       ],
     },
     usage: {
       dos: [
-        'Use the primary logo on white or light backgrounds',
-        'Maintain clear space equal to the height of the logomark around the logo',
-        'Use approved color combinations only',
+        'Use the primary logo on Paper or light photographic backgrounds',
+        'Keep clear space equal to the height of the logomark on all sides',
+        'Pair Pine with Ember only for calls to action',
       ],
       donts: [
-        'Don\'t stretch or distort the logo',
-        'Don\'t use the logo on busy backgrounds without a container',
-        'Don\'t recreate the logo in other typefaces',
+        'Don’t stretch, rotate, or recolor the logo',
+        'Don’t set headlines in Inter — Fraunces is the display voice',
+        'Don’t place Ember text on Pine backgrounds',
       ],
     },
   },
@@ -126,7 +130,7 @@ const config: BrandConfig = {
   agent: {
     enabled: true,
     name: 'Brand Agent',
-    greeting: 'Ask me anything about our brand — colors, logo usage, typography, tone of voice.',
+    greeting: 'Ask me anything about the Meridian brand — colors, logo usage, typography, tone of voice.',
     model: 'claude-haiku-4-5-20251001',
   },
 }

@@ -63,6 +63,8 @@ export interface AgentConfig {
 }
 
 export interface BrandConfig {
+  /** URL slug the hub lives at, e.g. "meridian" → /meridian */
+  slug: string
   name: string
   tagline: string
   logoUrl?: string
@@ -72,9 +74,6 @@ export interface BrandConfig {
   typography: TypographyGroup[]
   sections: SectionConfig[]
   assets: {
-    logo: AssetFile[]
-    screenshots: AssetFile[]
-    guidelines: AssetFile[]
     [key: string]: AssetFile[]
   }
   guidelines: {
@@ -89,4 +88,5 @@ export interface BrandConfig {
     }
   }
   agent: AgentConfig
+  updatedAt?: string
 }
