@@ -13,6 +13,8 @@ export interface User {
   id: string
   email: string
   createdAt: string
+  /** Billing plan; absent means 'free'. Pro isn't purchasable yet. */
+  plan?: 'free' | 'pro'
 }
 
 async function readUsers(): Promise<Record<string, User>> {
@@ -47,6 +49,21 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   const users = await readUsers()
   const norm = normalizeEmail(email)
   return Object.values(users).find(u => u.email === norm) || null
+}
+
+export async function updateUserEmail(id: string, newEmail: string): Promise<User | null> {
+  const users = await readUsers()
+  const user = users[id]
+  if (!user) return null
+  user.email = normalizeEmail(newEmail)
+  await writeUsers(users)
+  return user
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  const users = await readUsers()
+  delete users[id]
+  await writeUsers(users)
 }
 
 /** Find or create the account for an email address. */

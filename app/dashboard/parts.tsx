@@ -5,23 +5,27 @@ import { useRouter } from 'next/navigation'
 
 export function NewHubButton() {
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
 
   async function create() {
     if (busy) return
     setBusy(true)
+    setError('')
     try {
       const res = await fetch('/api/hubs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
+      if (!res.ok) throw new Error(data.error || 'Couldn’t create a hub')
       router.push(`/${data.slug}`)
-    } catch {
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Couldn’t create a hub')
       setBusy(false)
     }
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
+      {error && <p className="text-[12px] text-red-500 w-full text-right">{error}</p>}
       <a href="/" className="text-[13px] font-semibold border border-[#e8e7e4] text-[#1a1a1a] px-4 py-2.5 rounded-xl hover:border-[#1a1a1a] transition-colors">
         Scan a website
       </a>
@@ -53,6 +57,9 @@ export function AccountMenu({ email }: { email: string }) {
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-10 z-40 w-56 bg-white border border-[#e8e7e4] rounded-xl shadow-xl p-1.5">
             <p className="px-2.5 py-2 text-[12px] text-[#8a8a85] truncate border-b border-[#f0efec] mb-1">{email}</p>
+            <a href="/settings" className="block px-2.5 py-2 text-[13px] text-[#1a1a1a] hover:bg-[#f5f5f3] rounded-lg transition-colors">
+              Account settings
+            </a>
             <form action="/api/auth/logout" method="POST">
               <button type="submit" className="w-full text-left px-2.5 py-2 text-[13px] text-[#1a1a1a] hover:bg-[#f5f5f3] rounded-lg transition-colors">
                 Sign out

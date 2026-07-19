@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { deleteHub, getMeta, isHubOwner, renameHub, saveMeta } from '@/lib/store'
+import { deleteHub, getHub, getMeta, isHubOwner, renameHub, saveMeta } from '@/lib/store'
 import { getSessionUser } from '@/lib/auth'
+import { createToken, listTokensForSlug, revokeToken } from '@/lib/tokens'
+import { sendMagicLink } from '@/lib/email'
+import { isValidEmail, normalizeEmail } from '@/lib/users'
 
 /** Owner-only hub settings: PIN, editors, address, deletion. */
 
@@ -14,7 +17,13 @@ export async function GET(
   if (!isHubOwner(meta, user)) {
     return NextResponse.json({ error: 'Only the owner can see hub settings' }, { status: 403 })
   }
-  return NextResponse.json({ pin: meta.pin, editors: meta.editors, slug: meta.slug })
+  const pending = await listTokensForSlug(slug)
+  return NextResponse.json({
+    pin: meta.pin,
+    editors: meta.editors,
+    slug: meta.slug,
+    pendingInvites: pending.map(t => ({ token: t.token, email: t.email, purpose: t.purpose })),
+  })
 }
 
 export async function PUT(
@@ -28,7 +37,7 @@ export async function PUT(
     return NextResponse.json({ error: 'Only the owner can change hub settings' }, { status: 403 })
   }
 
-  let body: { pin?: string | null; removeEditor?: string; newSlug?: string }
+  let body: { pin?: string | null; removeEditor?: string; newSlug?: string; revokeInvite?: string; transferTo?: string }
   try {
     body = await req.json()
   } catch {
@@ -36,6 +45,22 @@ export async function PUT(
   }
 
   let current = meta
+
+  if (body.revokeInvite) {
+    await revokeToken(body.revokeInvite)
+  }
+
+  // Initiate an ownership transfer: the new owner accepts via magic link.
+  if (body.transferTo !== undefined) {
+    const email = normalizeEmail(body.transferTo || '')
+    if (!isValidEmail(email)) return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
+    if (email === user!.email) return NextResponse.json({ error: 'You already own this hub' }, { status: 400 })
+    const hub = await getHub(slug)
+    const token = await createToken({ purpose: 'transfer', email, slug })
+    const url = `${req.nextUrl.origin}/api/auth/verify?token=${token}`
+    const result = await sendMagicLink({ to: email, url, kind: 'invite', hubName: hub?.name })
+    return NextResponse.json({ ...result, transfer: email })
+  }
 
   if (body.pin !== undefined) {
     if (body.pin !== null && !/^\d{4,8}$/.test(String(body.pin))) {

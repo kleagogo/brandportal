@@ -23,7 +23,7 @@ export function BrandAgent() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg, brandName: config.name }),
+        body: JSON.stringify({ message: userMsg, slug: config.slug }),
       })
       const data = await res.json()
       setMessages(m => [...m, { role: 'assistant', text: data.reply || 'Sorry, I could not answer that.' }])

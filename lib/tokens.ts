@@ -10,7 +10,7 @@ import crypto from 'crypto'
 
 const TOKENS_FILE = path.join(process.cwd(), 'data', 'tokens.json')
 
-export type TokenPurpose = 'login' | 'claim' | 'invite'
+export type TokenPurpose = 'login' | 'claim' | 'invite' | 'transfer' | 'email-change'
 
 export interface TokenRecord {
   token: string
@@ -19,8 +19,10 @@ export interface TokenRecord {
   email: string
   /** For 'claim': the preview being claimed. */
   previewId?: string
-  /** For 'invite': the hub the editor is invited to. */
+  /** For 'invite' / 'transfer': the hub involved. */
   slug?: string
+  /** For 'email-change': the account being changed. */
+  userId?: string
   /** Where to send the user after verification. */
   redirect?: string
   expiresAt: number
@@ -44,7 +46,7 @@ async function writeTokens(tokens: TokenRecord[]): Promise<void> {
 export async function createToken(record: Omit<TokenRecord, 'token' | 'expiresAt'>): Promise<string> {
   const tokens = (await readTokens()).filter(t => t.expiresAt > Date.now())
   const token = crypto.randomBytes(24).toString('base64url')
-  const ttl = record.purpose === 'invite' ? 7 * 24 * 3600_000 : 3600_000
+  const ttl = record.purpose === 'invite' || record.purpose === 'transfer' ? 7 * 24 * 3600_000 : 3600_000
   tokens.push({ ...record, token, expiresAt: Date.now() + ttl })
   await writeTokens(tokens)
   return token
@@ -57,4 +59,15 @@ export async function consumeToken(token: string): Promise<TokenRecord | null> {
   if (!found) return null
   await writeTokens(tokens.filter(t => t.token !== token))
   return found
+}
+
+/** Outstanding invites/transfers for a hub (so owners can see and revoke them). */
+export async function listTokensForSlug(slug: string): Promise<TokenRecord[]> {
+  const tokens = await readTokens()
+  return tokens.filter(t => t.slug === slug && t.expiresAt > Date.now() && (t.purpose === 'invite' || t.purpose === 'transfer'))
+}
+
+export async function revokeToken(token: string): Promise<void> {
+  const tokens = await readTokens()
+  await writeTokens(tokens.filter(t => t.token !== token))
 }

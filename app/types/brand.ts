@@ -46,6 +46,7 @@ export interface AssetFile {
   file: string
   format: string[]
   usage?: string
+  tags?: string[]
   platform?: string
   description?: string
 }

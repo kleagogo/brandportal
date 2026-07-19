@@ -139,6 +139,71 @@ export async function deleteHub(slug: string): Promise<void> {
   await fs.unlink(metaFile(slug)).catch(() => {})
 }
 
+/** How many hubs a user owns (for plan limits). Demo hubs don't count. */
+export async function countOwnedHubs(userId: string): Promise<number> {
+  let names: string[] = []
+  try { names = await fs.readdir(HUBS_DIR) } catch { return 0 }
+  let count = 0
+  for (const name of names) {
+    if (!name.endsWith('.json')) continue
+    const meta = await getMeta(name.slice(0, -5))
+    if (!meta.demo && meta.ownerId === userId) count++
+  }
+  return count
+}
+
+/** Hand a hub to a new owner; the old owner stays on as an editor. */
+export async function transferOwnership(slug: string, newOwnerId: string, newOwnerEmail: string, oldOwnerEmail?: string): Promise<void> {
+  const meta = await getMeta(slug)
+  const editors = meta.editors.filter(e => e !== newOwnerEmail)
+  if (oldOwnerEmail && !editors.includes(oldOwnerEmail)) editors.push(oldOwnerEmail)
+  await saveMeta({ ...meta, ownerId: newOwnerId, editors })
+}
+
+/** Keep editor lists in sync when an account's email changes. */
+export async function renameEditorEmail(oldEmail: string, newEmail: string): Promise<void> {
+  await forEachMeta(async meta => {
+    if (!meta.editors.includes(oldEmail)) return null
+    return { ...meta, editors: meta.editors.map(e => (e === oldEmail ? newEmail : e)) }
+  })
+}
+
+/** Remove an email from every editor list (account deletion, leaving hubs). */
+export async function removeEditorEverywhere(email: string): Promise<void> {
+  await forEachMeta(async meta => {
+    if (!meta.editors.includes(email)) return null
+    return { ...meta, editors: meta.editors.filter(e => e !== email) }
+  })
+}
+
+/** Delete every hub a user owns (account deletion). Returns deleted slugs. */
+export async function deleteHubsOwnedBy(userId: string): Promise<string[]> {
+  let names: string[] = []
+  try { names = await fs.readdir(HUBS_DIR) } catch { return [] }
+  const deleted: string[] = []
+  for (const name of names) {
+    if (!name.endsWith('.json')) continue
+    const slug = name.slice(0, -5)
+    const meta = await getMeta(slug)
+    if (!meta.demo && meta.ownerId === userId) {
+      await deleteHub(slug)
+      deleted.push(slug)
+    }
+  }
+  return deleted
+}
+
+async function forEachMeta(update: (meta: HubMeta) => Promise<HubMeta | null>): Promise<void> {
+  let names: string[] = []
+  try { names = await fs.readdir(META_DIR) } catch { return }
+  for (const name of names) {
+    if (!name.endsWith('.json')) continue
+    const meta = await getMeta(name.slice(0, -5))
+    const next = await update(meta)
+    if (next) await saveMeta(next)
+  }
+}
+
 export function slugify(value: string): string {
   return value
     .toLowerCase()

@@ -10,6 +10,44 @@ function isImage(file: string): boolean {
   return /\.(svg|png|jpg|jpeg|webp|gif|ico)(\?|$)/i.test(file)
 }
 
+/** Metadata tags on an asset: chips in view mode, editable in edit mode. */
+function TagRow({ tags, onAdd, onRemove }: { tags: string[]; onAdd: (t: string) => void; onRemove: (t: string) => void }) {
+  const { editing } = useHub()
+  const [draft, setDraft] = useState('')
+
+  function commit() {
+    const t = draft.trim().toLowerCase().replace(/[^a-z0-9\- ]/g, '').slice(0, 24)
+    if (t && !tags.includes(t)) onAdd(t)
+    setDraft('')
+  }
+
+  if (!editing && tags.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap items-center gap-1 mb-2">
+      {tags.map(tag => (
+        <span key={tag} className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-[#f0efec] text-[#6b6b66]">
+          #{tag}
+          {editing && (
+            <button onClick={() => onRemove(tag)} className="text-[#b0afa9] hover:text-red-500" title="Remove tag">×</button>
+          )}
+        </span>
+      ))}
+      {editing && (
+        <input
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); commit() } }}
+          onBlur={commit}
+          placeholder="+ tag"
+          size={Math.max(draft.length, 5)}
+          className="text-[10px] px-1.5 py-0.5 rounded-md border border-dashed border-[#d6d4cd] outline-none focus:border-[#1a1a1a] bg-transparent placeholder:text-[#c4c2bb]"
+        />
+      )}
+    </div>
+  )
+}
+
 function downloadHref(file: string): string {
   return file.startsWith('/api/files/') ? `${file}?dl=1` : file
 }
@@ -36,11 +74,13 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
         const res = await fetch('/api/upload', { method: 'POST', body: form })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Upload failed')
+        // If Claude described the image, its name/tags/usage prefill the card.
         const asset: AssetFile = {
-          name: file.name.replace(/\.[^.]*$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()),
+          name: data.suggestion?.name || file.name.replace(/\.[^.]*$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()),
           file: data.url,
           format: [data.format],
-          usage: '',
+          usage: data.suggestion?.usage || '',
+          tags: data.suggestion?.tags || [],
         }
         update(c => {
           if (!c.assets[sectionId]) c.assets[sectionId] = []
@@ -54,12 +94,24 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
     }
   }
 
+  const hasLocalFiles = assets.some(a => a.file.startsWith('/'))
+
   return (
     <div>
-      <h1 className="text-[22px] font-bold tracking-tight mb-1">{label}</h1>
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
+        <h1 className="text-[22px] font-bold tracking-tight">{label}</h1>
+        {assets.length > 0 && hasLocalFiles && (
+          <a
+            href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(sectionId)}`}
+            className="flex items-center gap-1.5 text-[13px] font-semibold bg-[#1a1a1a] text-white px-3.5 py-2 rounded-xl hover:bg-[#333] transition-colors"
+          >
+            <Icon name="download" size={13} /> Download all (.zip)
+          </a>
+        )}
+      </div>
       <p className="text-[14px] text-[#8a8a85] mb-8">
         {editing
-          ? 'Drop files anywhere below to add them, and click names or notes to edit.'
+          ? 'Drop files anywhere below to add them, and click names, notes, or tags to edit.'
           : sectionId === 'logo'
             ? 'Our logo system. Download approved assets and follow usage guidelines.'
             : `${label} — download for presentations, product, and marketing.`}
@@ -118,6 +170,11 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                   <p className="text-[11px] text-[#8a8a85] mb-2 leading-tight">
                     <Editable value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
                   </p>
+                  <TagRow
+                    tags={asset.tags || []}
+                    onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
+                    onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
+                  />
                   <div className="flex items-center justify-between">
                     <div className="flex gap-1">
                       {asset.format.map(f => (

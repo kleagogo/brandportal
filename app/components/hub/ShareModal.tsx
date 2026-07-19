@@ -12,6 +12,7 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
   // Owner-only settings state
   const [pin, setPin] = useState<string | null>(null)
   const [editors, setEditors] = useState<string[]>([])
+  const [pending, setPending] = useState<Array<{ token: string; email: string; purpose: string }>>([])
   const [loaded, setLoaded] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteBusy, setInviteBusy] = useState(false)
@@ -31,6 +32,7 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
       const data = await res.json()
       setPin(data.pin)
       setEditors(data.editors || [])
+      setPending(data.pendingInvites || [])
       setLoaded(true)
     } catch { /* settings stay hidden */ }
   }, [config.slug, isOwner])
@@ -73,6 +75,7 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
       setInviteSentTo(data.email)
       setInviteLink(data.devLink || '')
       setInviteEmail('')
+      loadSettings() // refresh the pending list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Couldn’t send the invite')
     } finally {
@@ -169,7 +172,7 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
                   )}
                 </div>
               )}
-              {editors.length > 0 && (
+              {(editors.length > 0 || pending.length > 0) && (
                 <div className="space-y-1">
                   {editors.map(email => (
                     <div key={email} className="flex items-center justify-between text-[12.5px] text-[#6b6b66] px-1 py-1 group">
@@ -178,6 +181,25 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
                         onClick={() => removeEditor(email)}
                         className="text-[#b0afa9] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
                         title="Remove editor"
+                      >
+                        <Icon name="close" size={11} />
+                      </button>
+                    </div>
+                  ))}
+                  {pending.map(p => (
+                    <div key={p.token} className="flex items-center justify-between text-[12.5px] text-[#b0afa9] px-1 py-1 group">
+                      <span className="truncate">✉ {p.email} · invited, not yet accepted</span>
+                      <button
+                        onClick={async () => {
+                          await fetch(`/api/hubs/${encodeURIComponent(config.slug)}/settings`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ revokeInvite: p.token }),
+                          })
+                          setPending(list => list.filter(x => x.token !== p.token))
+                        }}
+                        className="text-[#b0afa9] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                        title="Revoke invite"
                       >
                         <Icon name="close" size={11} />
                       </button>

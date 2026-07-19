@@ -3,6 +3,7 @@ import { createToken } from '@/lib/tokens'
 import { sendMagicLink } from '@/lib/email'
 import { isValidEmail, normalizeEmail } from '@/lib/users'
 import { getPreview } from '@/lib/store'
+import { allow, clientIp } from '@/lib/ratelimit'
 
 /**
  * Request a magic link — for signing in, or for claiming a preview hub.
@@ -20,6 +21,10 @@ export async function POST(req: NextRequest) {
   const email = normalizeEmail(body.email || '')
   if (!isValidEmail(email)) {
     return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
+  }
+
+  if (!allow(`auth:${clientIp(req)}`, 10, 15 * 60_000) || !allow(`auth:${email}`, 5, 15 * 60_000)) {
+    return NextResponse.json({ error: 'Too many attempts — try again in a few minutes' }, { status: 429 })
   }
 
   const claiming = typeof body.previewId === 'string' && body.previewId.length > 0

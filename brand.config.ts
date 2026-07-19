@@ -97,7 +97,11 @@ const config: BrandConfig = {
       { name: 'Logo — Reverse', file: '/brand/meridian-logo-dark.svg', format: ['SVG'], usage: 'On Pine or photographic backgrounds' },
       { name: 'Logomark',       file: '/brand/meridian-mark.svg',      format: ['SVG'], usage: 'App icon, avatar, favicon' },
     ],
-    photography: [],
+    photography: [
+      { name: 'Trail at dusk',    file: '/brand/photo-trail.svg', format: ['SVG'], usage: 'Hero imagery, campaign backgrounds', tags: ['outdoors', 'landscape', 'hero'] },
+      { name: 'Gear flat lay',    file: '/brand/photo-gear.svg',  format: ['SVG'], usage: 'Product pages, catalogues',         tags: ['product', 'studio'] },
+      { name: 'Coastline marker', file: '/brand/photo-coast.svg', format: ['SVG'], usage: 'Editorial, about pages',            tags: ['outdoors', 'editorial'] },
+    ],
   },
 
   // ─── Written guidelines ──────────────────────────────────────────────────────

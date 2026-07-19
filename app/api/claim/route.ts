@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createHub, deletePreview, getPreview } from '@/lib/store'
+import { countOwnedHubs, createHub, deletePreview, getPreview } from '@/lib/store'
 import { getSessionUser } from '@/lib/auth'
+import { limitsFor } from '@/lib/limits'
 
 /**
  * Turn a scan preview into a real, owned hub.
@@ -26,6 +27,11 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser()
   if (!user) {
     return NextResponse.json({ needAuth: true }, { status: 401 })
+  }
+
+  const limits = limitsFor(user)
+  if ((await countOwnedHubs(user.id)) >= limits.hubs) {
+    return NextResponse.json({ error: `Your plan includes ${limits.hubs} hub${limits.hubs === 1 ? '' : 's'} — Pro (coming soon) raises the limit` }, { status: 403 })
   }
 
   const hub = await createHub(config, user.id)

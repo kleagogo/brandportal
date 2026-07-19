@@ -16,6 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${hub.name} — Brand Hub`,
     description: hub.tagline,
+    ...(hub.logoUrl ? { icons: { icon: hub.logoUrl } } : {}),
   }
 }
 

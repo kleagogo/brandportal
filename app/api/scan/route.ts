@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildConfigFromScan, type ScanResult } from '@/lib/brand-builder'
 import { savePreview } from '@/lib/store'
+import { allow, clientIp } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
   const { url } = await req.json()
   if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 })
+
+  // Scans are the only per-use cost exposed to anonymous visitors — cap them.
+  if (!allow(`scan:${clientIp(req)}`, 10, 60 * 60_000)) {
+    return NextResponse.json({ error: 'Scan limit reached — try again in an hour' }, { status: 429 })
+  }
 
   let fullUrl: string
   let hostname: string

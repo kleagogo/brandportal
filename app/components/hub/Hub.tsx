@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BrandConfig, SectionConfig } from '@/app/types/brand'
 import { HubProvider, useHub } from './HubContext'
 import { Icon } from './Icon'
@@ -12,6 +12,7 @@ import { GuidelinesSection } from './GuidelinesSection'
 import { BrandAgent } from './BrandAgent'
 import { ShareModal } from './ShareModal'
 import { SettingsModal } from './SettingsModal'
+import { SearchBox } from './SearchBox'
 
 export interface HubAccess {
   canEdit?: boolean
@@ -64,6 +65,7 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
       {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
 
       {previewId && <ClaimBanner previewId={previewId} />}
+      <WelcomeToast />
 
       <div className="flex-1 flex">
         {/* Mobile nav backdrop */}
@@ -80,6 +82,7 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
             onMenu={() => setNavOpen(o => !o)}
             onShare={() => setShareOpen(true)}
             onSettings={() => setSettingsOpen(true)}
+            onNavigate={setActive}
             editing={editing}
             setEditing={setEditing}
             saveState={saveState}
@@ -98,6 +101,32 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
       {shareOpen && <ShareModal onClose={() => setShareOpen(false)} isOwner={Boolean(access.isOwner)} demo={Boolean(access.demo)} />}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <BrandAgent />
+    </div>
+  )
+}
+
+// ─── One-time toasts after claiming or receiving a hub ────────────────────────
+
+function WelcomeToast() {
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('claimed')) setMessage('This hub is yours now. Hit Edit to make it perfect, then Share when you’re ready.')
+    if (params.has('transferred')) setMessage('You now own this hub. The previous owner stays on as an editor.')
+    if (params.has('claimed') || params.has('transferred')) {
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
+
+  if (!message) return null
+  return (
+    <div className="bg-emerald-600 text-white px-4 sm:px-6 py-2.5 flex items-center gap-3 text-[13px]">
+      <span className="font-semibold shrink-0">🎉 Welcome!</span>
+      <span className="text-white/90 flex-1">{message}</span>
+      <button onClick={() => setMessage('')} className="text-white/70 hover:text-white shrink-0" title="Dismiss">
+        <Icon name="close" size={12} />
+      </button>
     </div>
   )
 }
@@ -213,11 +242,12 @@ function ClaimBanner({ previewId }: { previewId: string }) {
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
 function TopBar({
-  onMenu, onShare, onSettings, editing, setEditing, saveState, sectionLabel, preview, access,
+  onMenu, onShare, onSettings, onNavigate, editing, setEditing, saveState, sectionLabel, preview, access,
 }: {
   onMenu: () => void
   onShare: () => void
   onSettings: () => void
+  onNavigate: (sectionId: string) => void
   editing: boolean
   setEditing: (v: boolean) => void
   saveState: 'idle' | 'saving' | 'saved' | 'error'
@@ -231,6 +261,7 @@ function TopBar({
         <Icon name="menu" size={18} />
       </button>
       <p className="text-[13px] font-medium text-[#8a8a85] truncate">{sectionLabel}</p>
+      <SearchBox onNavigate={onNavigate} />
 
       {preview ? (
         <div className="ml-auto">

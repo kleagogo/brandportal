@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getHub, getMeta, isHubOwner } from '@/lib/store'
 import { getSessionUser } from '@/lib/auth'
-import { createToken } from '@/lib/tokens'
+import { createToken, listTokensForSlug } from '@/lib/tokens'
 import { sendMagicLink } from '@/lib/email'
 import { isValidEmail, normalizeEmail } from '@/lib/users'
+import { limitsFor } from '@/lib/limits'
 
 /** Owner invites an editor by email. The invite is a magic link. */
 export async function POST(
@@ -32,6 +33,15 @@ export async function POST(
   }
   if (meta.editors.includes(email)) {
     return NextResponse.json({ error: 'That person can already edit this hub' }, { status: 400 })
+  }
+  // Accepted editors + outstanding invites both count toward the seat limit.
+  const pending = (await listTokensForSlug(slug)).filter(t => t.purpose === 'invite')
+  if (pending.some(t => t.email === email)) {
+    return NextResponse.json({ error: 'That person already has a pending invite' }, { status: 400 })
+  }
+  const limits = limitsFor(user!)
+  if (meta.editors.length + pending.length >= limits.editorsPerHub) {
+    return NextResponse.json({ error: `Your plan allows ${limits.editorsPerHub} editors per hub — Pro (coming soon) raises the limit` }, { status: 403 })
   }
 
   const hub = await getHub(slug)
