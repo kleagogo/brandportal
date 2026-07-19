@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHub, deletePreview, getPreview } from '@/lib/store'
+import { getSessionUser } from '@/lib/auth'
 
 /**
- * Turn a scan preview into a real, editable hub.
- * v1 has no accounts yet — claiming is open. Auth wraps this endpoint later.
+ * Turn a scan preview into a real, owned hub.
+ * Signed-in users claim directly; signed-out users get { needAuth: true } and
+ * the UI collects their email for a claim magic link instead.
  */
 export async function POST(req: NextRequest) {
   let previewId: string
@@ -21,7 +23,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'This preview has expired — scan your site again' }, { status: 410 })
   }
 
-  const hub = await createHub(config)
+  const user = await getSessionUser()
+  if (!user) {
+    return NextResponse.json({ needAuth: true }, { status: 401 })
+  }
+
+  const hub = await createHub(config, user.id)
   await deletePreview(previewId)
   return NextResponse.json({ slug: hub.slug })
 }

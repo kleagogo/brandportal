@@ -20,11 +20,14 @@ export default function LandingPage() {
   const [error, setError] = useState('')
   const router = useRouter()
 
-  // Arriving from an expired preview link.
+  const [me, setMe] = useState<{ email: string } | null>(null)
+
+  // Arriving from an expired preview link + signed-in state for the nav.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has('expired')) {
       setError('That preview expired — scan your site again to get a fresh one.')
     }
+    fetch('/api/me').then(r => r.json()).then(d => setMe(d.user)).catch(() => {})
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -98,7 +101,14 @@ export default function LandingPage() {
         <div className="flex items-center gap-5">
           <Link href="/meridian" className="text-[13px] text-[#8a8a85] hover:text-[#1a1a1a] transition-colors hidden sm:block">Example hub</Link>
           <a href="#pricing" className="text-[13px] text-[#8a8a85] hover:text-[#1a1a1a] transition-colors">Pricing</a>
-          <a href="#scan" className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-3.5 py-1.5 rounded-lg hover:bg-[#333] transition-colors">Get started</a>
+          {me ? (
+            <Link href="/dashboard" className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-3.5 py-1.5 rounded-lg hover:bg-[#333] transition-colors">Your hubs</Link>
+          ) : (
+            <>
+              <Link href="/login" className="text-[13px] text-[#8a8a85] hover:text-[#1a1a1a] transition-colors">Sign in</Link>
+              <a href="#scan" className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-3.5 py-1.5 rounded-lg hover:bg-[#333] transition-colors">Get started</a>
+            </>
+          )}
         </div>
       </nav>
 

@@ -14,9 +14,11 @@ import path from 'path'
 import crypto from 'crypto'
 import seed from '@/brand.config'
 import type { BrandConfig } from '@/app/types/brand'
+import type { User } from './users'
 
 const DATA_DIR = path.join(process.cwd(), 'data')
 const HUBS_DIR = path.join(DATA_DIR, 'hubs')
+const META_DIR = path.join(DATA_DIR, 'meta')
 const PREVIEWS_DIR = path.join(DATA_DIR, 'previews')
 
 export const PREVIEW_TTL_MS = 24 * 60 * 60 * 1000
@@ -45,7 +47,7 @@ export async function saveHub(config: BrandConfig): Promise<BrandConfig> {
 }
 
 /** Create a new hub, deriving a unique slug from the desired one. */
-export async function createHub(config: BrandConfig): Promise<BrandConfig> {
+export async function createHub(config: BrandConfig, ownerId: string | null = null): Promise<BrandConfig> {
   await fs.mkdir(HUBS_DIR, { recursive: true })
   const base = slugify(config.slug || config.name) || 'brand'
   let slug = base
@@ -53,7 +55,88 @@ export async function createHub(config: BrandConfig): Promise<BrandConfig> {
   while (RESERVED_SLUGS.has(slug) || slug === seed.slug || (await exists(hubFile(slug)))) {
     slug = `${base}-${n++}`
   }
-  return saveHub({ ...config, slug })
+  const hub = await saveHub({ ...config, slug })
+  await saveMeta({ slug, ownerId, editors: [], pin: null, createdAt: new Date().toISOString() })
+  return hub
+}
+
+// ─── Hub meta: ownership, editors, viewer PIN ────────────────────────────────
+
+export interface HubMeta {
+  slug: string
+  /** null = unowned. The seed hub is a demo anyone may edit. */
+  ownerId: string | null
+  /** Editor emails — matched against the signed-in user's email. */
+  editors: string[]
+  /** 4–8 digit viewer PIN, or null for public. */
+  pin: string | null
+  demo?: boolean
+  createdAt: string
+}
+
+export async function getMeta(slug: string): Promise<HubMeta> {
+  try {
+    return JSON.parse(await fs.readFile(metaFile(slug), 'utf8')) as HubMeta
+  } catch {
+    // No meta: the seed demo hub, or a pre-accounts hub. Both stay open demos.
+    return { slug, ownerId: null, editors: [], pin: null, demo: true, createdAt: new Date(0).toISOString() }
+  }
+}
+
+export async function saveMeta(meta: HubMeta): Promise<HubMeta> {
+  await fs.mkdir(META_DIR, { recursive: true })
+  await atomicWrite(metaFile(meta.slug), JSON.stringify(meta, null, 2))
+  return meta
+}
+
+export function canEditHub(meta: HubMeta, user: User | null): boolean {
+  if (meta.demo) return true
+  if (!user) return false
+  return meta.ownerId === user.id || meta.editors.includes(user.email)
+}
+
+export function isHubOwner(meta: HubMeta, user: User | null): boolean {
+  return Boolean(user && meta.ownerId === user.id)
+}
+
+/** Every hub the user owns or can edit, for the dashboard. */
+export async function listHubsForUser(user: User): Promise<Array<{ hub: BrandConfig; meta: HubMeta; role: 'owner' | 'editor' }>> {
+  let names: string[] = []
+  try { names = await fs.readdir(HUBS_DIR) } catch { /* no hubs yet */ }
+  const out: Array<{ hub: BrandConfig; meta: HubMeta; role: 'owner' | 'editor' }> = []
+  for (const name of names) {
+    if (!name.endsWith('.json')) continue
+    const slug = name.slice(0, -5)
+    const meta = await getMeta(slug)
+    const role = meta.ownerId === user.id ? 'owner' : meta.editors.includes(user.email) ? 'editor' : null
+    if (!role) continue
+    const hub = await getHub(slug)
+    if (hub) out.push({ hub, meta, role })
+  }
+  return out.sort((a, b) => (b.hub.updatedAt || '').localeCompare(a.hub.updatedAt || ''))
+}
+
+/** Move a hub to a new slug. Returns the final slug or an error string. */
+export async function renameHub(oldSlug: string, wanted: string): Promise<{ slug?: string; error?: string }> {
+  const next = slugify(wanted)
+  if (!next) return { error: 'That address isn’t valid — use letters and numbers' }
+  if (next === oldSlug) return { slug: oldSlug }
+  if (RESERVED_SLUGS.has(next) || next === seed.slug || (await exists(hubFile(next)))) {
+    return { error: 'That address is already taken' }
+  }
+  const hub = await getHub(oldSlug)
+  if (!hub) return { error: 'Hub not found' }
+  const meta = await getMeta(oldSlug)
+  await saveHub({ ...hub, slug: next })
+  await saveMeta({ ...meta, slug: next })
+  await fs.unlink(hubFile(oldSlug)).catch(() => {})
+  await fs.unlink(metaFile(oldSlug)).catch(() => {})
+  return { slug: next }
+}
+
+export async function deleteHub(slug: string): Promise<void> {
+  await fs.unlink(hubFile(slug)).catch(() => {})
+  await fs.unlink(metaFile(slug)).catch(() => {})
 }
 
 export function slugify(value: string): string {
@@ -113,6 +196,10 @@ async function cleanupPreviews(): Promise<void> {
 
 function hubFile(slug: string): string {
   return path.join(HUBS_DIR, `${path.basename(slug)}.json`)
+}
+
+function metaFile(slug: string): string {
+  return path.join(META_DIR, `${path.basename(slug)}.json`)
 }
 
 function previewFile(id: string): string {

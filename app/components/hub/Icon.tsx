@@ -41,6 +41,8 @@ export function Icon({ name, size = 16 }: { name: string; size?: number }) {
       return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
     case 'menu':
       return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    case 'gear':
+      return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.4"/><path d="M8 1.8v1.8M8 12.4v1.8M1.8 8h1.8M12.4 8h1.8M3.6 3.6l1.3 1.3M11.1 11.1l1.3 1.3M12.4 3.6l-1.3 1.3M4.9 11.1l-1.3 1.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
     case 'file':
       return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M4 1.5h5L13 5.5v9a.5.5 0 01-.5.5h-8.5a.5.5 0 01-.5-.5v-13a.5.5 0 01.5-.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M9 1.5V5.5H13" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
     default:

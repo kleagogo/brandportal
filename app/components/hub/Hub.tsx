@@ -11,19 +11,28 @@ import { AssetsSection } from './AssetsSection'
 import { GuidelinesSection } from './GuidelinesSection'
 import { BrandAgent } from './BrandAgent'
 import { ShareModal } from './ShareModal'
+import { SettingsModal } from './SettingsModal'
 
-export default function Hub({ initial, previewId }: { initial: BrandConfig; previewId?: string }) {
+export interface HubAccess {
+  canEdit?: boolean
+  isOwner?: boolean
+  demo?: boolean
+  signedIn?: boolean
+}
+
+export default function Hub({ initial, previewId, ...access }: { initial: BrandConfig; previewId?: string } & HubAccess) {
   return (
     <HubProvider initial={initial}>
-      <HubShell previewId={previewId} />
+      <HubShell previewId={previewId} access={access} />
     </HubProvider>
   )
 }
 
-function HubShell({ previewId }: { previewId?: string }) {
+function HubShell({ previewId, access }: { previewId?: string; access: HubAccess }) {
   const { config, editing, setEditing, saveState } = useHub()
   const [active, setActive] = useState(config.sections[0]?.id || 'logo')
   const [shareOpen, setShareOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
 
   // If the active section gets deleted, fall back to the first one.
@@ -70,11 +79,13 @@ function HubShell({ previewId }: { previewId?: string }) {
           <TopBar
             onMenu={() => setNavOpen(o => !o)}
             onShare={() => setShareOpen(true)}
+            onSettings={() => setSettingsOpen(true)}
             editing={editing}
             setEditing={setEditing}
             saveState={saveState}
             sectionLabel={activeSection?.label || ''}
             preview={Boolean(previewId)}
+            access={access}
           />
           <main className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
@@ -84,7 +95,8 @@ function HubShell({ previewId }: { previewId?: string }) {
         </div>
       </div>
 
-      {shareOpen && <ShareModal onClose={() => setShareOpen(false)} />}
+      {shareOpen && <ShareModal onClose={() => setShareOpen(false)} isOwner={Boolean(access.isOwner)} demo={Boolean(access.demo)} />}
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <BrandAgent />
     </div>
   )
@@ -94,11 +106,13 @@ function HubShell({ previewId }: { previewId?: string }) {
 
 function ClaimBanner({ previewId }: { previewId: string }) {
   const { config } = useHub()
-  const [claiming, setClaiming] = useState(false)
+  const [state, setState] = useState<'idle' | 'claiming' | 'email' | 'sending' | 'sent'>('idle')
+  const [email, setEmail] = useState('')
+  const [devLink, setDevLink] = useState('')
   const [error, setError] = useState('')
 
   async function claim() {
-    setClaiming(true)
+    setState('claiming')
     setError('')
     try {
       const res = await fetch('/api/claim', {
@@ -107,28 +121,91 @@ function ClaimBanner({ previewId }: { previewId: string }) {
         body: JSON.stringify({ previewId }),
       })
       const data = await res.json()
+      if (res.status === 401 && data.needAuth) {
+        setState('email') // not signed in — ask for their email
+        return
+      }
       if (!res.ok) throw new Error(data.error || 'Something went wrong')
       window.location.href = `/${data.slug}`
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
-      setClaiming(false)
+      setState('idle')
+    }
+  }
+
+  async function sendLink(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim()) return
+    setState('sending')
+    setError('')
+    try {
+      const res = await fetch('/api/auth/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), previewId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Something went wrong')
+      setDevLink(data.devLink || '')
+      setState('sent')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setState('email')
     }
   }
 
   return (
     <div className="bg-[#1a1a1a] text-white px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap sticky top-0 z-50">
-      <p className="text-[13px] leading-snug flex-1 min-w-[200px]">
-        <span className="font-semibold">This is {config.name}&rsquo;s brand hub</span>
-        <span className="text-white/70"> — built from your website. Claim it to keep and edit it. Unclaimed previews expire in 24 hours.</span>
-        {error && <span className="text-red-300"> {error}</span>}
-      </p>
-      <button
-        onClick={claim}
-        disabled={claiming}
-        className="text-[13px] font-semibold bg-white text-[#1a1a1a] px-4 py-2 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-60 whitespace-nowrap"
-      >
-        {claiming ? 'Claiming…' : 'Claim this hub — free'}
-      </button>
+      {state === 'sent' ? (
+        <p className="text-[13px] leading-snug flex-1 min-w-[200px]">
+          <span className="font-semibold">Check your email</span>
+          <span className="text-white/70"> — your claim link is on its way to {email}.</span>
+          {devLink && (
+            <>
+              {' '}
+              <a href={devLink} className="underline underline-offset-2 font-semibold">
+                Or open your claim link directly →
+              </a>
+            </>
+          )}
+        </p>
+      ) : state === 'email' || state === 'sending' ? (
+        <form onSubmit={sendLink} className="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
+          <p className="text-[13px] text-white/70">Where should this hub live?</p>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="you@company.com"
+            required
+            autoFocus
+            className="flex-1 min-w-[180px] text-[13px] px-3 py-2 rounded-lg bg-white/10 border border-white/20 outline-none focus:border-white placeholder:text-white/40"
+          />
+          <button
+            type="submit"
+            disabled={state === 'sending'}
+            className="text-[13px] font-semibold bg-white text-[#1a1a1a] px-4 py-2 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-60 whitespace-nowrap"
+          >
+            {state === 'sending' ? 'Sending…' : 'Claim it'}
+          </button>
+          {error && <span className="text-[12px] text-red-300 w-full">{error}</span>}
+        </form>
+      ) : (
+        <>
+          <p className="text-[13px] leading-snug flex-1 min-w-[200px]">
+            <span className="font-semibold">This is {config.name}&rsquo;s brand hub</span>
+            <span className="text-white/70"> — built from your website. Claim it to keep and edit it. Unclaimed previews expire in 24 hours.</span>
+            {error && <span className="text-red-300"> {error}</span>}
+          </p>
+          <button
+            onClick={claim}
+            disabled={state === 'claiming'}
+            className="text-[13px] font-semibold bg-white text-[#1a1a1a] px-4 py-2 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-60 whitespace-nowrap"
+          >
+            {state === 'claiming' ? 'Claiming…' : 'Claim this hub — free'}
+          </button>
+        </>
+      )}
     </div>
   )
 }
@@ -136,15 +213,17 @@ function ClaimBanner({ previewId }: { previewId: string }) {
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
 function TopBar({
-  onMenu, onShare, editing, setEditing, saveState, sectionLabel, preview,
+  onMenu, onShare, onSettings, editing, setEditing, saveState, sectionLabel, preview, access,
 }: {
   onMenu: () => void
   onShare: () => void
+  onSettings: () => void
   editing: boolean
   setEditing: (v: boolean) => void
   saveState: 'idle' | 'saving' | 'saved' | 'error'
   sectionLabel: string
   preview: boolean
+  access: HubAccess
 }) {
   return (
     <header className="h-14 shrink-0 bg-white border-b border-[#e8e7e4] flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
@@ -173,6 +252,12 @@ function TopBar({
           </span>
         )}
 
+        {access.demo && access.canEdit && (
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8a8a85] bg-[#f0efec] px-2 py-1 rounded-md hidden sm:block">
+            Demo — anyone can edit
+          </span>
+        )}
+
         <button
           onClick={onShare}
           className="flex items-center gap-1.5 text-[13px] font-medium text-[#1a1a1a] border border-[#e8e7e4] hover:border-[#1a1a1a] rounded-lg px-3 py-1.5 transition-colors"
@@ -180,16 +265,35 @@ function TopBar({
           <Icon name="share" size={13} /> Share
         </button>
 
-        <button
-          onClick={() => setEditing(!editing)}
-          className={`flex items-center gap-1.5 text-[13px] font-semibold rounded-lg px-3.5 py-1.5 transition-colors ${
-            editing
-              ? 'bg-[#1a1a1a] text-white hover:bg-[#333]'
-              : 'border border-[#e8e7e4] text-[#1a1a1a] hover:border-[#1a1a1a]'
-          }`}
-        >
-          {editing ? <><Icon name="check" size={13} /> Done</> : <><Icon name="edit" size={13} /> Edit</>}
-        </button>
+        {access.isOwner && (
+          <button
+            onClick={onSettings}
+            className="flex items-center text-[#8a8a85] hover:text-[#1a1a1a] border border-[#e8e7e4] hover:border-[#1a1a1a] rounded-lg px-2 py-1.5 transition-colors"
+            title="Hub settings"
+          >
+            <Icon name="gear" size={15} />
+          </button>
+        )}
+
+        {access.canEdit ? (
+          <button
+            onClick={() => setEditing(!editing)}
+            className={`flex items-center gap-1.5 text-[13px] font-semibold rounded-lg px-3.5 py-1.5 transition-colors ${
+              editing
+                ? 'bg-[#1a1a1a] text-white hover:bg-[#333]'
+                : 'border border-[#e8e7e4] text-[#1a1a1a] hover:border-[#1a1a1a]'
+            }`}
+          >
+            {editing ? <><Icon name="check" size={13} /> Done</> : <><Icon name="edit" size={13} /> Edit</>}
+          </button>
+        ) : !access.signedIn ? (
+          <a
+            href="/login"
+            className="text-[13px] font-medium text-[#b0afa9] hover:text-[#1a1a1a] transition-colors"
+          >
+            Sign in
+          </a>
+        ) : null}
       </div>
       )}
     </header>
@@ -213,6 +317,7 @@ function Sidebar({ active, onSelect, open }: { active: string; onSelect: (id: st
     try {
       const form = new FormData()
       form.append('file', file)
+      form.append('slug', config.slug)
       const res = await fetch('/api/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)

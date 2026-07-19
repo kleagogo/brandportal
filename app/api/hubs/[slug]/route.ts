@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getHub, saveHub } from '@/lib/store'
+import { canEditHub, getHub, getMeta, saveHub } from '@/lib/store'
+import { getSessionUser } from '@/lib/auth'
 import type { BrandConfig } from '@/app/types/brand'
 
 export async function GET(
@@ -19,6 +20,12 @@ export async function PUT(
   const { slug } = await params
   const current = await getHub(slug)
   if (!current) return NextResponse.json({ error: 'Hub not found' }, { status: 404 })
+
+  const meta = await getMeta(slug)
+  const user = await getSessionUser()
+  if (!canEditHub(meta, user)) {
+    return NextResponse.json({ error: 'You don’t have permission to edit this hub' }, { status: 403 })
+  }
 
   let body: BrandConfig
   try {
