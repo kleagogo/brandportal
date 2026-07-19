@@ -1,21 +1,19 @@
 /**
- * Single-use tokens for magic links: sign-in, hub claiming, editor invites.
- * Stored in data/tokens.json; consumed (deleted) on first use, expire after 1h
- * (invites get 7 days, so a link sent to a client keeps working).
+ * Single-use tokens for magic links: sign-in, claiming, invites, transfers,
+ * email changes. Stored as one JSON list ('app'/'tokens') via the driver;
+ * consumed (deleted) on first use. Login-ish tokens expire in 1h, invites
+ * and transfers in 7 days so a link sent to a client keeps working.
  */
 
-import { promises as fs } from 'fs'
-import path from 'path'
 import crypto from 'crypto'
-
-const TOKENS_FILE = path.join(process.cwd(), 'data', 'tokens.json')
+import { getStorage } from './db'
 
 export type TokenPurpose = 'login' | 'claim' | 'invite' | 'transfer' | 'email-change'
 
 export interface TokenRecord {
   token: string
   purpose: TokenPurpose
-  /** Email the link was issued to. Empty for open invite links. */
+  /** Email the link was issued to. */
   email: string
   /** For 'claim': the preview being claimed. */
   previewId?: string
@@ -29,18 +27,11 @@ export interface TokenRecord {
 }
 
 async function readTokens(): Promise<TokenRecord[]> {
-  try {
-    return JSON.parse(await fs.readFile(TOKENS_FILE, 'utf8'))
-  } catch {
-    return []
-  }
+  return (await getStorage().getJSON<TokenRecord[]>('app', 'tokens')) || []
 }
 
 async function writeTokens(tokens: TokenRecord[]): Promise<void> {
-  await fs.mkdir(path.dirname(TOKENS_FILE), { recursive: true })
-  const tmp = `${TOKENS_FILE}.tmp`
-  await fs.writeFile(tmp, JSON.stringify(tokens, null, 2), 'utf8')
-  await fs.rename(tmp, TOKENS_FILE)
+  await getStorage().putJSON('app', 'tokens', tokens)
 }
 
 export async function createToken(record: Omit<TokenRecord, 'token' | 'expiresAt'>): Promise<string> {

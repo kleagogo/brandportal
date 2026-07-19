@@ -10,8 +10,8 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { cookies } from 'next/headers'
 import { getUserById, type User } from './users'
+import { getStorage } from './db'
 
-const SECRET_FILE = path.join(process.cwd(), 'data', 'auth-secret')
 const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000
 
 export const SESSION_COOKIE = 'bp_session'
@@ -21,13 +21,18 @@ let cachedSecret: string | null = null
 async function getSecret(): Promise<string> {
   if (process.env.AUTH_SECRET) return process.env.AUTH_SECRET
   if (cachedSecret) return cachedSecret
+  const stored = await getStorage().getJSON<{ secret: string }>('app', 'auth-secret')
+  if (stored?.secret) {
+    cachedSecret = stored.secret
+    return cachedSecret
+  }
+  // Legacy location (pre-driver): a raw text file.
   try {
-    cachedSecret = (await fs.readFile(SECRET_FILE, 'utf8')).trim()
+    cachedSecret = (await fs.readFile(path.join(process.cwd(), 'data', 'auth-secret'), 'utf8')).trim()
   } catch {
     cachedSecret = crypto.randomBytes(32).toString('hex')
-    await fs.mkdir(path.dirname(SECRET_FILE), { recursive: true })
-    await fs.writeFile(SECRET_FILE, cachedSecret, 'utf8')
   }
+  await getStorage().putJSON('app', 'auth-secret', { secret: cachedSecret })
   return cachedSecret
 }
 

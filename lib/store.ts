@@ -1,63 +1,57 @@
 /**
- * Hub store — server-side persistence for brand hubs.
+ * Hub store — hubs, ownership meta, and scan previews.
  *
- * Layout on disk:
- *   data/hubs/<slug>.json      — claimed hubs, one file per hub
- *   data/previews/<id>.json    — unclaimed scan previews (expire after 24h)
- *
- * The interface below is the seam where a database (one row per hub) slots in
- * later without touching any UI code.
+ * All persistence goes through the storage driver (lib/db.ts): JSON files in
+ * dev, Postgres in production. Namespaces: 'hubs', 'meta', 'previews'.
  */
 
-import { promises as fs } from 'fs'
-import path from 'path'
 import crypto from 'crypto'
 import seed from '@/brand.config'
 import type { BrandConfig } from '@/app/types/brand'
 import type { User } from './users'
-
-const DATA_DIR = path.join(process.cwd(), 'data')
-const HUBS_DIR = path.join(DATA_DIR, 'hubs')
-const META_DIR = path.join(DATA_DIR, 'meta')
-const PREVIEWS_DIR = path.join(DATA_DIR, 'previews')
+import { getStorage } from './db'
 
 export const PREVIEW_TTL_MS = 24 * 60 * 60 * 1000
 
 /** Slugs that can never be hub addresses — they collide with app routes. */
-const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'signup', 'settings', 'pricing', 'brand', '_next'])
+const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'signup', 'settings', 'dashboard', 'pricing', 'brand', '_next'])
 
 // ─── Hubs ─────────────────────────────────────────────────────────────────────
 
 export async function getHub(slug: string): Promise<BrandConfig | null> {
-  try {
-    const raw = await fs.readFile(hubFile(slug), 'utf8')
-    return JSON.parse(raw) as BrandConfig
-  } catch {
-    // The seed hub exists even before its file is first written.
-    if (slug === seed.slug) return seed
-    return null
-  }
+  const hub = await getStorage().getJSON<BrandConfig>('hubs', slug)
+  if (hub) return hub
+  // The seed hub exists even before its record is first written.
+  return slug === seed.slug ? seed : null
 }
 
 export async function saveHub(config: BrandConfig): Promise<BrandConfig> {
   const next = { ...config, updatedAt: new Date().toISOString() }
-  await fs.mkdir(HUBS_DIR, { recursive: true })
-  await atomicWrite(hubFile(config.slug), JSON.stringify(next, null, 2))
+  await getStorage().putJSON('hubs', config.slug, next)
   return next
 }
 
 /** Create a new hub, deriving a unique slug from the desired one. */
 export async function createHub(config: BrandConfig, ownerId: string | null = null): Promise<BrandConfig> {
-  await fs.mkdir(HUBS_DIR, { recursive: true })
   const base = slugify(config.slug || config.name) || 'brand'
   let slug = base
   let n = 2
-  while (RESERVED_SLUGS.has(slug) || slug === seed.slug || (await exists(hubFile(slug)))) {
+  while (RESERVED_SLUGS.has(slug) || slug === seed.slug || (await getStorage().getJSON('hubs', slug))) {
     slug = `${base}-${n++}`
   }
   const hub = await saveHub({ ...config, slug })
   await saveMeta({ slug, ownerId, editors: [], pin: null, createdAt: new Date().toISOString() })
   return hub
+}
+
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '') // strip accents
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
 }
 
 // ─── Hub meta: ownership, editors, viewer PIN ────────────────────────────────
@@ -75,17 +69,14 @@ export interface HubMeta {
 }
 
 export async function getMeta(slug: string): Promise<HubMeta> {
-  try {
-    return JSON.parse(await fs.readFile(metaFile(slug), 'utf8')) as HubMeta
-  } catch {
-    // No meta: the seed demo hub, or a pre-accounts hub. Both stay open demos.
-    return { slug, ownerId: null, editors: [], pin: null, demo: true, createdAt: new Date(0).toISOString() }
-  }
+  const meta = await getStorage().getJSON<HubMeta>('meta', slug)
+  if (meta) return meta
+  // No meta: the seed demo hub, or a pre-accounts hub. Both stay open demos.
+  return { slug, ownerId: null, editors: [], pin: null, demo: true, createdAt: new Date(0).toISOString() }
 }
 
 export async function saveMeta(meta: HubMeta): Promise<HubMeta> {
-  await fs.mkdir(META_DIR, { recursive: true })
-  await atomicWrite(metaFile(meta.slug), JSON.stringify(meta, null, 2))
+  await getStorage().putJSON('meta', meta.slug, meta)
   return meta
 }
 
@@ -101,12 +92,9 @@ export function isHubOwner(meta: HubMeta, user: User | null): boolean {
 
 /** Every hub the user owns or can edit, for the dashboard. */
 export async function listHubsForUser(user: User): Promise<Array<{ hub: BrandConfig; meta: HubMeta; role: 'owner' | 'editor' }>> {
-  let names: string[] = []
-  try { names = await fs.readdir(HUBS_DIR) } catch { /* no hubs yet */ }
+  const slugs = await getStorage().listKeys('hubs')
   const out: Array<{ hub: BrandConfig; meta: HubMeta; role: 'owner' | 'editor' }> = []
-  for (const name of names) {
-    if (!name.endsWith('.json')) continue
-    const slug = name.slice(0, -5)
+  for (const slug of slugs) {
     const meta = await getMeta(slug)
     const role = meta.ownerId === user.id ? 'owner' : meta.editors.includes(user.email) ? 'editor' : null
     if (!role) continue
@@ -121,7 +109,7 @@ export async function renameHub(oldSlug: string, wanted: string): Promise<{ slug
   const next = slugify(wanted)
   if (!next) return { error: 'That address isn’t valid — use letters and numbers' }
   if (next === oldSlug) return { slug: oldSlug }
-  if (RESERVED_SLUGS.has(next) || next === seed.slug || (await exists(hubFile(next)))) {
+  if (RESERVED_SLUGS.has(next) || next === seed.slug || (await getStorage().getJSON('hubs', next))) {
     return { error: 'That address is already taken' }
   }
   const hub = await getHub(oldSlug)
@@ -129,24 +117,22 @@ export async function renameHub(oldSlug: string, wanted: string): Promise<{ slug
   const meta = await getMeta(oldSlug)
   await saveHub({ ...hub, slug: next })
   await saveMeta({ ...meta, slug: next })
-  await fs.unlink(hubFile(oldSlug)).catch(() => {})
-  await fs.unlink(metaFile(oldSlug)).catch(() => {})
+  await getStorage().deleteJSON('hubs', oldSlug)
+  await getStorage().deleteJSON('meta', oldSlug)
   return { slug: next }
 }
 
 export async function deleteHub(slug: string): Promise<void> {
-  await fs.unlink(hubFile(slug)).catch(() => {})
-  await fs.unlink(metaFile(slug)).catch(() => {})
+  await getStorage().deleteJSON('hubs', slug)
+  await getStorage().deleteJSON('meta', slug)
 }
 
 /** How many hubs a user owns (for plan limits). Demo hubs don't count. */
 export async function countOwnedHubs(userId: string): Promise<number> {
-  let names: string[] = []
-  try { names = await fs.readdir(HUBS_DIR) } catch { return 0 }
+  const slugs = await getStorage().listKeys('hubs')
   let count = 0
-  for (const name of names) {
-    if (!name.endsWith('.json')) continue
-    const meta = await getMeta(name.slice(0, -5))
+  for (const slug of slugs) {
+    const meta = await getMeta(slug)
     if (!meta.demo && meta.ownerId === userId) count++
   }
   return count
@@ -178,12 +164,9 @@ export async function removeEditorEverywhere(email: string): Promise<void> {
 
 /** Delete every hub a user owns (account deletion). Returns deleted slugs. */
 export async function deleteHubsOwnedBy(userId: string): Promise<string[]> {
-  let names: string[] = []
-  try { names = await fs.readdir(HUBS_DIR) } catch { return [] }
+  const slugs = await getStorage().listKeys('hubs')
   const deleted: string[] = []
-  for (const name of names) {
-    if (!name.endsWith('.json')) continue
-    const slug = name.slice(0, -5)
+  for (const slug of slugs) {
     const meta = await getMeta(slug)
     if (!meta.demo && meta.ownerId === userId) {
       await deleteHub(slug)
@@ -194,89 +177,48 @@ export async function deleteHubsOwnedBy(userId: string): Promise<string[]> {
 }
 
 async function forEachMeta(update: (meta: HubMeta) => Promise<HubMeta | null>): Promise<void> {
-  let names: string[] = []
-  try { names = await fs.readdir(META_DIR) } catch { return }
-  for (const name of names) {
-    if (!name.endsWith('.json')) continue
-    const meta = await getMeta(name.slice(0, -5))
+  const slugs = await getStorage().listKeys('meta')
+  for (const slug of slugs) {
+    const meta = await getMeta(slug)
     const next = await update(meta)
     if (next) await saveMeta(next)
   }
 }
 
-export function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '') // strip accents
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40)
-}
-
 // ─── Previews ─────────────────────────────────────────────────────────────────
 
+interface PreviewRecord {
+  config: BrandConfig
+  createdAt: number
+}
+
 export async function savePreview(config: BrandConfig): Promise<string> {
-  await fs.mkdir(PREVIEWS_DIR, { recursive: true })
   const id = crypto.randomBytes(6).toString('base64url')
-  const record = { config, createdAt: Date.now() }
-  await atomicWrite(previewFile(id), JSON.stringify(record))
+  await getStorage().putJSON('previews', id, { config, createdAt: Date.now() } satisfies PreviewRecord)
   void cleanupPreviews()
   return id
 }
 
 export async function getPreview(id: string): Promise<BrandConfig | null> {
-  try {
-    const safe = path.basename(id)
-    const raw = await fs.readFile(previewFile(safe), 'utf8')
-    const record = JSON.parse(raw) as { config: BrandConfig; createdAt: number }
-    if (Date.now() - record.createdAt > PREVIEW_TTL_MS) return null
-    return record.config
-  } catch {
-    return null
-  }
+  const record = await getStorage().getJSON<PreviewRecord>('previews', id)
+  if (!record) return null
+  if (Date.now() - record.createdAt > PREVIEW_TTL_MS) return null
+  return record.config
 }
 
 export async function deletePreview(id: string): Promise<void> {
-  try { await fs.unlink(previewFile(path.basename(id))) } catch { /* already gone */ }
+  await getStorage().deleteJSON('previews', id)
 }
 
 /** Best-effort removal of expired previews; never blocks a request. */
 async function cleanupPreviews(): Promise<void> {
   try {
-    const names = await fs.readdir(PREVIEWS_DIR)
-    for (const name of names) {
-      try {
-        const raw = await fs.readFile(path.join(PREVIEWS_DIR, name), 'utf8')
-        const record = JSON.parse(raw) as { createdAt: number }
-        if (Date.now() - record.createdAt > PREVIEW_TTL_MS) {
-          await fs.unlink(path.join(PREVIEWS_DIR, name))
-        }
-      } catch { /* skip unreadable entries */ }
+    const ids = await getStorage().listKeys('previews')
+    for (const id of ids) {
+      const record = await getStorage().getJSON<PreviewRecord>('previews', id)
+      if (record && Date.now() - record.createdAt > PREVIEW_TTL_MS) {
+        await getStorage().deleteJSON('previews', id)
+      }
     }
-  } catch { /* previews dir may not exist yet */ }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function hubFile(slug: string): string {
-  return path.join(HUBS_DIR, `${path.basename(slug)}.json`)
-}
-
-function metaFile(slug: string): string {
-  return path.join(META_DIR, `${path.basename(slug)}.json`)
-}
-
-function previewFile(id: string): string {
-  return path.join(PREVIEWS_DIR, `${id}.json`)
-}
-
-async function exists(file: string): Promise<boolean> {
-  try { await fs.access(file); return true } catch { return false }
-}
-
-async function atomicWrite(file: string, content: string): Promise<void> {
-  const tmp = `${file}.tmp`
-  await fs.writeFile(tmp, content, 'utf8')
-  await fs.rename(tmp, file)
+  } catch { /* cleanup is opportunistic */ }
 }

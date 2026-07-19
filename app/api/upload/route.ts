@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
 import { canEditHub, getHub, getMeta } from '@/lib/store'
 import { getSessionUser } from '@/lib/auth'
+import { getStorage } from '@/lib/db'
 
-const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads')
 const MAX_SIZE = 15 * 1024 * 1024 // 15MB
 const ALLOWED = new Set(['svg', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'ico', 'pdf', 'zip', 'eps', 'ai', 'mp4', 'woff', 'woff2', 'otf', 'ttf'])
 
@@ -42,9 +40,8 @@ export async function POST(req: NextRequest) {
   const unique = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
   const filename = `${base}-${unique}.${ext}`
 
-  await fs.mkdir(UPLOAD_DIR, { recursive: true })
   const buffer = Buffer.from(await file.arrayBuffer())
-  await fs.writeFile(path.join(UPLOAD_DIR, filename), buffer)
+  await getStorage().putFile(filename, buffer)
 
   // AI assist: for images, let Claude suggest a name, tags, and usage note.
   const suggestion = await describeImage(buffer, ext, file.name)

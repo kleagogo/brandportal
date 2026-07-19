@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
 import path from 'path'
-
-const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads')
+import { getStorage } from '@/lib/db'
 
 const MIME: Record<string, string> = {
   svg: 'image/svg+xml',
@@ -29,14 +27,9 @@ export async function GET(
 ) {
   const { name } = await params
   const safe = path.basename(name) // strips any path traversal
-  const filePath = path.join(UPLOAD_DIR, safe)
 
-  let data: Buffer
-  try {
-    data = await fs.readFile(filePath)
-  } catch {
-    return NextResponse.json({ error: 'File not found' }, { status: 404 })
-  }
+  const data = await getStorage().getFile(safe)
+  if (!data) return NextResponse.json({ error: 'File not found' }, { status: 404 })
 
   const ext = (safe.split('.').pop() || '').toLowerCase()
   const headers: Record<string, string> = {

@@ -3,8 +3,8 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import AdmZip from 'adm-zip'
 import { getHub } from '@/lib/store'
+import { getStorage } from '@/lib/db'
 
-const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads')
 const PUBLIC_DIR = path.join(process.cwd(), 'public')
 
 /**
@@ -33,10 +33,9 @@ export async function GET(
     const safeName = asset.name.replace(/[^\w\- ]+/g, '').trim() || 'asset'
     if (asset.file.startsWith('/api/files/')) {
       const filename = path.basename(asset.file.split('?')[0])
-      try {
-        const data = await fs.readFile(path.join(UPLOAD_DIR, filename))
-        zip.addFile(`${safeName}${path.extname(filename)}`, data)
-      } catch { external.push(`${asset.name}: file missing`) }
+      const data = await getStorage().getFile(filename)
+      if (data) zip.addFile(`${safeName}${path.extname(filename)}`, data)
+      else external.push(`${asset.name}: file missing`)
     } else if (asset.file.startsWith('/')) {
       try {
         const rel = path.normalize(asset.file).replace(/^([/\\])+/, '')

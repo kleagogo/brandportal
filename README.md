@@ -36,10 +36,9 @@ Open http://localhost:3000 — the landing page — or `/meridian`, the demo hub
 
 ## Architecture notes
 
-- **Storage** is file-based under `/data` (hubs, previews, users, tokens,
-  uploads) behind small interfaces in `lib/` — designed to swap for Postgres +
-  object storage without touching UI code. This means edits persist locally
-  but NOT on serverless hosts yet; the database adapter is the next milestone.
+- **Storage** goes through a driver (`lib/db.ts`): JSON files under `/data`
+  in development, **Postgres automatically when `DATABASE_URL` is set** —
+  including uploaded files. Deployable to Vercel + Neon as-is: see DEPLOY.md.
 - **Auth** is passwordless: magic links, signed session cookies, single-use
   tokens. Editor permissions are per-hub email lists.
 - **Routes**: `/` landing · `/preview/[id]` scan previews (24h) · `/[slug]`
