@@ -11,6 +11,15 @@
 
 import * as cheerio from 'cheerio'
 
+export interface SemanticColors {
+  buttonBg?: string
+  buttonText?: string
+  link?: string
+  bodyText?: string
+  heading?: string
+  background?: string
+}
+
 export interface ScannedBrand {
   brandName: string
   tagline: string
@@ -19,8 +28,13 @@ export interface ScannedBrand {
   /** Extra brand color candidates, strongest first. */
   extraColors: string[]
   backgroundColor: string
+  /** Colors by role, read from the site's actual CSS rules. */
+  semantic: SemanticColors
   fontFamily: string
   headingFont?: string
+  /** Real sizes from body{}/h1{} rules, when found (e.g. "16px"). */
+  bodySize?: string
+  headingSize?: string
   logoUrl?: string
   faviconUrl?: string
   images: string[]
@@ -59,11 +73,19 @@ export async function scanWebsite(url: string): Promise<ScannedBrand> {
       return text.length > 400_000 ? text.slice(0, 400_000) : text
     } catch { return '' }
   }))
-  const allCss = `${inlineCss}\n${fetchedCss.join('\n')}\n${html}`
+  const styleAttrCss = $('[style]').map((_, el) => `x{${$(el).attr('style')}}`).get().join('\n')
+  const cssOnly = `${inlineCss}\n${fetchedCss.join('\n')}\n${styleAttrCss}`
+  const allCss = `${cssOnly}\n${html}`
+
+  // ── Semantic pass: what the site's CSS says about roles
+  const rules = parseRules(cssOnly)
+  const vars = buildVarMap(rules)
+  const semantic = extractSemantic(rules, vars)
+  const sizes = extractSizes(rules)
 
   // ── Colors
   const themeColor = normalizeHex($('meta[name="theme-color"]').attr('content') || '')
-  const { primary, accent, extras, background } = extractPalette(allCss, themeColor)
+  const { primary, accent, extras, background } = extractPalette(allCss, themeColor, vars, semantic)
 
   // ── Identity
   const ogSiteName = $('meta[property="og:site_name"]').attr('content')
@@ -93,9 +115,12 @@ export async function scanWebsite(url: string): Promise<ScannedBrand> {
     primaryColor: primary,
     accentColor: accent,
     extraColors: extras,
-    backgroundColor: background,
+    backgroundColor: semantic.background || background,
+    semantic,
     fontFamily: bodyFont,
     headingFont,
+    bodySize: sizes.bodySize,
+    headingSize: sizes.headingSize,
     logoUrl,
     faviconUrl,
     images,
@@ -103,9 +128,136 @@ export async function scanWebsite(url: string): Promise<ScannedBrand> {
   }
 }
 
+// ─── CSS rule parsing & semantic roles ────────────────────────────────────────
+
+interface CssRule { sel: string; decls: string }
+
+function parseRules(css: string): CssRule[] {
+  const clean = css
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    // Flatten @media/@supports wrappers so inner rules still parse.
+    .replace(/@(media|supports|layer|container)[^{;]*\{/g, '')
+  const out: CssRule[] = []
+  for (const chunk of clean.split('}')) {
+    const i = chunk.lastIndexOf('{')
+    if (i === -1) continue
+    const sel = chunk.slice(0, i).trim().toLowerCase()
+    if (!sel || sel.startsWith('@')) continue
+    out.push({ sel, decls: chunk.slice(i + 1).toLowerCase() })
+  }
+  return out
+}
+
+/** CSS custom properties (--brand: #...) — where modern sites keep the palette. */
+function buildVarMap(rules: CssRule[]): Map<string, string> {
+  const raw = new Map<string, string>()
+  for (const rule of rules) {
+    for (const m of rule.decls.matchAll(/--([\w-]+)\s*:\s*([^;]+)/g)) {
+      if (!raw.has(m[1])) raw.set(m[1], m[2].trim())
+    }
+  }
+  // Resolve var-to-var chains into concrete hex values.
+  const resolved = new Map<string, string>()
+  for (const [name, value] of raw) {
+    const hex = resolveColorValue(value, raw, 0)
+    if (hex) resolved.set(name, hex)
+  }
+  return resolved
+}
+
+function resolveColorValue(value: string, raw: Map<string, string>, depth: number): string | null {
+  if (depth > 3) return null
+  const v = value.trim()
+  const varRef = v.match(/var\(\s*--([\w-]+)/)
+  if (varRef) {
+    const next = raw.get(varRef[1])
+    return next ? resolveColorValue(next, raw, depth + 1) : null
+  }
+  const hex = normalizeHex(v.match(/#[0-9a-f]{3,8}\b/i)?.[0] || '')
+  if (hex) return hex
+  const rgb = v.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/)
+  if (rgb) return rgbToHex(+rgb[1], +rgb[2], +rgb[3])
+  if (/^white$/i.test(v)) return '#ffffff'
+  if (/^black$/i.test(v)) return '#000000'
+  return null
+}
+
+/** Read role colors from the rules that define them. */
+function extractSemantic(rules: CssRule[], vars: Map<string, string>): SemanticColors {
+  const buckets: Record<keyof SemanticColors, Map<string, number>> = {
+    buttonBg: new Map(), buttonText: new Map(), link: new Map(),
+    bodyText: new Map(), heading: new Map(), background: new Map(),
+  }
+
+  const grab = (bucket: Map<string, number>, decls: string, prop: 'color' | 'background', weight = 1) => {
+    const pattern = prop === 'color'
+      ? /(?:^|;)\s*color\s*:\s*([^;]+)/g
+      : /(?:^|;)\s*background(?:-color)?\s*:\s*([^;]+)/g
+    for (const m of decls.matchAll(pattern)) {
+      const hex = resolveColorValue(m[1], varsAsRaw(vars), 0)
+      if (hex) bucket.set(hex, (bucket.get(hex) || 0) + weight)
+    }
+  }
+
+  for (const { sel, decls } of rules) {
+    const isButton = /(^|[\s,>+~(])button\b|\.btn\b|btn-|button--|\[type="?submit|\bcta\b/.test(sel)
+    const isLink = /(^|[\s,])a\b(?![\w-])/.test(sel) && !sel.includes('button')
+    const isBody = /(^|,|\s)(body|html)\s*(,|$)/.test(sel)
+    const isHeading = /(^|[\s,])h[123]\b/.test(sel)
+    const isHover = sel.includes(':hover') || sel.includes(':focus') || sel.includes(':active')
+    const weight = isHover ? 0.5 : 1
+
+    if (isButton) {
+      grab(buckets.buttonBg, decls, 'background', weight)
+      grab(buckets.buttonText, decls, 'color', weight)
+    }
+    if (isLink) grab(buckets.link, decls, 'color', weight)
+    if (isBody) {
+      grab(buckets.bodyText, decls, 'color', weight)
+      grab(buckets.background, decls, 'background', weight)
+    }
+    if (isHeading) grab(buckets.heading, decls, 'color', weight)
+  }
+
+  const top = (bucket: Map<string, number>, opts?: { noTransparentish?: boolean }): string | undefined => {
+    const ranked = [...bucket.entries()].sort((a, b) => b[1] - a[1])
+    for (const [hex] of ranked) {
+      if (opts?.noTransparentish && (hex === '#ffffff' || hex === '#000000')) continue
+      return hex
+    }
+    return ranked[0]?.[0]
+  }
+
+  return {
+    buttonBg: top(buckets.buttonBg, { noTransparentish: true }) || top(buckets.buttonBg),
+    buttonText: top(buckets.buttonText),
+    link: top(buckets.link),
+    bodyText: top(buckets.bodyText),
+    heading: top(buckets.heading),
+    background: top(buckets.background),
+  }
+}
+
+/** Adapt a resolved var map back to the raw shape resolveColorValue expects. */
+function varsAsRaw(vars: Map<string, string>): Map<string, string> {
+  return vars
+}
+
+function extractSizes(rules: CssRule[]): { bodySize?: string; headingSize?: string } {
+  let bodySize: string | undefined
+  let headingSize: string | undefined
+  for (const { sel, decls } of rules) {
+    const size = decls.match(/(?:^|;)\s*font-size\s*:\s*(\d+(?:\.\d+)?(?:px|rem))/)?.[1]
+    if (!size) continue
+    if (!bodySize && /(^|,|\s)(body|html)\s*(,|$)/.test(sel)) bodySize = size
+    if (!headingSize && /(^|[\s,])h1\b/.test(sel)) headingSize = size
+  }
+  return { bodySize, headingSize }
+}
+
 // ─── Colors ───────────────────────────────────────────────────────────────────
 
-function extractPalette(css: string, themeColor: string | null): {
+function extractPalette(css: string, themeColor: string | null, vars: Map<string, string>, semantic: SemanticColors): {
   primary: string; accent?: string; extras: string[]; background: string
 } {
   const counts = new Map<string, number>()
@@ -120,6 +272,14 @@ function extractPalette(css: string, themeColor: string | null): {
     if (hex) counts.set(hex, (counts.get(hex) || 0) + 1)
   }
 
+  // Colors defined as CSS variables are deliberate design tokens — boost them.
+  for (const hex of vars.values()) {
+    counts.set(hex, (counts.get(hex) || 0) + 15)
+  }
+  // Colors serving a semantic role (button, link) are certainly brand colors.
+  for (const hex of [semantic.buttonBg, semantic.link, semantic.heading]) {
+    if (hex) counts.set(hex, (counts.get(hex) || 0) + 30)
+  }
   // The site's declared theme color is a strong signal.
   if (themeColor) counts.set(themeColor, (counts.get(themeColor) || 0) + 40)
 

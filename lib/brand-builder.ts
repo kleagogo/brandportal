@@ -28,36 +28,49 @@ export function buildConfigFromScan(scan: ScanResult): BrandConfig {
   const headingFont = scan.headingFont ? cleanFontName(scan.headingFont) : null
   const tagline = scan.tagline.trim() || 'One source of truth for our brand.'
 
-  // ── Colors: real scanned palette, with generated tints for the primary
-  const colors: ColorGroup[] = [
-    {
-      group: 'Primary',
-      swatches: [
-        { name: 'Brand', hex: primary, usage: 'Primary actions, headlines, key surfaces' },
-        { name: 'Brand 80', hex: mix(primary, '#ffffff', 0.2), usage: 'Hover states, secondary emphasis' },
-        { name: 'Brand 20', hex: mix(primary, '#ffffff', 0.8), usage: 'Tints, subtle backgrounds' },
-      ],
-    },
-  ]
-  if (accent || extras.length > 0) {
-    colors.push({
-      group: 'Secondary',
-      swatches: [
-        ...(accent ? [{ name: 'Accent', hex: accent, usage: 'Highlights, links, calls to action' }] : []),
-        ...extras.slice(0, 3).map((hex, i) => ({ name: `Support ${i + 1}`, hex, usage: 'Found on your site — rename or remove' })),
-      ],
-    })
+  // ── Colors: structured by role, straight from the site's own CSS rules.
+  const sem = scan.semantic || {}
+  const used = new Set<string>()
+  const swatch = (name: string, hex: string | null | undefined, usage: string) => {
+    const h = normalizeHex(hex || '')
+    if (!h || used.has(h)) return null
+    used.add(h)
+    return { name, hex: h, usage }
   }
-  colors.push({
-    group: 'Neutrals',
-    swatches: [
-      { name: 'White', hex: '#ffffff', usage: 'Backgrounds' },
-      { name: 'Background', hex: normalizeHex(scan.backgroundColor) || '#f4f4f2', usage: 'Page background, cards' },
-      { name: 'Grey 300', hex: '#d9d8d4', usage: 'Borders, dividers' },
-      { name: 'Grey 500', hex: '#8a8a85', usage: 'Secondary text, captions' },
-      { name: 'Ink', hex: '#1a1a1a', usage: 'Body text, primary UI' },
-    ],
-  })
+  const compact = <T,>(items: Array<T | null>): T[] => items.filter((s): s is T => s !== null)
+
+  const colors: ColorGroup[] = []
+
+  const brandGroup = compact([
+    swatch('Brand', primary, sem.buttonBg === primary ? 'Primary brand color — buttons and key actions' : 'Primary brand color'),
+    swatch('Brand 80', mix(primary, '#ffffff', 0.2), 'Hover states, secondary emphasis'),
+    swatch('Brand 20', mix(primary, '#ffffff', 0.8), 'Tints, subtle backgrounds'),
+  ])
+  colors.push({ group: 'Brand', swatches: brandGroup })
+
+  const interactive = compact([
+    sem.buttonBg !== primary ? swatch('Button', sem.buttonBg, 'Button backgrounds, primary actions') : null,
+    swatch('Button text', sem.buttonText, 'Text on buttons'),
+    swatch('Link', sem.link, 'Links and interactive text'),
+    accent ? swatch('Accent', accent, 'Highlights and calls to action') : null,
+    ...extras.slice(0, 2).map((hex, i) => swatch(`Support ${i + 1}`, hex, 'Found on your site — rename or remove')),
+  ])
+  if (interactive.length) colors.push({ group: 'Interactive & accents', swatches: interactive })
+
+  const text = compact([
+    swatch('Heading', sem.heading, 'Headlines and titles'),
+    swatch('Body', sem.bodyText, 'Body copy and paragraphs'),
+  ])
+  if (text.length) colors.push({ group: 'Text', swatches: text })
+
+  const surfaces = compact([
+    swatch('Background', sem.background || scan.backgroundColor, 'Page background'),
+    swatch('White', '#ffffff', 'Cards and surfaces'),
+    swatch('Border', '#d9d8d4', 'Borders and dividers'),
+    swatch('Muted text', '#8a8a85', 'Secondary text, captions'),
+    !used.has('#1a1a1a') && !sem.bodyText ? swatch('Ink', '#1a1a1a', 'Body text, primary UI') : null,
+  ])
+  colors.push({ group: 'Surfaces & neutrals', swatches: surfaces })
 
   // ── Assets: real logo + imagery found on the site
   const logoAssets: AssetFile[] = []
@@ -87,17 +100,19 @@ export function buildConfigFromScan(scan: ScanResult): BrandConfig {
     tags: ['from-website'],
   }))
 
-  // ── Typography: heading + body when the site uses two faces
+  // ── Typography: heading + body faces, with the site's real sizes when found
+  const h1Size = scan.headingSize || '36px'
+  const bodySize = scan.bodySize || '15px'
   const fonts = []
   if (headingFont && headingFont !== bodyFont) {
     fonts.push({
       name: headingFont,
       role: 'Display typeface',
       weights: ['500', '600', '700'],
-      usage: 'Headlines and display moments',
+      usage: `Headlines and display moments · H1 on your site: ${h1Size}`,
       importUrl: googleFontUrl(headingFont, ['500', '600', '700']),
       specimens: [
-        { label: 'Display', size: '36px', weight: '700', sample: tagline },
+        { label: 'Display', size: h1Size, weight: '700', sample: tagline },
         { label: 'Heading', size: '22px', weight: '600', sample: `${name} brand guidelines` },
       ],
     })
@@ -106,14 +121,14 @@ export function buildConfigFromScan(scan: ScanResult): BrandConfig {
     name: bodyFont,
     role: fonts.length ? 'Text typeface' : 'Primary typeface',
     weights: ['400', '500', '600', '700'],
-    usage: fonts.length ? 'Body copy, UI, captions' : 'Headlines, body copy, and UI',
+    usage: fonts.length ? `Body copy, UI, captions · base size on your site: ${bodySize}` : 'Headlines, body copy, and UI',
     importUrl: googleFontUrl(bodyFont, ['400', '500', '600', '700']),
     specimens: [
       ...(fonts.length ? [] : [
-        { label: 'Display', size: '36px', weight: '700', sample: tagline },
+        { label: 'Display', size: h1Size, weight: '700', sample: tagline },
         { label: 'Heading', size: '22px', weight: '600', sample: `${name} brand guidelines` },
       ]),
-      { label: 'Body', size: '15px', weight: '400', sample: 'Everything you need to represent our brand, in one place.' },
+      { label: 'Body', size: bodySize, weight: '400', sample: 'Everything you need to represent our brand, in one place.' },
       { label: 'Caption', size: '12px', weight: '500', sample: 'BRAND ASSETS · UPDATED TODAY' },
     ],
   })
