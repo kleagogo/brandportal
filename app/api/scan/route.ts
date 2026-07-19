@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { buildConfigFromScan, type ScanResult } from '@/lib/brand-builder'
 import { savePreview } from '@/lib/store'
 import { allow, clientIp } from '@/lib/ratelimit'
+import { scanWebsite, type ScannedBrand } from '@/lib/scanner'
 
 export async function POST(req: NextRequest) {
   const { url } = await req.json()
@@ -23,125 +24,90 @@ export async function POST(req: NextRequest) {
 
   let brand: ScanResult
   try {
-    const response = await fetch(fullUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; BrandPortalBot/1.0)',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      signal: AbortSignal.timeout(8000),
-    })
-    const html = await response.text()
-    const extracted = extractBrandFromHTML(html, fullUrl)
-    brand = process.env.ANTHROPIC_API_KEY
-      ? { ...extracted, ...(await enhanceWithClaude(html, extracted)) }
-      : extracted
+    const scanned = await scanWebsite(fullUrl)
+    brand = process.env.ANTHROPIC_API_KEY ? await enhanceWithClaude(scanned) : scanned
   } catch {
-    brand = generateDemoResult(hostname, fullUrl) as ScanResult
+    brand = generateDemoResult(hostname, fullUrl)
   }
 
   // Build a complete hub config from the scan and store it as a preview.
   const config = buildConfigFromScan({ ...brand, originalUrl: fullUrl })
   const previewId = await savePreview(config)
 
-  return NextResponse.json({ previewId, ...brand })
+  return NextResponse.json({ previewId, brandName: brand.brandName })
+}
+
+/**
+ * Claude pass: picks the best palette from the extracted candidates, writes a
+ * sharper tagline, and sanity-checks the brand name. Falls back silently.
+ */
+async function enhanceWithClaude(scanned: ScannedBrand): Promise<ScanResult> {
+  try {
+    const Anthropic = (await import('@anthropic-ai/sdk')).default
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    const message = await client.messages.create(
+      {
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: `A website was scanned for its brand. Extracted signals:
+- Site name: ${scanned.brandName}
+- Description: ${scanned.tagline || '(none)'}
+- Color candidates (strongest first): primary=${scanned.primaryColor}, accent=${scanned.accentColor || 'none'}, extras=${scanned.extraColors.join(', ') || 'none'}
+- Fonts: body=${scanned.fontFamily}, heading=${scanned.headingFont || 'none'}
+- URL: ${scanned.originalUrl}
+
+Using your knowledge of this brand (if you recognize it) plus the signals, return ONLY JSON:
+{"brandName":"official name","tagline":"their real tagline or a faithful short one","primaryColor":"#hex","accentColor":"#hex or null","extraColors":["#hex", "..."],"fontFamily":"body font name"}
+Prefer the extracted candidates unless you're confident the brand's true color differs.`,
+        }],
+      },
+      { timeout: 9000 }
+    )
+    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const parsed = JSON.parse(text.match(/\{[\s\S]+\}/)?.[0] || '{}')
+    return {
+      ...scanned,
+      brandName: typeof parsed.brandName === 'string' && parsed.brandName ? parsed.brandName : scanned.brandName,
+      tagline: typeof parsed.tagline === 'string' && parsed.tagline ? parsed.tagline : scanned.tagline,
+      primaryColor: typeof parsed.primaryColor === 'string' ? parsed.primaryColor : scanned.primaryColor,
+      accentColor: typeof parsed.accentColor === 'string' ? parsed.accentColor : scanned.accentColor,
+      extraColors: Array.isArray(parsed.extraColors) ? parsed.extraColors.filter((c: unknown) => typeof c === 'string') : scanned.extraColors,
+      fontFamily: typeof parsed.fontFamily === 'string' && parsed.fontFamily ? parsed.fontFamily : scanned.fontFamily,
+    }
+  } catch {
+    return scanned
+  }
 }
 
 // ---------- Demo fallback ----------
-// Returns plausible brand data when the URL can't be fetched
-function generateDemoResult(hostname: string, url: string) {
-  const known: Record<string, object> = {
-    'stripe.com':   { brandName: 'Stripe',  primaryColor: '#635bff', backgroundColor: '#ffffff', fontFamily: 'Inter', tagline: 'Financial infrastructure for the internet.' },
-    'linear.app':   { brandName: 'Linear',  primaryColor: '#5e6ad2', backgroundColor: '#1a1a2e', fontFamily: 'Inter', tagline: 'The issue tracker that makes it easier to ship.' },
-    'notion.so':    { brandName: 'Notion',  primaryColor: '#000000', backgroundColor: '#ffffff', fontFamily: 'ui-sans-serif', tagline: 'One workspace. Every team.' },
-    'figma.com':    { brandName: 'Figma',   primaryColor: '#f24e1e', backgroundColor: '#1e1e1e', fontFamily: 'Inter', tagline: 'The collaborative interface design tool.' },
-    'vercel.com':   { brandName: 'Vercel',  primaryColor: '#000000', backgroundColor: '#ffffff', fontFamily: 'GeistSans', tagline: 'Build and deploy the best web experiences.' },
-    'monzo.com':    { brandName: 'Monzo',   primaryColor: '#ff4e64', backgroundColor: '#ffffff', fontFamily: 'Inter', tagline: 'A bank that makes you feel in control.' },
-    'mollie.com':   { brandName: 'Mollie',  primaryColor: '#00a670', backgroundColor: '#ffffff', fontFamily: 'Inter', tagline: 'Accept online payments with ease.' },
-    'loom.com':     { brandName: 'Loom',    primaryColor: '#625df5', backgroundColor: '#ffffff', fontFamily: 'Inter', tagline: 'Fewer meetings, more doing.' },
-    'pitch.com':    { brandName: 'Pitch',   primaryColor: '#f7db49', backgroundColor: '#1a1a1a', fontFamily: 'Inter', tagline: 'Collaborative presentation software.' },
+// Plausible brand data when the URL can't be fetched at all.
+function generateDemoResult(hostname: string, url: string): ScanResult {
+  const known: Record<string, Partial<ScanResult>> = {
+    'stripe.com': { brandName: 'Stripe', primaryColor: '#635bff', accentColor: '#0a2540', fontFamily: 'Inter', tagline: 'Financial infrastructure for the internet.' },
+    'linear.app': { brandName: 'Linear', primaryColor: '#5e6ad2', fontFamily: 'Inter', tagline: 'The issue tracker that makes it easier to ship.' },
+    'notion.so': { brandName: 'Notion', primaryColor: '#000000', fontFamily: 'ui-sans-serif', tagline: 'One workspace. Every team.' },
+    'figma.com': { brandName: 'Figma', primaryColor: '#f24e1e', accentColor: '#a259ff', extraColors: ['#1abcfe', '#0acf83'], fontFamily: 'Inter', tagline: 'The collaborative interface design tool.' },
+    'vercel.com': { brandName: 'Vercel', primaryColor: '#000000', fontFamily: 'Geist', tagline: 'Build and deploy the best web experiences.' },
+    'monzo.com': { brandName: 'Monzo', primaryColor: '#ff4e64', accentColor: '#0c2340', fontFamily: 'Inter', tagline: 'A bank that makes you feel in control.' },
+    'mollie.com': { brandName: 'Mollie', primaryColor: '#0f0d31', accentColor: '#3c53ff', fontFamily: 'Circular', tagline: 'Effortless payments for every business.' },
+    'loom.com': { brandName: 'Loom', primaryColor: '#625df5', fontFamily: 'Inter', tagline: 'Fewer meetings, more doing.' },
+    'pitch.com': { brandName: 'Pitch', primaryColor: '#f7db49', accentColor: '#1a1a1a', fontFamily: 'Inter', tagline: 'Collaborative presentation software.' },
   }
 
   const base = hostname.split('.')[0]
-  if (known[hostname]) return { ...known[hostname], faviconUrl: `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`, originalUrl: url }
+  const fallbackColors = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
-  // Generic fallback — derive a colour from the brand name
-  const colors = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899']
-  const i = base.charCodeAt(0) % colors.length
   return {
     brandName: base.charAt(0).toUpperCase() + base.slice(1),
-    primaryColor: colors[i],
+    tagline: `${base.charAt(0).toUpperCase() + base.slice(1)} brand assets and guidelines.`,
+    primaryColor: fallbackColors[base.charCodeAt(0) % fallbackColors.length],
     backgroundColor: '#ffffff',
     fontFamily: 'Inter',
-    tagline: `${base.charAt(0).toUpperCase() + base.slice(1)} brand assets and guidelines.`,
-    faviconUrl: `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`,
+    extraColors: [],
+    faviconUrl: `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`,
+    originalUrl: url,
+    ...(known[hostname] || {}),
   }
-}
-
-// ---------- Real extraction ----------
-function extractBrandFromHTML(html: string, url: string) {
-  const hostname = new URL(url).hostname.replace('www.', '')
-
-  // Brand name: og:site_name is most reliable, then title (strip suffix like "| Company")
-  const ogSiteName = html.match(/<meta[^>]*property="og:site_name"[^>]*content="([^"]+)"/i)?.[1]
-    || html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:site_name"/i)?.[1]
-  const titleTag = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]
-    ?.replace(/\s*[|\-–:]\s*.+$/, '').trim()
-  const hostnameBase = hostname.split('.')[0]
-  const brandName = (ogSiteName || titleTag || hostnameBase).trim()
-
-  // Tagline: prefer English og:description, then meta description
-  const ogDesc = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/i)?.[1]
-    || html.match(/<meta[^>]*content="([^"]+)"[^>]*property="og:description"/i)?.[1]
-  const metaDesc = html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/i)?.[1]
-    || html.match(/<meta[^>]*content="([^"]+)"[^>]*name="description"/i)?.[1]
-  const tagline = (ogDesc || metaDesc || '').slice(0, 120)
-
-  // Primary color: CSS vars first, then theme-color meta
-  const colorPatterns = [
-    /--color-primary:\s*(#[0-9a-f]{3,8})/i,
-    /--primary(?:-color)?:\s*(#[0-9a-f]{3,8})/i,
-    /--brand(?:-color)?:\s*(#[0-9a-f]{3,8})/i,
-    /--accent(?:-color)?:\s*(#[0-9a-f]{3,8})/i,
-  ]
-  let primaryColor = '#1a1a1a'
-  for (const p of colorPatterns) { const m = html.match(p); if (m) { primaryColor = m[1]; break } }
-  const themeColor = html.match(/<meta[^>]*name="theme-color"[^>]*content="(#[0-9a-fA-F]{3,8})"/i)?.[1]
-    || html.match(/<meta[^>]*content="(#[0-9a-fA-F]{3,8})"[^>]*name="theme-color"/i)?.[1]
-  if (themeColor && primaryColor === '#1a1a1a') primaryColor = themeColor
-
-  // Font
-  const googleFont = html.match(/fonts\.googleapis\.com\/css[^"']+family=([A-Za-z+]+)/)?.[1]?.replace(/\+/g, ' ')
-  const fontFamily = googleFont || 'Inter'
-
-  // Favicon: try HTML first, fall back to Google's favicon service (always works)
-  const faviconPath = html.match(/<link[^>]*rel="(?:shortcut )?icon"[^>]*href="([^"]+)"/i)?.[1]
-    || html.match(/<link[^>]*rel="apple-touch-icon"[^>]*href="([^"]+)"/i)?.[1]
-  const faviconUrl = faviconPath
-    ? (faviconPath.startsWith('http') ? faviconPath : `${new URL(url).origin}${faviconPath.startsWith('/') ? '' : '/'}${faviconPath}`)
-    : `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`
-
-  return {
-    brandName: brandName.charAt(0).toUpperCase() + brandName.slice(1),
-    tagline,
-    primaryColor,
-    backgroundColor: '#ffffff',
-    fontFamily,
-    faviconUrl,
-  }
-}
-
-async function enhanceWithClaude(html: string, fallback: ReturnType<typeof extractBrandFromHTML>) {
-  const snippet = html.slice(0, 6000)
-  const Anthropic = (await import('@anthropic-ai/sdk')).default
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  const message = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 300,
-    messages: [{ role: 'user', content: `Extract brand info from this HTML. Return only JSON: {"brandName":"...","tagline":"...","primaryColor":"#hex","backgroundColor":"#hex","fontFamily":"..."}\n\nHTML:\n${snippet}` }],
-  })
-  try {
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
-    const parsed = JSON.parse(text.match(/\{[\s\S]+\}/)?.[0] || '{}')
-    return { ...fallback, ...parsed, faviconUrl: fallback.faviconUrl }
-  } catch { return fallback }
 }
