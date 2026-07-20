@@ -52,19 +52,9 @@ export async function scanWebsite(url: string): Promise<ScannedBrand> {
   const html = await res.text()
   const finalUrl = res.url || url
   const $ = cheerio.load(html)
-  const origin = new URL(finalUrl).origin
-  const hostname = new URL(finalUrl).hostname.replace(/^www\./, '')
 
-  // ── Stylesheets: fetch up to 4 linked CSS files (they hold the real palette)
-  const cssLinks = $('link[rel="stylesheet"]')
-    .map((_, el) => $(el).attr('href'))
-    .get()
-    .filter(Boolean)
-    .map(href => absolutize(href!, finalUrl))
-    .filter((u): u is string => Boolean(u))
-    .slice(0, 4)
-
-  const inlineCss = $('style').map((_, el) => $(el).text()).get().join('\n')
+  // Stylesheets hold the real palette — fetch up to 4 linked CSS files.
+  const cssLinks = stylesheetLinks($, finalUrl)
   const fetchedCss = await Promise.all(cssLinks.map(async link => {
     try {
       const r = await fetch(link, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(6000) })
@@ -73,9 +63,29 @@ export async function scanWebsite(url: string): Promise<ScannedBrand> {
       return text.length > 400_000 ? text.slice(0, 400_000) : text
     } catch { return '' }
   }))
+
+  return analyzeSite(html, fetchedCss, finalUrl)
+}
+
+export function stylesheetLinks($: cheerio.CheerioAPI, baseUrl: string): string[] {
+  return $('link[rel="stylesheet"]')
+    .map((_, el) => $(el).attr('href'))
+    .get()
+    .filter(Boolean)
+    .map(href => absolutize(href!, baseUrl))
+    .filter((u): u is string => Boolean(u))
+    .slice(0, 4)
+}
+
+/** Pure analysis over already-fetched content — testable without network. */
+export function analyzeSite(html: string, fetchedCss: string[], finalUrl: string): ScannedBrand {
+  const $ = cheerio.load(html)
+  const hostname = new URL(finalUrl).hostname.replace(/^www\./, '')
+
+  const inlineCss = $('style').map((_, el) => $(el).text()).get().join('\n')
   const styleAttrCss = $('[style]').map((_, el) => `x{${$(el).attr('style')}}`).get().join('\n')
-  const cssOnly = `${inlineCss}\n${fetchedCss.join('\n')}\n${styleAttrCss}`
-  const allCss = `${cssOnly}\n${html}`
+  // Dark-theme blocks define every color a second time — drop them up front.
+  const cssOnly = stripDarkBlocks(`${inlineCss}\n${fetchedCss.join('\n')}\n${styleAttrCss}`)
 
   // ── Semantic pass: what the site's CSS says about roles
   const rules = parseRules(cssOnly)
@@ -83,9 +93,12 @@ export async function scanWebsite(url: string): Promise<ScannedBrand> {
   const semantic = extractSemantic(rules, vars)
   const sizes = extractSizes(rules)
 
-  // ── Colors
+  // ── Colors — counted from real CSS only; JS bundles in HTML are full of
+  // hex-shaped junk. Fall back to the whole document when a site has no
+  // external CSS worth speaking of.
+  const paletteSource = cssOnly.length > 2000 ? cssOnly : `${cssOnly}\n${html}`
   const themeColor = normalizeHex($('meta[name="theme-color"]').attr('content') || '')
-  const { primary, accent, extras, background } = extractPalette(allCss, themeColor, vars, semantic)
+  const { primary, accent, extras, background } = extractPalette(paletteSource, themeColor, vars, semantic)
 
   // ── Identity
   const ogSiteName = $('meta[property="og:site_name"]').attr('content')
@@ -107,7 +120,7 @@ export async function scanWebsite(url: string): Promise<ScannedBrand> {
   const images = findImages($, finalUrl, logoUrl)
 
   // ── Typography
-  const { bodyFont, headingFont } = extractFonts($, allCss)
+  const { bodyFont, headingFont } = extractFonts($, cssOnly)
 
   return {
     brandName: brandName.charAt(0).toUpperCase() + brandName.slice(1),
@@ -132,6 +145,43 @@ export async function scanWebsite(url: string): Promise<ScannedBrand> {
 
 interface CssRule { sel: string; decls: string }
 
+/** Remove `@media (prefers-color-scheme: dark) { … }` blocks, braces balanced. */
+export function stripDarkBlocks(css: string): string {
+  let out = ''
+  let i = 0
+  while (i < css.length) {
+    const at = css.indexOf('@media', i)
+    if (at === -1) { out += css.slice(i); break }
+    const braceStart = css.indexOf('{', at)
+    if (braceStart === -1) { out += css.slice(i); break }
+    const condition = css.slice(at, braceStart)
+    out += css.slice(i, at)
+    if (/prefers-color-scheme\s*:\s*dark/i.test(condition)) {
+      // Skip the whole block.
+      let depth = 1
+      let j = braceStart + 1
+      while (j < css.length && depth > 0) {
+        if (css[j] === '{') depth++
+        else if (css[j] === '}') depth--
+        j++
+      }
+      i = j
+    } else {
+      out += condition
+      i = braceStart
+      // Keep the '{' so parseRules' flattening still works.
+      out += css[i]
+      i++
+    }
+  }
+  return out
+}
+
+/** Selectors that style an explicit dark theme — not the brand's default look. */
+function isDarkSelector(sel: string): boolean {
+  return /(^|[\s,.[])dark\b|data-theme=.?dark|\.theme-dark|night-mode/.test(sel)
+}
+
 function parseRules(css: string): CssRule[] {
   const clean = css
     .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -151,9 +201,13 @@ function parseRules(css: string): CssRule[] {
 /** CSS custom properties (--brand: #...) — where modern sites keep the palette. */
 function buildVarMap(rules: CssRule[]): Map<string, string> {
   const raw = new Map<string, string>()
-  for (const rule of rules) {
-    for (const m of rule.decls.matchAll(/--([\w-]+)\s*:\s*([^;]+)/g)) {
-      if (!raw.has(m[1])) raw.set(m[1], m[2].trim())
+  // Light-theme definitions first; dark-theme selectors only fill gaps.
+  for (const darkPass of [false, true]) {
+    for (const rule of rules) {
+      if (isDarkSelector(rule.sel) !== darkPass) continue
+      for (const m of rule.decls.matchAll(/--([\w-]+)\s*:\s*([^;]+)/g)) {
+        if (!raw.has(m[1])) raw.set(m[1], m[2].trim())
+      }
     }
   }
   // Resolve var-to-var chains into concrete hex values.
@@ -164,6 +218,9 @@ function buildVarMap(rules: CssRule[]): Map<string, string> {
   }
   return resolved
 }
+
+/** Does a variable/selector name suggest it's THE brand color, not just a token? */
+const BRAND_HINT = /(primary|brand|accent|main|theme|action|cta)\b|-(primary|brand|accent)\b/
 
 function resolveColorValue(value: string, raw: Map<string, string>, depth: number): string | null {
   if (depth > 3) return null
@@ -200,14 +257,19 @@ function extractSemantic(rules: CssRule[], vars: Map<string, string>): SemanticC
   }
 
   for (const { sel, decls } of rules) {
+    if (isDarkSelector(sel)) continue
     const isButton = /(^|[\s,>+~(])button\b|\.btn\b|btn-|button--|\[type="?submit|\bcta\b/.test(sel)
+    // Status variants (danger red, success green…) are not THE button color.
+    const isStatusVariant = /(danger|error|destructive|warning|success|info|ghost|outline|secondary|tertiary)/.test(sel)
     const isLink = /(^|[\s,])a\b(?![\w-])/.test(sel) && !sel.includes('button')
     const isBody = /(^|,|\s)(body|html)\s*(,|$)/.test(sel)
     const isHeading = /(^|[\s,])h[123]\b/.test(sel)
     const isHover = sel.includes(':hover') || sel.includes(':focus') || sel.includes(':active')
-    const weight = isHover ? 0.5 : 1
+    // The default/primary button is the brand statement; variants barely count.
+    let weight = isHover ? 0.5 : 1
+    if (BRAND_HINT.test(sel)) weight *= 3
 
-    if (isButton) {
+    if (isButton && !isStatusVariant) {
       grab(buckets.buttonBg, decls, 'background', weight)
       grab(buckets.buttonText, decls, 'color', weight)
     }
@@ -228,13 +290,18 @@ function extractSemantic(rules: CssRule[], vars: Map<string, string>): SemanticC
     return ranked[0]?.[0]
   }
 
+  // Page background: prefer the lightest of the strong candidates — dark
+  // footers and hero sections shouldn't win over the actual page color.
+  const bgRanked = [...buckets.background.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4)
+  const lightBg = bgRanked.filter(([hex]) => hsl(hex).l > 0.75).sort((a, b) => b[1] - a[1])[0]?.[0]
+
   return {
     buttonBg: top(buckets.buttonBg, { noTransparentish: true }) || top(buckets.buttonBg),
     buttonText: top(buckets.buttonText),
     link: top(buckets.link),
     bodyText: top(buckets.bodyText),
     heading: top(buckets.heading),
-    background: top(buckets.background),
+    background: lightBg || bgRanked[0]?.[0],
   }
 }
 
@@ -272,21 +339,24 @@ function extractPalette(css: string, themeColor: string | null, vars: Map<string
     if (hex) counts.set(hex, (counts.get(hex) || 0) + 1)
   }
 
-  // Colors defined as CSS variables are deliberate design tokens — boost them.
-  for (const hex of vars.values()) {
-    counts.set(hex, (counts.get(hex) || 0) + 15)
+  // Variables whose NAME says "primary/brand/accent" are the brand's own
+  // tokens; the rest of a design system's token scale barely counts (a
+  // Tailwind-style palette defines every hue and would drown the signal).
+  for (const [name, hex] of vars) {
+    counts.set(hex, (counts.get(hex) || 0) + (BRAND_HINT.test(name) ? 30 : 2))
   }
-  // Colors serving a semantic role (button, link) are certainly brand colors.
-  for (const hex of [semantic.buttonBg, semantic.link, semantic.heading]) {
-    if (hex) counts.set(hex, (counts.get(hex) || 0) + 30)
+  // The button background is the strongest brand signal a site has.
+  if (semantic.buttonBg) counts.set(semantic.buttonBg, (counts.get(semantic.buttonBg) || 0) + 80)
+  for (const hex of [semantic.link, semantic.heading]) {
+    if (hex) counts.set(hex, (counts.get(hex) || 0) + 25)
   }
   // The site's declared theme color is a strong signal.
   if (themeColor) counts.set(themeColor, (counts.get(themeColor) || 0) + 40)
 
-  // Brand candidates: saturated, neither near-white nor near-black.
+  // Brand candidates: saturated enough, neither near-white nor near-black.
   const candidates = [...counts.entries()]
     .map(([hex, count]) => ({ hex, count, ...hsl(hex) }))
-    .filter(c => c.s >= 0.28 && c.l >= 0.18 && c.l <= 0.82)
+    .filter(c => c.s >= 0.22 && c.l >= 0.12 && c.l <= 0.85)
     .sort((a, b) => b.count - a.count)
 
   const picked: Array<{ hex: string; h: number }> = []
@@ -297,9 +367,16 @@ function extractPalette(css: string, themeColor: string | null, vars: Map<string
     if (picked.length >= 5) break
   }
 
-  const primary = picked[0]?.hex || themeColor || '#1a1a1a'
-  const accent = picked[1]?.hex
-  const extras = picked.slice(2).map(p => p.hex)
+  // The button background IS the brand color, even when it's a deep navy or
+  // black that the saturation filter would reject.
+  const semanticPrimary = semantic.buttonBg && hsl(semantic.buttonBg).l < 0.92 ? semantic.buttonBg : null
+  const primary = semanticPrimary || picked[0]?.hex || themeColor || '#1a1a1a'
+  const primaryHue = hsl(primary).h
+  const pool = picked.filter(p => p.hex !== primary)
+  const accent = pool.find(p =>
+    hueDistance(p.h, primaryHue) >= 25 || Math.abs(hsl(p.hex).l - hsl(primary).l) > 0.25
+  )?.hex
+  const extras = pool.filter(p => p.hex !== accent).slice(0, 3).map(p => p.hex)
 
   // Background: most common very-light color, else white.
   const light = [...counts.entries()]
