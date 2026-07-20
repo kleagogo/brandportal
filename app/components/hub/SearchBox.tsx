@@ -76,8 +76,8 @@ export function SearchBox({ onNavigate }: { onNavigate: (sectionId: string) => v
 
   return (
     <div className="relative hidden md:block w-56">
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f5f5f3] border border-transparent focus-within:border-[#1a1a1a] focus-within:bg-white transition-colors">
-        <span className="text-[#b0afa9]"><Icon name="search" size={13} /></span>
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--hub-soft)] border border-transparent focus-within:border-[var(--hub-text)] focus-within:bg-[var(--hub-panel)] transition-colors">
+        <span className="text-[var(--hub-faint)]"><Icon name="search" size={13} /></span>
         <input
           ref={inputRef}
           value={q}
@@ -86,31 +86,31 @@ export function SearchBox({ onNavigate }: { onNavigate: (sectionId: string) => v
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           onKeyDown={e => { if (e.key === 'Enter' && results[0]) pick(results[0]); if (e.key === 'Escape') { setQ(''); setOpen(false) } }}
           placeholder="Search colors, assets, tags…"
-          className="flex-1 min-w-0 bg-transparent text-[12.5px] outline-none placeholder:text-[#b0afa9]"
+          className="flex-1 min-w-0 bg-transparent text-[12.5px] outline-none placeholder:text-[var(--hub-faint)]"
         />
       </div>
 
       {open && q.trim().length >= 2 && (
-        <div className="absolute top-10 left-0 right-0 z-40 bg-white border border-[#e8e7e4] rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute top-10 left-0 right-0 z-40 bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl shadow-xl overflow-hidden">
           {results.length === 0 ? (
-            <p className="px-3 py-2.5 text-[12px] text-[#b0afa9]">Nothing matches “{q.trim()}”</p>
+            <p className="px-3 py-2.5 text-[12px] text-[var(--hub-faint)]">Nothing matches “{q.trim()}”</p>
           ) : (
             results.map((hit, i) => (
               <button
                 key={`${hit.kind}-${hit.label}-${i}`}
                 onMouseDown={e => { e.preventDefault(); pick(hit) }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[#f5f5f3] transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[var(--hub-soft)] transition-colors"
               >
                 {hit.swatchHex ? (
                   <span className="w-4 h-4 rounded border border-black/10 shrink-0" style={{ background: hit.swatchHex }} />
                 ) : (
-                  <span className="text-[#b0afa9] shrink-0">
+                  <span className="text-[var(--hub-faint)] shrink-0">
                     <Icon name={hit.kind === 'font' ? 'type' : hit.kind === 'asset' ? 'screenshots' : 'guidelines'} size={13} />
                   </span>
                 )}
                 <span className="min-w-0">
-                  <span className="block text-[12.5px] font-medium text-[#1a1a1a] truncate">{hit.label}</span>
-                  <span className="block text-[11px] text-[#b0afa9] truncate">{hit.detail}</span>
+                  <span className="block text-[12.5px] font-medium text-[var(--hub-text)] truncate">{hit.label}</span>
+                  <span className="block text-[11px] text-[var(--hub-faint)] truncate">{hit.detail}</span>
                 </span>
               </button>
             ))

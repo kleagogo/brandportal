@@ -26,10 +26,10 @@ function TagRow({ tags, onAdd, onRemove }: { tags: string[]; onAdd: (t: string) 
   return (
     <div className="flex flex-wrap items-center gap-1 mb-2">
       {tags.map(tag => (
-        <span key={tag} className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-[#f0efec] text-[#6b6b66]">
+        <span key={tag} className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-[var(--hub-soft)] text-[var(--hub-muted)]">
           #{tag}
           {editing && (
-            <button onClick={() => onRemove(tag)} className="text-[#b0afa9] hover:text-red-500" title="Remove tag">×</button>
+            <button onClick={() => onRemove(tag)} className="text-[var(--hub-faint)] hover:text-red-500" title="Remove tag">×</button>
           )}
         </span>
       ))}
@@ -41,7 +41,7 @@ function TagRow({ tags, onAdd, onRemove }: { tags: string[]; onAdd: (t: string) 
           onBlur={commit}
           placeholder="+ tag"
           size={Math.max(draft.length, 5)}
-          className="text-[10px] px-1.5 py-0.5 rounded-md border border-dashed border-[#d6d4cd] outline-none focus:border-[#1a1a1a] bg-transparent placeholder:text-[#c4c2bb]"
+          className="text-[10px] px-1.5 py-0.5 rounded-md border border-dashed border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] bg-transparent placeholder:text-[var(--hub-faint)]"
         />
       )}
     </div>
@@ -103,13 +103,13 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
         {assets.length > 0 && hasLocalFiles && (
           <a
             href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(sectionId)}`}
-            className="flex items-center gap-1.5 text-[13px] font-semibold bg-[#1a1a1a] text-white px-3.5 py-2 rounded-xl hover:bg-[#333] transition-colors"
+            className="flex items-center gap-1.5 text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-3.5 py-2 rounded-xl hover:opacity-85 transition-colors"
           >
             <Icon name="download" size={13} /> Download all (.zip)
           </a>
         )}
       </div>
-      <p className="text-[14px] text-[#8a8a85] mb-8">
+      <p className="text-[14px] text-[var(--hub-muted)] mb-8">
         {editing
           ? 'Drop files anywhere below to add them, and click names, notes, or tags to edit.'
           : sectionId === 'logo'
@@ -128,27 +128,27 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
           setDragOver(false)
           if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files)
         }}
-        className={`rounded-2xl transition-colors ${dragOver ? 'bg-[#f0efec] outline-2 outline-dashed outline-[#1a1a1a]' : ''}`}
+        className={`rounded-2xl transition-colors ${dragOver ? 'bg-[var(--hub-soft)] outline-2 outline-dashed outline-[#1a1a1a]' : ''}`}
       >
         {assets.length === 0 && !editing ? (
-          <div className="border-2 border-dashed border-[#e8e7e4] rounded-2xl p-12 text-center">
-            <p className="text-[14px] font-medium text-[#8a8a85] mb-1">No assets here yet</p>
-            <p className="text-[12px] text-[#b0afa9]">Check back soon — this section is being filled.</p>
+          <div className="border-2 border-dashed border-[var(--hub-border)] rounded-2xl p-12 text-center">
+            <p className="text-[14px] font-medium text-[var(--hub-muted)] mb-1">No assets here yet</p>
+            <p className="text-[12px] text-[var(--hub-faint)]">Check back soon — this section is being filled.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {assets.map((asset, i) => (
-              <div key={`${asset.file}-${i}`} className="bg-white border border-[#e8e7e4] rounded-xl overflow-hidden group relative">
+              <div key={`${asset.file}-${i}`} className="bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl overflow-hidden group relative">
                 {editing && (
                   <button
                     onClick={() => update(c => { c.assets[sectionId].splice(i, 1) })}
-                    className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-white border border-[#e8e7e4] text-[#8a8a85] hover:text-red-500 hover:border-red-300 items-center justify-center hidden group-hover:flex transition-colors"
+                    className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-[var(--hub-panel)] border border-[var(--hub-border)] text-[var(--hub-muted)] hover:text-red-500 hover:border-red-300 items-center justify-center hidden group-hover:flex transition-colors"
                     title="Remove asset"
                   >
                     <Icon name="close" size={11} />
                   </button>
                 )}
-                <div className="h-36 flex items-center justify-center bg-[#f9f9f8] border-b border-[#e8e7e4] p-6">
+                <div className="h-36 flex items-center justify-center bg-[var(--hub-tile)] border-b border-[var(--hub-border)] p-6">
                   {isImage(asset.file) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -158,16 +158,16 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
                     />
                   ) : (
-                    <div className="w-12 h-12 bg-[#e8e7e4] rounded-lg flex items-center justify-center text-[#8a8a85]">
+                    <div className="w-12 h-12 bg-[var(--hub-soft)] rounded-lg flex items-center justify-center text-[var(--hub-muted)]">
                       <Icon name="file" size={20} />
                     </div>
                   )}
                 </div>
                 <div className="p-3">
-                  <p className="text-[13px] font-medium text-[#1a1a1a] mb-1">
+                  <p className="text-[13px] font-medium text-[var(--hub-text)] mb-1">
                     <Editable value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
                   </p>
-                  <p className="text-[11px] text-[#8a8a85] mb-2 leading-tight">
+                  <p className="text-[11px] text-[var(--hub-muted)] mb-2 leading-tight">
                     <Editable value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
                   </p>
                   <TagRow
@@ -178,13 +178,13 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                   <div className="flex items-center justify-between">
                     <div className="flex gap-1">
                       {asset.format.map(f => (
-                        <span key={f} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#f0efec] text-[#8a8a85]">{f}</span>
+                        <span key={f} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">{f}</span>
                       ))}
                     </div>
                     <a
                       href={downloadHref(asset.file)}
                       download
-                      className="w-7 h-7 rounded-lg border border-[#e8e7e4] flex items-center justify-center hover:bg-[#1a1a1a] hover:text-white hover:border-[#1a1a1a] transition-colors text-[#8a8a85]"
+                      className="w-7 h-7 rounded-lg border border-[var(--hub-border)] flex items-center justify-center hover:bg-[#1a1a1a] hover:text-white hover:border-[var(--hub-text)] transition-colors text-[var(--hub-muted)]"
                       title={`Download ${asset.name}`}
                     >
                       <Icon name="download" size={12} />
@@ -197,7 +197,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
             {editing && (
               <button
                 onClick={() => inputRef.current?.click()}
-                className="min-h-[220px] border-2 border-dashed border-[#dddcd6] rounded-xl text-[#b0afa9] hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-colors flex flex-col items-center justify-center gap-2 p-6"
+                className="min-h-[220px] border-2 border-dashed border-[var(--hub-border)] rounded-xl text-[var(--hub-faint)] hover:border-[var(--hub-text)] hover:text-[var(--hub-text)] transition-colors flex flex-col items-center justify-center gap-2 p-6"
               >
                 <Icon name="upload" size={20} />
                 <span className="text-[13px] font-medium">{uploading > 0 ? `Uploading ${uploading}…` : 'Add files'}</span>

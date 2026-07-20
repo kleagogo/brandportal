@@ -41,27 +41,27 @@ export function BrandAgent() {
     <>
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 w-12 h-12 bg-[#1a1a1a] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#333] transition-colors z-50"
+        className="fixed bottom-6 right-6 w-12 h-12 bg-[var(--hub-btn)] text-[var(--hub-btn-text)] rounded-full flex items-center justify-center shadow-lg hover:opacity-85 transition-colors z-50"
         title={config.agent.name}
       >
         <Icon name={open ? 'close' : 'chat'} size={18} />
       </button>
 
       {open && (
-        <div className="fixed bottom-20 right-6 w-80 max-w-[calc(100vw-3rem)] bg-white border border-[#e8e7e4] rounded-2xl shadow-xl z-50 flex flex-col overflow-hidden" style={{ height: 420 }}>
-          <div className="px-4 py-3 border-b border-[#e8e7e4] flex items-center gap-2">
+        <div className="fixed bottom-20 right-6 w-80 max-w-[calc(100vw-3rem)] bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-2xl shadow-xl z-50 flex flex-col overflow-hidden" style={{ height: 420 }}>
+          <div className="px-4 py-3 border-b border-[var(--hub-border)] flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <p className="text-[13px] font-semibold">{config.agent.name}</p>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.length === 0 && (
-              <p className="text-[12px] text-[#8a8a85] leading-relaxed">{config.agent.greeting}</p>
+              <p className="text-[12px] text-[var(--hub-muted)] leading-relaxed">{config.agent.greeting}</p>
             )}
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] px-3 py-2 rounded-xl text-[13px] leading-relaxed ${
-                  m.role === 'user' ? 'bg-[#1a1a1a] text-white' : 'bg-[#f5f5f3] text-[#1a1a1a]'
+                  m.role === 'user' ? 'bg-[var(--hub-btn)] text-[var(--hub-btn-text)]' : 'bg-[var(--hub-soft)] text-[var(--hub-text)]'
                 }`}>
                   {m.text}
                 </div>
@@ -69,7 +69,7 @@ export function BrandAgent() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-[#f5f5f3] px-3 py-2 rounded-xl">
+                <div className="bg-[var(--hub-soft)] px-3 py-2 rounded-xl">
                   <div className="flex gap-1">
                     {[0, 1, 2].map(i => (
                       <div key={i} className="w-1.5 h-1.5 bg-[#b0afa9] rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
@@ -81,18 +81,18 @@ export function BrandAgent() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="p-3 border-t border-[#e8e7e4] flex gap-2">
+          <div className="p-3 border-t border-[var(--hub-border)] flex gap-2">
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && send()}
               placeholder="Ask about our brand…"
-              className="flex-1 text-[13px] px-3 py-2 bg-[#f5f5f3] rounded-lg outline-none placeholder:text-[#b0afa9]"
+              className="flex-1 text-[13px] px-3 py-2 bg-[var(--hub-soft)] rounded-lg outline-none placeholder:text-[var(--hub-faint)]"
             />
             <button
               onClick={send}
               disabled={loading || !input.trim()}
-              className="w-8 h-8 bg-[#1a1a1a] text-white rounded-lg flex items-center justify-center disabled:opacity-40 hover:bg-[#333] transition-colors shrink-0"
+              className="w-8 h-8 bg-[var(--hub-btn)] text-[var(--hub-btn-text)] rounded-lg flex items-center justify-center disabled:opacity-40 hover:opacity-85 transition-colors shrink-0"
             >
               <Icon name="send" size={13} />
             </button>

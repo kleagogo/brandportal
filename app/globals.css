@@ -3,3 +3,17 @@
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
+
+/* Hub theme tokens — dark-first, toggleable */
+.hub-dark {
+  --hub-bg: #141414; --hub-panel: #1e1e1e; --hub-soft: #282828;
+  --hub-border: #2f2f2f; --hub-text: #f2f1ef; --hub-muted: #a6a5a1;
+  --hub-faint: #6f6e6a; --hub-btn: #f2f1ef; --hub-btn-text: #161616;
+  --hub-tile: #ffffff;
+}
+.hub-light {
+  --hub-bg: #f9f9f8; --hub-panel: #ffffff; --hub-soft: #f0efec;
+  --hub-border: #e8e7e4; --hub-text: #1a1a1a; --hub-muted: #8a8a85;
+  --hub-faint: #b0afa9; --hub-btn: #1a1a1a; --hub-btn-text: #ffffff;
+  --hub-tile: #f9f9f8;
+}

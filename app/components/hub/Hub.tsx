@@ -35,6 +35,18 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
   const [shareOpen, setShareOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
+  // Dark-first, remembered per browser.
+  const [dark, setDark] = useState(true)
+  useEffect(() => {
+    const saved = localStorage.getItem('bp_theme')
+    if (saved) setDark(saved === 'dark')
+  }, [])
+  function toggleTheme() {
+    setDark(d => {
+      localStorage.setItem('bp_theme', d ? 'light' : 'dark')
+      return !d
+    })
+  }
 
   // If the active section gets deleted, fall back to the first one.
   const activeSection = config.sections.find(s => s.id === active) || config.sections[0]
@@ -61,7 +73,7 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
   }
 
   return (
-    <div className="min-h-screen bg-[#f9f9f8] flex flex-col">
+    <div className={`${dark ? 'hub-dark' : 'hub-light'} min-h-screen bg-[var(--hub-bg)] text-[var(--hub-text)] flex flex-col`}>
       {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
 
       {previewId && <ClaimBanner previewId={previewId} />}
@@ -75,6 +87,8 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
           active={activeSection?.id || ''}
           onSelect={id => { setActive(id); setNavOpen(false) }}
           open={navOpen}
+          dark={dark}
+          onToggleTheme={toggleTheme}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -184,7 +198,7 @@ function ClaimBanner({ previewId }: { previewId: string }) {
   }
 
   return (
-    <div className="bg-[#1a1a1a] text-white px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap sticky top-0 z-50">
+    <div className="bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap sticky top-0 z-50">
       {state === 'sent' ? (
         <p className="text-[13px] leading-snug flex-1 min-w-[200px]">
           <span className="font-semibold">Check your email</span>
@@ -208,12 +222,12 @@ function ClaimBanner({ previewId }: { previewId: string }) {
             placeholder="you@company.com"
             required
             autoFocus
-            className="flex-1 min-w-[180px] text-[13px] px-3 py-2 rounded-lg bg-white/10 border border-white/20 outline-none focus:border-white placeholder:text-white/40"
+            className="flex-1 min-w-[180px] text-[13px] px-3 py-2 rounded-lg bg-[var(--hub-panel)]/10 border border-white/20 outline-none focus:border-white placeholder:text-white/40"
           />
           <button
             type="submit"
             disabled={state === 'sending'}
-            className="text-[13px] font-semibold bg-white text-[#1a1a1a] px-4 py-2 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-60 whitespace-nowrap"
+            className="text-[13px] font-semibold bg-[var(--hub-panel)] text-[var(--hub-text)] px-4 py-2 rounded-lg hover:bg-[var(--hub-panel)]/90 transition-colors disabled:opacity-60 whitespace-nowrap"
           >
             {state === 'sending' ? 'Sending…' : 'Claim it'}
           </button>
@@ -229,7 +243,7 @@ function ClaimBanner({ previewId }: { previewId: string }) {
           <button
             onClick={claim}
             disabled={state === 'claiming'}
-            className="text-[13px] font-semibold bg-white text-[#1a1a1a] px-4 py-2 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-60 whitespace-nowrap"
+            className="text-[13px] font-semibold bg-[var(--hub-panel)] text-[var(--hub-text)] px-4 py-2 rounded-lg hover:bg-[var(--hub-panel)]/90 transition-colors disabled:opacity-60 whitespace-nowrap"
           >
             {state === 'claiming' ? 'Claiming…' : 'Claim this hub — free'}
           </button>
@@ -256,22 +270,22 @@ function TopBar({
   access: HubAccess
 }) {
   return (
-    <header className="h-14 shrink-0 bg-white border-b border-[#e8e7e4] flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
-      <button onClick={onMenu} className="md:hidden text-[#8a8a85] hover:text-[#1a1a1a] transition-colors" title="Menu">
+    <header className="h-14 shrink-0 bg-[var(--hub-panel)] border-b border-[var(--hub-border)] flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
+      <button onClick={onMenu} className="md:hidden text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors" title="Menu">
         <Icon name="menu" size={18} />
       </button>
-      <p className="text-[13px] font-medium text-[#8a8a85] truncate">{sectionLabel}</p>
+      <p className="text-[13px] font-medium text-[var(--hub-muted)] truncate">{sectionLabel}</p>
       <SearchBox onNavigate={onNavigate} />
 
       {preview ? (
         <div className="ml-auto">
-          <span className="text-[12px] font-medium text-[#b0afa9]">Preview — claim to edit and share</span>
+          <span className="text-[12px] font-medium text-[var(--hub-faint)]">Preview — claim to edit and share</span>
         </div>
       ) : (
       <div className="ml-auto flex items-center gap-2.5">
         {editing && (
           <span className={`text-[12px] font-medium hidden sm:flex items-center gap-1.5 ${
-            saveState === 'error' ? 'text-red-500' : 'text-[#8a8a85]'
+            saveState === 'error' ? 'text-red-500' : 'text-[var(--hub-muted)]'
           }`}>
             {saveState === 'saving' && (
               <><span className="w-1.5 h-1.5 rounded-full bg-[#b0afa9] animate-pulse" /> Saving…</>
@@ -284,14 +298,14 @@ function TopBar({
         )}
 
         {access.demo && access.canEdit && (
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8a8a85] bg-[#f0efec] px-2 py-1 rounded-md hidden sm:block">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--hub-muted)] bg-[var(--hub-soft)] px-2 py-1 rounded-md hidden sm:block">
             Demo — anyone can edit
           </span>
         )}
 
         <button
           onClick={onShare}
-          className="flex items-center gap-1.5 text-[13px] font-medium text-[#1a1a1a] border border-[#e8e7e4] hover:border-[#1a1a1a] rounded-lg px-3 py-1.5 transition-colors"
+          className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--hub-text)] border border-[var(--hub-border)] hover:border-[var(--hub-text)] rounded-lg px-3 py-1.5 transition-colors"
         >
           <Icon name="share" size={13} /> Share
         </button>
@@ -299,7 +313,7 @@ function TopBar({
         {access.isOwner && (
           <button
             onClick={onSettings}
-            className="flex items-center text-[#8a8a85] hover:text-[#1a1a1a] border border-[#e8e7e4] hover:border-[#1a1a1a] rounded-lg px-2 py-1.5 transition-colors"
+            className="flex items-center text-[var(--hub-muted)] hover:text-[var(--hub-text)] border border-[var(--hub-border)] hover:border-[var(--hub-text)] rounded-lg px-2 py-1.5 transition-colors"
             title="Hub settings"
           >
             <Icon name="gear" size={15} />
@@ -311,8 +325,8 @@ function TopBar({
             onClick={() => setEditing(!editing)}
             className={`flex items-center gap-1.5 text-[13px] font-semibold rounded-lg px-3.5 py-1.5 transition-colors ${
               editing
-                ? 'bg-[#1a1a1a] text-white hover:bg-[#333]'
-                : 'border border-[#e8e7e4] text-[#1a1a1a] hover:border-[#1a1a1a]'
+                ? 'bg-[var(--hub-btn)] text-[var(--hub-btn-text)] hover:opacity-85'
+                : 'border border-[var(--hub-border)] text-[var(--hub-text)] hover:border-[var(--hub-text)]'
             }`}
           >
             {editing ? <><Icon name="check" size={13} /> Done</> : <><Icon name="edit" size={13} /> Edit</>}
@@ -320,7 +334,7 @@ function TopBar({
         ) : !access.signedIn ? (
           <a
             href="/login"
-            className="text-[13px] font-medium text-[#b0afa9] hover:text-[#1a1a1a] transition-colors"
+            className="text-[13px] font-medium text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors"
           >
             Sign in
           </a>
@@ -338,7 +352,7 @@ const SECTION_ICONS: Record<string, SectionConfig['icon']> = {
   guidelines: 'guidelines',
 }
 
-function Sidebar({ active, onSelect, open }: { active: string; onSelect: (id: string) => void; open: boolean }) {
+function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: string; onSelect: (id: string) => void; open: boolean; dark: boolean; onToggleTheme: () => void }) {
   const { config, editing, update } = useHub()
   const logoInputRef = useRef<HTMLInputElement>(null)
   const [logoUploading, setLogoUploading] = useState(false)
@@ -371,10 +385,10 @@ function Sidebar({ active, onSelect, open }: { active: string; onSelect: (id: st
   }
 
   return (
-    <aside className={`w-60 shrink-0 border-r border-[#e8e7e4] bg-white flex flex-col h-screen z-40 transition-transform
+    <aside className={`w-60 shrink-0 border-r border-[var(--hub-border)] bg-[var(--hub-panel)] flex flex-col h-screen z-40 transition-transform
       fixed inset-y-0 left-0 ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:sticky md:top-0`}>
       {/* Identity */}
-      <div className="px-4 py-4 border-b border-[#e8e7e4]">
+      <div className="px-4 py-4 border-b border-[var(--hub-border)]">
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => editing && logoInputRef.current?.click()}
@@ -395,7 +409,7 @@ function Sidebar({ active, onSelect, open }: { active: string; onSelect: (id: st
             <p className="text-[13px] font-semibold leading-tight truncate">
               <Editable value={config.name} placeholder="Brand name" onChange={v => update(c => { c.name = v })} />
             </p>
-            <p className="text-[10px] text-[#b0afa9] leading-tight mt-0.5">
+            <p className="text-[10px] text-[var(--hub-faint)] leading-tight mt-0.5">
               <Editable value={config.tagline} placeholder="Tagline" onChange={v => update(c => { c.tagline = v })} />
             </p>
           </div>
@@ -411,7 +425,7 @@ function Sidebar({ active, onSelect, open }: { active: string; onSelect: (id: st
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#b0afa9] px-2 mb-2">Sections</p>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] px-2 mb-2">Sections</p>
         {config.sections.map((section, i) => (
           <SidebarItem
             key={section.id}
@@ -425,7 +439,7 @@ function Sidebar({ active, onSelect, open }: { active: string; onSelect: (id: st
         {editing && (
           <button
             onClick={addSection}
-            className="w-full flex items-center gap-2.5 px-2 py-1.5 mt-1 rounded-lg text-[13px] text-[#b0afa9] hover:text-[#1a1a1a] border border-dashed border-transparent hover:border-[#dddcd6] transition-colors"
+            className="w-full flex items-center gap-2.5 px-2 py-1.5 mt-1 rounded-lg text-[13px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] border border-dashed border-transparent hover:border-[var(--hub-border)] transition-colors"
           >
             <Icon name="plus" size={13} /> Add section
           </button>
@@ -433,9 +447,17 @@ function Sidebar({ active, onSelect, open }: { active: string; onSelect: (id: st
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-[#e8e7e4]">
-        <a href="/" className="text-[11px] text-[#b0afa9] hover:text-[#1a1a1a] transition-colors">
+      <div className="p-4 border-t border-[var(--hub-border)]">
+        <a href="/" className="text-[11px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors">
           Made with Brand Portal
+        </a>
+        <button
+          onClick={onToggleTheme}
+          className="mt-2 w-full flex items-center gap-2 text-[12px] text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors"
+        >
+          <Icon name={dark ? 'sun' : 'moon'} size={13} /> {dark ? 'Light mode' : 'Dark mode'}
+        </button>
+        <a className="hidden">
         </a>
       </div>
     </aside>
@@ -459,7 +481,7 @@ function SidebarItem({
         href={section.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-[#8a8a85] hover:text-[#1a1a1a] hover:bg-[#f5f5f3] transition-colors"
+        className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-[var(--hub-muted)] hover:text-[var(--hub-text)] hover:bg-[var(--hub-soft)] transition-colors"
       >
         <Icon name={section.icon} size={14} />
         {section.label}
@@ -473,7 +495,7 @@ function SidebarItem({
       <button
         onClick={() => onSelect(section.id)}
         className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] transition-colors text-left ${
-          active ? 'bg-[#f0efec] text-[#1a1a1a] font-medium' : 'text-[#8a8a85] hover:text-[#1a1a1a] hover:bg-[#f5f5f3]'
+          active ? 'bg-[var(--hub-soft)] text-[var(--hub-text)] font-medium' : 'text-[var(--hub-muted)] hover:text-[var(--hub-text)] hover:bg-[var(--hub-soft)]'
         }`}
       >
         <Icon name={section.icon} size={14} />
@@ -484,15 +506,15 @@ function SidebarItem({
 
   // Edit mode: label is editable, with reorder/delete controls on hover.
   return (
-    <div className={`group flex items-center gap-1.5 px-2 py-1 rounded-lg ${active ? 'bg-[#f0efec]' : 'hover:bg-[#f5f5f3]'}`}>
-      <button onClick={() => onSelect(section.id)} className="text-[#8a8a85]" title="Open section">
+    <div className={`group flex items-center gap-1.5 px-2 py-1 rounded-lg ${active ? 'bg-[var(--hub-soft)]' : 'hover:bg-[var(--hub-soft)]'}`}>
+      <button onClick={() => onSelect(section.id)} className="text-[var(--hub-muted)]" title="Open section">
         <Icon name={section.icon} size={14} />
       </button>
       <input
         value={section.label}
         onChange={e => update(c => { c.sections[index].label = e.target.value })}
         onFocus={() => onSelect(section.id)}
-        className="flex-1 min-w-0 text-[13px] bg-transparent outline-none border border-dashed border-transparent hover:border-[#d6d4cd] focus:border-[#1a1a1a] rounded px-1 text-[#1a1a1a]"
+        className="flex-1 min-w-0 text-[13px] bg-transparent outline-none border border-dashed border-transparent hover:border-[var(--hub-border)] focus:border-[var(--hub-text)] rounded px-1 text-[var(--hub-text)]"
       />
       <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
         <button
@@ -501,7 +523,7 @@ function SidebarItem({
             c.sections.splice(index - 1, 0, s)
           })}
           disabled={index === 0}
-          className="text-[#b0afa9] hover:text-[#1a1a1a] disabled:opacity-30 p-0.5"
+          className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] disabled:opacity-30 p-0.5"
           title="Move up"
         >
           <Icon name="up" size={11} />
@@ -512,7 +534,7 @@ function SidebarItem({
             c.sections.splice(index + 1, 0, s)
           })}
           disabled={index === count - 1}
-          className="text-[#b0afa9] hover:text-[#1a1a1a] disabled:opacity-30 p-0.5"
+          className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] disabled:opacity-30 p-0.5"
           title="Move down"
         >
           <Icon name="down" size={11} />
@@ -522,7 +544,7 @@ function SidebarItem({
             if (!window.confirm(`Delete the "${section.label}" section?`)) return
             update(c => { c.sections.splice(index, 1) })
           }}
-          className="text-[#b0afa9] hover:text-red-500 p-0.5"
+          className="text-[var(--hub-faint)] hover:text-red-500 p-0.5"
           title="Delete section"
         >
           <Icon name="trash" size={11} />

@@ -47,19 +47,19 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl border border-[#e8e7e4] shadow-2xl w-full max-w-[440px] p-6">
-        <button onClick={onClose} className="absolute top-4 right-4 text-[#b0afa9] hover:text-[#1a1a1a] transition-colors" title="Close">
+      <div className="relative bg-[var(--hub-panel)] rounded-2xl border border-[var(--hub-border)] shadow-2xl w-full max-w-[440px] p-6">
+        <button onClick={onClose} className="absolute top-4 right-4 text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Close">
           <Icon name="close" size={14} />
         </button>
 
         <h2 className="text-[17px] font-bold tracking-tight mb-1">Hub settings</h2>
-        <p className="text-[13px] text-[#8a8a85] mb-5">Only you, the owner, can see this.</p>
+        <p className="text-[13px] text-[var(--hub-muted)] mb-5">Only you, the owner, can see this.</p>
 
         <form onSubmit={rename} className="mb-6">
-          <label className="block text-[11px] font-semibold uppercase tracking-widest text-[#b0afa9] mb-1.5">Hub address</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-1.5">Hub address</label>
           <div className="flex gap-2">
-            <div className="flex items-center flex-1 rounded-xl border-[1.5px] border-[#e8e7e4] focus-within:border-[#1a1a1a] transition-colors overflow-hidden">
-              <span className="pl-3 text-[13px] text-[#b0afa9] font-mono">/</span>
+            <div className="flex items-center flex-1 rounded-xl border-[1.5px] border-[var(--hub-border)] focus-within:border-[var(--hub-text)] transition-colors overflow-hidden">
+              <span className="pl-3 text-[13px] text-[var(--hub-faint)] font-mono">/</span>
               <input
                 value={slug}
                 onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
@@ -69,22 +69,22 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             <button
               type="submit"
               disabled={busy || slug.trim() === config.slug}
-              className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-4 py-2.5 rounded-xl hover:bg-[#333] transition-colors disabled:opacity-40 whitespace-nowrap"
+              className="text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-4 py-2.5 rounded-xl hover:opacity-85 transition-colors disabled:opacity-40 whitespace-nowrap"
             >
               Change
             </button>
           </div>
-          <p className="text-[11.5px] text-[#b0afa9] mt-1.5">Changing the address breaks previously shared links.</p>
+          <p className="text-[11.5px] text-[var(--hub-faint)] mt-1.5">Changing the address breaks previously shared links.</p>
         </form>
 
         {error && <p className="text-[12.5px] text-red-500 mb-4">{error}</p>}
 
         <TransferSection slug={config.slug} name={config.name} />
 
-        <div className="border-t border-dashed border-[#e8e7e4] pt-4 flex items-center justify-between gap-3">
+        <div className="border-t border-dashed border-[var(--hub-border)] pt-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[13px] font-medium text-[#1a1a1a]">Delete this hub</p>
-            <p className="text-[12px] text-[#b0afa9]">Removes the hub and its share link forever</p>
+            <p className="text-[13px] font-medium text-[var(--hub-text)]">Delete this hub</p>
+            <p className="text-[12px] text-[var(--hub-faint)]">Removes the hub and its share link forever</p>
           </div>
           <button
             onClick={destroy}
@@ -132,28 +132,28 @@ function TransferSection({ slug, name }: { slug: string; name: string }) {
   }
 
   return (
-    <div className="border-t border-dashed border-[#e8e7e4] pt-4 mb-6">
+    <div className="border-t border-dashed border-[var(--hub-border)] pt-4 mb-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[13px] font-medium text-[#1a1a1a]">Hand off to a client</p>
-          <p className="text-[12px] text-[#b0afa9]">Transfer ownership — they accept by email, you stay on as an editor</p>
+          <p className="text-[13px] font-medium text-[var(--hub-text)]">Hand off to a client</p>
+          <p className="text-[12px] text-[var(--hub-faint)]">Transfer ownership — they accept by email, you stay on as an editor</p>
         </div>
         {!open && !sentTo && (
-          <button onClick={() => setOpen(true)} className="text-[13px] font-semibold border-[1.5px] border-[#e8e7e4] text-[#1a1a1a] px-3.5 py-2 rounded-xl hover:border-[#1a1a1a] transition-colors whitespace-nowrap">
+          <button onClick={() => setOpen(true)} className="text-[13px] font-semibold border-[1.5px] border-[var(--hub-border)] text-[var(--hub-text)] px-3.5 py-2 rounded-xl hover:border-[var(--hub-text)] transition-colors whitespace-nowrap">
             Transfer…
           </button>
         )}
       </div>
 
       {sentTo ? (
-        <div className="bg-[#f5f5f3] rounded-xl p-3 mt-3">
-          <p className="text-[12px] text-[#6b6b66]">
+        <div className="bg-[var(--hub-soft)] rounded-xl p-3 mt-3">
+          <p className="text-[12px] text-[var(--hub-muted)]">
             Transfer offer sent to <b>{sentTo}</b>. The hub stays yours until they accept.
           </p>
           {devLink && (
             <button
               onClick={() => navigator.clipboard.writeText(devLink)}
-              className="text-[12px] font-semibold text-[#1a1a1a] underline underline-offset-2 mt-1"
+              className="text-[12px] font-semibold text-[var(--hub-text)] underline underline-offset-2 mt-1"
             >
               Copy their accept link (email not configured)
             </button>
@@ -168,12 +168,12 @@ function TransferSection({ slug, name }: { slug: string; name: string }) {
             placeholder="client@theircompany.com"
             required
             autoFocus
-            className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-[#e8e7e4] outline-none focus:border-[#1a1a1a] transition-colors placeholder:text-[#b0afa9]"
+            className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors placeholder:text-[var(--hub-faint)]"
           />
           <button
             type="submit"
             disabled={busy}
-            className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-3.5 py-2 rounded-xl hover:bg-[#333] transition-colors disabled:opacity-50 whitespace-nowrap"
+            className="text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-3.5 py-2 rounded-xl hover:opacity-85 transition-colors disabled:opacity-50 whitespace-nowrap"
           >
             {busy ? 'Sending…' : 'Send offer'}
           </button>

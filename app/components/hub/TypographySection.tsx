@@ -18,7 +18,7 @@ export function TypographySection() {
   return (
     <div>
       <h1 className="text-[22px] font-bold tracking-tight mb-1">Typography</h1>
-      <p className="text-[14px] text-[#8a8a85] mb-8">
+      <p className="text-[14px] text-[var(--hub-muted)] mb-8">
         {editing
           ? 'Edit typefaces, weights, and specimens. Google Fonts load automatically by name.'
           : 'Our type system — font families, weights, and usage guidelines.'}
@@ -26,7 +26,7 @@ export function TypographySection() {
 
       {config.typography.map((group, gi) => (
         <div key={gi} className="mb-10">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#b0afa9] mb-6">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-6">
             <Editable
               inline
               value={group.group}
@@ -36,7 +36,7 @@ export function TypographySection() {
           </p>
 
           {group.fonts.map((font, fi) => (
-            <div key={fi} className="bg-white border border-[#e8e7e4] rounded-2xl p-6 mb-6 group/font">
+            <div key={fi} className="bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-2xl p-6 mb-6 group/font">
               <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
                 <div className="min-w-0">
                   <p className="text-[18px] font-semibold mb-1" style={{ fontFamily: `'${font.name}', sans-serif` }}>
@@ -51,7 +51,7 @@ export function TypographySection() {
                       })}
                     />
                   </p>
-                  <p className="text-[13px] text-[#8a8a85]">
+                  <p className="text-[13px] text-[var(--hub-muted)]">
                     <Editable inline value={font.role} placeholder="Role" onChange={v => update(c => { c.typography[gi].fonts[fi].role = v })} />
                     {' · '}
                     <Editable inline value={font.usage} placeholder="Usage" onChange={v => update(c => { c.typography[gi].fonts[fi].usage = v })} />
@@ -61,7 +61,7 @@ export function TypographySection() {
                   {(editing ? ALL_WEIGHTS : font.weights).map(w => {
                     const active = font.weights.includes(w)
                     if (!editing) {
-                      return <span key={w} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#f0efec] text-[#8a8a85]">{w}</span>
+                      return <span key={w} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--hub-soft)] text-[var(--hub-muted)]">{w}</span>
                     }
                     return (
                       <button
@@ -73,8 +73,8 @@ export function TypographySection() {
                         })}
                         className={`text-[11px] font-medium px-2 py-0.5 rounded-full border transition-colors ${
                           active
-                            ? 'bg-[#1a1a1a] text-white border-[#1a1a1a]'
-                            : 'bg-white text-[#b0afa9] border-[#e8e7e4] hover:border-[#b0afa9]'
+                            ? 'bg-[var(--hub-btn)] text-[var(--hub-btn-text)] border-[var(--hub-text)]'
+                            : 'bg-[var(--hub-panel)] text-[var(--hub-faint)] border-[var(--hub-border)] hover:border-[var(--hub-muted)]'
                         }`}
                         title={`Weight ${w}`}
                       >
@@ -88,7 +88,7 @@ export function TypographySection() {
                         if (!window.confirm(`Remove "${font.name}" from the type system?`)) return
                         update(c => { c.typography[gi].fonts.splice(fi, 1) })
                       }}
-                      className="ml-2 text-[#b0afa9] hover:text-red-500 opacity-0 group-hover/font:opacity-100 transition-all"
+                      className="ml-2 text-[var(--hub-faint)] hover:text-red-500 opacity-0 group-hover/font:opacity-100 transition-all"
                       title="Delete font"
                     >
                       <Icon name="trash" size={14} />
@@ -97,10 +97,10 @@ export function TypographySection() {
                 </div>
               </div>
 
-              <div className="space-y-4 border-t border-[#f0efec] pt-4">
+              <div className="space-y-4 border-t border-[var(--hub-border)] pt-4">
                 {font.specimens.map((spec, si) => (
                   <div key={si} className="flex items-baseline gap-4 group/spec">
-                    <span className="text-[11px] text-[#b0afa9] w-16 shrink-0">
+                    <span className="text-[11px] text-[var(--hub-faint)] w-16 shrink-0">
                       <Editable inline value={spec.label} placeholder="Label" onChange={v => update(c => { c.typography[gi].fonts[fi].specimens[si].label = v })} />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -108,7 +108,7 @@ export function TypographySection() {
                         value={spec.sample}
                         placeholder="Specimen text"
                         onChange={v => update(c => { c.typography[gi].fonts[fi].specimens[si].sample = v })}
-                        className="text-[#1a1a1a] leading-tight"
+                        className="text-[var(--hub-text)] leading-tight"
                         style={{ fontFamily: `'${font.name}', sans-serif`, fontSize: spec.size, fontWeight: Number(spec.weight) || 400, lineHeight: 1.2 }}
                       />
                       {editing && (
@@ -116,20 +116,20 @@ export function TypographySection() {
                           <input
                             value={spec.size}
                             onChange={e => update(c => { c.typography[gi].fonts[fi].specimens[si].size = e.target.value })}
-                            className="w-16 text-[11px] font-mono px-1.5 py-0.5 border border-[#e8e7e4] rounded outline-none focus:border-[#1a1a1a]"
+                            className="w-16 text-[11px] font-mono px-1.5 py-0.5 border border-[var(--hub-border)] rounded outline-none focus:border-[var(--hub-text)]"
                             title="Size (e.g. 24px)"
                           />
                           <select
                             value={spec.weight}
                             onChange={e => update(c => { c.typography[gi].fonts[fi].specimens[si].weight = e.target.value })}
-                            className="text-[11px] font-mono px-1 py-0.5 border border-[#e8e7e4] rounded outline-none bg-white"
+                            className="text-[11px] font-mono px-1 py-0.5 border border-[var(--hub-border)] rounded outline-none bg-[var(--hub-panel)]"
                             title="Weight"
                           >
                             {ALL_WEIGHTS.map(w => <option key={w} value={w}>{w}</option>)}
                           </select>
                           <button
                             onClick={() => update(c => { c.typography[gi].fonts[fi].specimens.splice(si, 1) })}
-                            className="text-[#b0afa9] hover:text-red-500 opacity-0 group-hover/spec:opacity-100 transition-all"
+                            className="text-[var(--hub-faint)] hover:text-red-500 opacity-0 group-hover/spec:opacity-100 transition-all"
                             title="Remove specimen"
                           >
                             <Icon name="close" size={11} />
@@ -145,7 +145,7 @@ export function TypographySection() {
                     onClick={() => update(c => {
                       c.typography[gi].fonts[fi].specimens.push({ label: 'Style', size: '18px', weight: '400', sample: 'The quick brown fox jumps over the lazy dog' })
                     })}
-                    className="text-[12px] text-[#8a8a85] hover:text-[#1a1a1a] flex items-center gap-1.5 transition-colors"
+                    className="text-[12px] text-[var(--hub-muted)] hover:text-[var(--hub-text)] flex items-center gap-1.5 transition-colors"
                   >
                     <Icon name="plus" size={11} /> Add specimen
                   </button>
@@ -166,7 +166,7 @@ export function TypographySection() {
                   specimens: [{ label: 'Sample', size: '20px', weight: '400', sample: 'The quick brown fox jumps over the lazy dog' }],
                 })
               })}
-              className="text-[13px] font-medium text-[#8a8a85] hover:text-[#1a1a1a] border border-dashed border-[#dddcd6] hover:border-[#1a1a1a] rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors"
+              className="text-[13px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] border border-dashed border-[var(--hub-border)] hover:border-[var(--hub-text)] rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors"
             >
               <Icon name="plus" size={13} /> Add typeface
             </button>
