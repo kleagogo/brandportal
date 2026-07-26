@@ -1,6 +1,20 @@
 export function Icon({ name, size = 16 }: { name: string; size?: number }) {
   const s = size
   switch (name) {
+    case 'home':
+      return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M2.5 7L8 2.5 13.5 7v6a.5.5 0 01-.5.5h-3v-4H6v4H3a.5.5 0 01-.5-.5V7z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+    case 'heart':
+      return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 13.5s-5-3.2-5-6.5a2.8 2.8 0 015-1.7A2.8 2.8 0 0113 7c0 3.3-5 6.5-5 6.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+    case 'mail':
+      return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M3 5l5 3.5L13 5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+    case 'person':
+      return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M3.5 13c0-2.2 2-3.5 4.5-3.5s4.5 1.3 4.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+    case 'templates':
+      return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M2 6h12M6 6v8" stroke="currentColor" strokeWidth="1.2"/></svg>
+    case 'sparkles':
+      return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 2l1.2 3.3L12.5 6.5 9.2 7.7 8 11 6.8 7.7 3.5 6.5 6.8 5.3 8 2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M12.5 10.5l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5.5-1.3z" fill="currentColor"/></svg>
+    case 'artwork':
+      return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L6 12l-2.5.5L4 10l7.5-7.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
     case 'logo':
       return <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" fill="currentColor"/><rect x="9" y="2" width="5" height="5" rx="1" fill="currentColor" opacity=".4"/><rect x="2" y="9" width="5" height="5" rx="1" fill="currentColor" opacity=".4"/><rect x="9" y="9" width="5" height="5" rx="1" fill="currentColor"/></svg>
     case 'colors':

@@ -26,18 +26,11 @@ export function TypographySection() {
 
       {config.typography.map((group, gi) => (
         <div key={gi} className="mb-10">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-6">
-            <Editable
-              inline
-              value={group.group}
-              placeholder="Group name"
-              onChange={v => update(c => { c.typography[gi].group = v })}
-            />
-          </p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-4">Font Family</p>
 
           {group.fonts.map((font, fi) => (
             <div key={fi} className="bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-2xl p-6 mb-6 group/font">
-              <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+              <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
                 <div className="min-w-0">
                   <p className="text-[18px] font-semibold mb-1" style={{ fontFamily: `'${font.name}', sans-serif` }}>
                     <Editable
@@ -52,9 +45,7 @@ export function TypographySection() {
                     />
                   </p>
                   <p className="text-[13px] text-[var(--hub-muted)]">
-                    <Editable inline value={font.role} placeholder="Role" onChange={v => update(c => { c.typography[gi].fonts[fi].role = v })} />
-                    {' · '}
-                    <Editable inline value={font.usage} placeholder="Usage" onChange={v => update(c => { c.typography[gi].fonts[fi].usage = v })} />
+                    <Editable inline value={font.primaryLabel || font.role} placeholder="Role" onChange={v => update(c => { c.typography[gi].fonts[fi].primaryLabel = v })} />
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -97,15 +88,44 @@ export function TypographySection() {
                 </div>
               </div>
 
-              <div className="space-y-3 border-t border-[var(--hub-border)] pt-4">
+              {font.cssSnippet && (
+                <div className="border-t border-[var(--hub-border)] pt-4 mb-2">
+                  <code className="block text-[12px] font-mono text-[var(--hub-muted)] bg-[var(--hub-bg)] border border-[var(--hub-border)] rounded-lg px-3 py-2">
+                    <Editable inline value={font.cssSnippet} placeholder="font-family: …" onChange={v => update(c => { c.typography[gi].fonts[fi].cssSnippet = v })} />
+                  </code>
+                </div>
+              )}
+
+              {font.downloads && font.downloads.length > 0 && (
+                <div className="border-t border-[var(--hub-border)] pt-4 mt-4">
+                  <p className="text-[12px] font-semibold text-[var(--hub-text)] mb-2.5">Download font files</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {font.downloads.map((d, di) => (
+                      <a
+                        key={di}
+                        href={d.file || '#'}
+                        {...(d.file ? { download: true } : { onClick: (e: React.MouseEvent) => e.preventDefault() })}
+                        className="flex items-center gap-2 text-[12px] text-[var(--hub-text)] border border-[var(--hub-border)] rounded-lg px-3 py-2 hover:border-[var(--hub-text)] transition-colors"
+                      >
+                        <Icon name="download" size={12} /> {d.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mt-6 mb-3">Type Scale</p>
+              <div className="space-y-3">
                 {font.specimens.map((spec, si) => (
                   <div key={si} className="group/spec rounded-xl bg-[var(--hub-bg)] border border-[var(--hub-border)] px-4 py-3.5">
                     <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--hub-muted)]">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--hub-muted)] mr-1">
                         <Editable inline value={spec.label} placeholder="Label" onChange={v => update(c => { c.typography[gi].fonts[fi].specimens[si].label = v })} />
                       </span>
                       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">Weight {spec.weight}</span>
                       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">{spec.size}</span>
+                      {spec.kerning && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">Kerning {spec.kerning}</span>}
+                      {spec.lineHeight && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">Line {spec.lineHeight}</span>}
                     </div>
                     <div className="min-w-0 flex-1">
                       <Editable
@@ -113,7 +133,13 @@ export function TypographySection() {
                         placeholder="Specimen text"
                         onChange={v => update(c => { c.typography[gi].fonts[fi].specimens[si].sample = v })}
                         className="text-[var(--hub-text)] leading-tight"
-                        style={{ fontFamily: `'${font.name}', sans-serif`, fontSize: spec.size, fontWeight: Number(spec.weight) || 400, lineHeight: 1.2 }}
+                        style={{
+                          fontFamily: `'${font.name}', sans-serif`,
+                          fontSize: spec.size,
+                          fontWeight: Number(spec.weight) || 400,
+                          lineHeight: spec.lineHeight || 1.2,
+                          letterSpacing: spec.kerning ? `${parseFloat(spec.kerning) / 100}em` : undefined,
+                        }}
                       />
                       {editing && (
                         <div className="flex items-center gap-2 mt-1.5">

@@ -9,11 +9,33 @@ export interface ColorGroup {
   swatches: ColorSwatch[]
 }
 
+export interface GradientDef {
+  name: string
+  /** Full CSS gradient value, e.g. "linear-gradient(90deg, #a 0%, #b 100%)". */
+  css: string
+  /** Show a Download control (renders the gradient to a PNG client-side). */
+  downloadable?: boolean
+}
+
+export interface GradientGroup {
+  group: string
+  gradients: GradientDef[]
+}
+
 export interface TypeSpecimen {
   label: string
   size: string
   weight: string
+  /** Letter-spacing note, e.g. "-4%". */
+  kerning?: string
+  /** Line-height note, e.g. "90%". */
+  lineHeight?: string
   sample: string
+}
+
+export interface FontDownload {
+  label: string
+  file?: string
 }
 
 export interface FontConfig {
@@ -22,6 +44,12 @@ export interface FontConfig {
   weights: string[]
   usage: string
   importUrl?: string
+  /** e.g. "Primary — All UI, Headings & Body". */
+  primaryLabel?: string
+  /** e.g. "font-family: 'Camera Plain', system-ui, sans-serif;". */
+  cssSnippet?: string
+  /** Installable font files. */
+  downloads?: FontDownload[]
   specimens: TypeSpecimen[]
 }
 
@@ -30,17 +58,18 @@ export interface TypographyGroup {
   fonts: FontConfig[]
 }
 
-export type SectionType = 'assets' | 'colors' | 'typography' | 'guidelines' | 'link' | 'tokens'
-export type SectionIcon = 'logo' | 'colors' | 'type' | 'screenshots' | 'guidelines' | 'link'
+export type SectionType = 'assets' | 'colors' | 'typography' | 'guidelines' | 'link' | 'tokens' | 'home' | 'gradients' | 'subbrand'
+export type SectionIcon = 'home' | 'logo' | 'colors' | 'type' | 'screenshots' | 'artwork' | 'guidelines' | 'link' | 'heart' | 'mail' | 'person' | 'templates' | 'sparkles'
+export type SectionGroup = 'main' | 'assets' | 'subbrands' | 'tools' | 'resources'
 
 export interface SectionConfig {
   id: string
   label: string
   type: SectionType
   icon: SectionIcon
-  url?: string // for type: 'link'
+  url?: string // for type: 'link' and 'subbrand'
   /** Sidebar group. Defaults to 'assets'. */
-  group?: 'assets' | 'tools' | 'resources'
+  group?: SectionGroup
 }
 
 export interface AssetFile {
@@ -49,6 +78,12 @@ export interface AssetFile {
   format: string[]
   usage?: string
   tags?: string[]
+  /** Named sub-group within a section, e.g. "Lockup", "Logomark", "Web". */
+  subgroup?: string
+  /** Aspect hint for the preview tile: 'wide' (16:9) or 'portrait' (9:16). */
+  ratio?: 'square' | 'wide' | 'portrait'
+  /** Open in a new tab instead of downloading (Figma templates etc.). */
+  external?: boolean
   platform?: string
   description?: string
 }
@@ -63,6 +98,10 @@ export interface AgentConfig {
   name: string
   greeting: string
   model: string
+  /** Home-page hero subtitle. */
+  home?: string
+  /** Quick-prompt chips on the home page. */
+  prompts?: string[]
 }
 
 export interface BrandConfig {
@@ -74,6 +113,7 @@ export interface BrandConfig {
   faviconUrl?: string
   website?: string
   colors: ColorGroup[]
+  gradients?: GradientGroup[]
   typography: TypographyGroup[]
   sections: SectionConfig[]
   assets: {

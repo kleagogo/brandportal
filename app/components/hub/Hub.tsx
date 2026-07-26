@@ -13,6 +13,23 @@ import { BrandAgent } from './BrandAgent'
 import { ShareModal } from './ShareModal'
 import { SettingsModal } from './SettingsModal'
 import { SearchBox } from './SearchBox'
+import { HomeSection } from './HomeSection'
+
+function SubBrandPlaceholder({ label }: { label: string }) {
+  return (
+    <div>
+      <h1 className="text-[22px] font-bold tracking-tight mb-1">{label}</h1>
+      <p className="text-[14px] text-[var(--hub-muted)] mb-8">A sub-brand with its own colors, type, and assets.</p>
+      <div className="border-2 border-dashed border-[var(--hub-border)] rounded-2xl p-12 text-center">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#d96e30] bg-[#f7e1d3] px-2.5 py-1 rounded-full mb-3">
+          <Icon name="sparkles" size={11} /> Pro feature
+        </span>
+        <p className="text-[14px] font-medium text-[var(--hub-text)] mb-1">Sub-brands are coming to Pro</p>
+        <p className="text-[12px] text-[var(--hub-faint)]">Nest a product line or campaign brand under this hub, with its own palette and assets.</p>
+      </div>
+    </div>
+  )
+}
 
 export interface HubAccess {
   canEdit?: boolean
@@ -65,9 +82,11 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
   function renderContent() {
     if (!activeSection) return null
     switch (activeSection.type) {
+      case 'home':       return <HomeSection />
       case 'colors':     return <ColorsSection />
       case 'typography': return <TypographySection />
       case 'guidelines': return <GuidelinesSection />
+      case 'subbrand':   return <SubBrandPlaceholder label={activeSection.label} />
       default:           return <AssetsSection sectionId={activeSection.id} />
     }
   }
@@ -425,14 +444,14 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
 
       {/* Nav — grouped like a real brand hub: Assets / Tools / Resources */}
       <nav className="flex-1 overflow-y-auto py-3 px-2">
-        {([['assets', 'Assets'], ['tools', 'Tools'], ['resources', 'Resources']] as const).map(([groupKey, groupLabel]) => {
+        {([['main', ''], ['assets', 'Assets'], ['subbrands', 'Sub Brands'], ['tools', 'Tools'], ['resources', 'Resources']] as const).map(([groupKey, groupLabel]) => {
           const items = config.sections
             .map((section, i) => ({ section, i }))
             .filter(({ section }) => (section.group || 'assets') === groupKey)
           if (items.length === 0) return null
           return (
             <div key={groupKey} className="mb-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] px-2 mb-2">{groupLabel}</p>
+              {groupLabel && <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] px-2 mb-2">{groupLabel}</p>}
               {items.map(({ section, i }) => (
                 <SidebarItem
                   key={section.id}

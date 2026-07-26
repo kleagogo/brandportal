@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
+import { GradientsBlock } from './GradientsBlock'
 
 function normalizeHex(v: string): string {
   let h = v.trim()
@@ -152,11 +153,13 @@ export function ColorsSection() {
       {editing && (
         <button
           onClick={() => update(c => { c.colors.push({ group: 'New group', swatches: [] }) })}
-          className="text-[13px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] border border-dashed border-[var(--hub-border)] hover:border-[var(--hub-text)] rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors"
+          className="text-[13px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] border border-dashed border-[var(--hub-border)] hover:border-[var(--hub-text)] rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors mb-10"
         >
           <Icon name="plus" size={13} /> Add color group
         </button>
       )}
+
+      <GradientsBlock />
     </div>
   )
 }

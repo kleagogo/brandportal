@@ -136,63 +136,14 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
             <p className="text-[12px] text-[var(--hub-faint)]">Check back soon — this section is being filled.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {assets.map((asset, i) => (
-              <div key={`${asset.file}-${i}`} className="bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl overflow-hidden group relative">
-                {editing && (
-                  <button
-                    onClick={() => update(c => { c.assets[sectionId].splice(i, 1) })}
-                    className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-[var(--hub-panel)] border border-[var(--hub-border)] text-[var(--hub-muted)] hover:text-red-500 hover:border-red-300 items-center justify-center hidden group-hover:flex transition-colors"
-                    title="Remove asset"
-                  >
-                    <Icon name="close" size={11} />
-                  </button>
-                )}
-                <div className="h-36 flex items-center justify-center bg-[var(--hub-tile)] border-b border-[var(--hub-border)] p-6">
-                  {isImage(asset.file) ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={asset.file}
-                      alt={asset.name}
-                      className="max-h-full max-w-full object-contain"
-                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-[var(--hub-soft)] rounded-lg flex items-center justify-center text-[var(--hub-muted)]">
-                      <Icon name="file" size={20} />
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <p className="text-[13px] font-medium text-[var(--hub-text)] mb-1">
-                    <Editable value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
-                  </p>
-                  <p className="text-[11px] text-[var(--hub-muted)] mb-2 leading-tight">
-                    <Editable value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
-                  </p>
-                  <TagRow
-                    tags={asset.tags || []}
-                    onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
-                    onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
-                  />
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-1 items-center">
-                      {asset.platform && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)] uppercase tracking-wide">{asset.platform}</span>
-                      )}
-                      {asset.format.map(f => (
-                        <span key={f} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">{f}</span>
-                      ))}
-                    </div>
-                    <a
-                      href={asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
-                      {...(asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
-                      className="w-7 h-7 rounded-lg border border-[var(--hub-border)] flex items-center justify-center hover:bg-[var(--hub-btn)] hover:text-[var(--hub-btn-text)] hover:border-[var(--hub-text)] transition-colors text-[var(--hub-muted)]"
-                      title={`Download ${asset.name}`}
-                    >
-                      <Icon name={asset.file.startsWith('http') ? 'link' : 'download'} size={12} />
-                    </a>
-                  </div>
+          <div className="space-y-8">
+            {groupBySubgroup(assets).map(({ subgroup, items }) => (
+              <div key={subgroup || '_'}>
+                {subgroup && <p className="text-[15px] font-semibold text-[var(--hub-text)] mb-3">{subgroup}</p>}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {items.map(({ asset, i }) => (
+                    <AssetCard key={`${asset.file}-${i}`} asset={asset} index={i} sectionId={sectionId} />
+                  ))}
                 </div>
               </div>
             ))}
@@ -200,7 +151,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
             {editing && (
               <button
                 onClick={() => inputRef.current?.click()}
-                className="min-h-[220px] border-2 border-dashed border-[var(--hub-border)] rounded-xl text-[var(--hub-faint)] hover:border-[var(--hub-text)] hover:text-[var(--hub-text)] transition-colors flex flex-col items-center justify-center gap-2 p-6"
+                className="w-full min-h-[120px] border-2 border-dashed border-[var(--hub-border)] rounded-xl text-[var(--hub-faint)] hover:border-[var(--hub-text)] hover:text-[var(--hub-text)] transition-colors flex flex-col items-center justify-center gap-2 p-6"
               >
                 <Icon name="upload" size={20} />
                 <span className="text-[13px] font-medium">{uploading > 0 ? `Uploading ${uploading}…` : 'Add files'}</span>
@@ -218,6 +169,84 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
         className="hidden"
         onChange={e => { if (e.target.files?.length) uploadFiles(e.target.files); e.target.value = '' }}
       />
+    </div>
+  )
+}
+
+/** Group assets by their `subgroup`, preserving order and original indices. */
+function groupBySubgroup(assets: AssetFile[]): Array<{ subgroup: string; items: Array<{ asset: AssetFile; i: number }> }> {
+  const order: string[] = []
+  const map = new Map<string, Array<{ asset: AssetFile; i: number }>>()
+  assets.forEach((asset, i) => {
+    const key = asset.subgroup || ''
+    if (!map.has(key)) { map.set(key, []); order.push(key) }
+    map.get(key)!.push({ asset, i })
+  })
+  return order.map(subgroup => ({ subgroup, items: map.get(subgroup)! }))
+}
+
+function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
+  const { editing, update } = useHub()
+  const i = index
+  const tileClass = asset.ratio === 'wide' ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
+
+  return (
+    <div className="bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl overflow-hidden group relative">
+      {editing && (
+        <button
+          onClick={() => update(c => { c.assets[sectionId].splice(i, 1) })}
+          className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-[var(--hub-panel)] border border-[var(--hub-border)] text-[var(--hub-muted)] hover:text-red-500 hover:border-red-300 items-center justify-center hidden group-hover:flex transition-colors"
+          title="Remove asset"
+        >
+          <Icon name="close" size={11} />
+        </button>
+      )}
+      <div className={`${tileClass} flex items-center justify-center bg-[var(--hub-tile)] border-b border-[var(--hub-border)] p-6 overflow-hidden`}>
+        {isImage(asset.file) ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={asset.file}
+            alt={asset.name}
+            className={`max-h-full max-w-full ${asset.ratio ? 'w-full h-full object-cover' : 'object-contain'}`}
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        ) : (
+          <div className="w-12 h-12 bg-[var(--hub-soft)] rounded-lg flex items-center justify-center text-[var(--hub-muted)]">
+            <Icon name="file" size={20} />
+          </div>
+        )}
+      </div>
+      <div className="p-3">
+        <p className="text-[13px] font-medium text-[var(--hub-text)] mb-1">
+          <Editable value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
+        </p>
+        <p className="text-[11px] text-[var(--hub-muted)] mb-2 leading-tight">
+          <Editable value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
+        </p>
+        <TagRow
+          tags={asset.tags || []}
+          onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
+          onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
+        />
+        <div className="flex items-center justify-between">
+          <div className="flex gap-1 items-center flex-wrap">
+            {asset.platform && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)] uppercase tracking-wide">{asset.platform}</span>
+            )}
+            {asset.format.map(f => (
+              <span key={f} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">{f}</span>
+            ))}
+          </div>
+          <a
+            href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
+            {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
+            className="w-7 h-7 rounded-lg border border-[var(--hub-border)] flex items-center justify-center hover:bg-[var(--hub-btn)] hover:text-[var(--hub-btn-text)] hover:border-[var(--hub-text)] transition-colors text-[var(--hub-muted)] shrink-0"
+            title={asset.external ? `Open ${asset.name}` : `Download ${asset.name}`}
+          >
+            <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={12} />
+          </a>
+        </div>
+      </div>
     </div>
   )
 }
