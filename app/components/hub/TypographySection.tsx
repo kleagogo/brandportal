@@ -97,12 +97,16 @@ export function TypographySection() {
                 </div>
               </div>
 
-              <div className="space-y-4 border-t border-[var(--hub-border)] pt-4">
+              <div className="space-y-3 border-t border-[var(--hub-border)] pt-4">
                 {font.specimens.map((spec, si) => (
-                  <div key={si} className="flex items-baseline gap-4 group/spec">
-                    <span className="text-[11px] text-[var(--hub-faint)] w-16 shrink-0">
-                      <Editable inline value={spec.label} placeholder="Label" onChange={v => update(c => { c.typography[gi].fonts[fi].specimens[si].label = v })} />
-                    </span>
+                  <div key={si} className="group/spec rounded-xl bg-[var(--hub-bg)] border border-[var(--hub-border)] px-4 py-3.5">
+                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--hub-muted)]">
+                        <Editable inline value={spec.label} placeholder="Label" onChange={v => update(c => { c.typography[gi].fonts[fi].specimens[si].label = v })} />
+                      </span>
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">Weight {spec.weight}</span>
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">{spec.size}</span>
+                    </div>
                     <div className="min-w-0 flex-1">
                       <Editable
                         value={spec.sample}

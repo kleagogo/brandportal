@@ -176,18 +176,21 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                     onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
                   />
                   <div className="flex items-center justify-between">
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 items-center">
+                      {asset.platform && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)] uppercase tracking-wide">{asset.platform}</span>
+                      )}
                       {asset.format.map(f => (
                         <span key={f} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">{f}</span>
                       ))}
                     </div>
                     <a
-                      href={downloadHref(asset.file)}
-                      download
-                      className="w-7 h-7 rounded-lg border border-[var(--hub-border)] flex items-center justify-center hover:bg-[#1a1a1a] hover:text-white hover:border-[var(--hub-text)] transition-colors text-[var(--hub-muted)]"
+                      href={asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
+                      {...(asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
+                      className="w-7 h-7 rounded-lg border border-[var(--hub-border)] flex items-center justify-center hover:bg-[var(--hub-btn)] hover:text-[var(--hub-btn-text)] hover:border-[var(--hub-text)] transition-colors text-[var(--hub-muted)]"
                       title={`Download ${asset.name}`}
                     >
-                      <Icon name="download" size={12} />
+                      <Icon name={asset.file.startsWith('http') ? 'link' : 'download'} size={12} />
                     </a>
                   </div>
                 </div>

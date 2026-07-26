@@ -39,6 +39,8 @@ export interface SectionConfig {
   type: SectionType
   icon: SectionIcon
   url?: string // for type: 'link'
+  /** Sidebar group. Defaults to 'assets'. */
+  group?: 'assets' | 'tools' | 'resources'
 }
 
 export interface AssetFile {

@@ -83,11 +83,13 @@ const config: BrandConfig = {
   // This drives the sidebar. Sections can be added, renamed, and reordered in
   // edit mode. Types: 'assets' | 'colors' | 'typography' | 'guidelines' | 'link'
   sections: [
-    { id: 'logo',         label: 'Logo',        type: 'assets',     icon: 'logo' },
-    { id: 'colors',       label: 'Colors',      type: 'colors',     icon: 'colors' },
-    { id: 'typography',   label: 'Typography',  type: 'typography', icon: 'type' },
-    { id: 'photography',  label: 'Photography', type: 'assets',     icon: 'screenshots' },
-    { id: 'guidelines',   label: 'Guidelines',  type: 'guidelines', icon: 'guidelines' },
+    { id: 'logo',         label: 'Logo',        type: 'assets',     icon: 'logo',        group: 'assets' },
+    { id: 'colors',       label: 'Colors',      type: 'colors',     icon: 'colors',      group: 'assets' },
+    { id: 'typography',   label: 'Typography',  type: 'typography', icon: 'type',        group: 'assets' },
+    { id: 'photography',  label: 'Photography', type: 'assets',     icon: 'screenshots', group: 'assets' },
+    { id: 'artwork',      label: 'Artwork',     type: 'assets',     icon: 'screenshots', group: 'assets' },
+    { id: 'guidelines',   label: 'Guidelines',  type: 'guidelines', icon: 'guidelines',  group: 'assets' },
+    { id: 'templates',    label: 'Templates',   type: 'assets',     icon: 'screenshots', group: 'resources' },
   ],
 
   // ─── Asset library ───────────────────────────────────────────────────────────
@@ -101,6 +103,14 @@ const config: BrandConfig = {
       { name: 'Trail at dusk',    file: '/brand/photo-trail.svg', format: ['SVG'], usage: 'Hero imagery, campaign backgrounds', tags: ['outdoors', 'landscape', 'hero'] },
       { name: 'Gear flat lay',    file: '/brand/photo-gear.svg',  format: ['SVG'], usage: 'Product pages, catalogues',         tags: ['product', 'studio'] },
       { name: 'Coastline marker', file: '/brand/photo-coast.svg', format: ['SVG'], usage: 'Editorial, about pages',            tags: ['outdoors', 'editorial'] },
+    ],
+    artwork: [
+      { name: 'Route pattern',   file: '/brand/photo-trail.svg', format: ['SVG'], usage: 'Decorative fills, packaging interiors', tags: ['pattern'] },
+      { name: 'Compass motif',   file: '/brand/meridian-mark.svg', format: ['SVG'], usage: 'Badges, stamps, watermarks',           tags: ['icon', 'motif'] },
+    ],
+    templates: [
+      { name: 'Instagram post',  file: '/brand/photo-coast.svg', format: ['SVG'], usage: 'Square 1080×1080 social template', tags: ['social'], platform: 'Social' },
+      { name: 'Email header',    file: '/brand/photo-trail.svg', format: ['SVG'], usage: 'Newsletter banner template',       tags: ['email'], platform: 'Email' },
     ],
   },
 

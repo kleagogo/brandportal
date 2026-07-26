@@ -144,11 +144,11 @@ export function buildConfigFromScan(scan: ScanResult): BrandConfig {
     typography: [{ group: 'Brand typefaces', fonts }],
 
     sections: [
-      { id: 'logo', label: 'Logo', type: 'assets', icon: 'logo' },
-      { id: 'colors', label: 'Colors', type: 'colors', icon: 'colors' },
-      { id: 'typography', label: 'Typography', type: 'typography', icon: 'type' },
-      { id: 'imagery', label: 'Imagery', type: 'assets', icon: 'screenshots' },
-      { id: 'guidelines', label: 'Guidelines', type: 'guidelines', icon: 'guidelines' },
+      { id: 'logo', label: 'Logo', type: 'assets', icon: 'logo', group: 'assets' },
+      { id: 'colors', label: 'Colors', type: 'colors', icon: 'colors', group: 'assets' },
+      { id: 'typography', label: 'Typography', type: 'typography', icon: 'type', group: 'assets' },
+      { id: 'imagery', label: 'Imagery', type: 'assets', icon: 'screenshots', group: 'assets' },
+      { id: 'guidelines', label: 'Guidelines', type: 'guidelines', icon: 'guidelines', group: 'assets' },
     ],
 
     assets: {

@@ -35,8 +35,8 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
   const [shareOpen, setShareOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
-  // Dark-first, remembered per browser.
-  const [dark, setDark] = useState(true)
+  // Light by default, remembered per browser.
+  const [dark, setDark] = useState(false)
   useEffect(() => {
     const saved = localStorage.getItem('bp_theme')
     if (saved) setDark(saved === 'dark')
@@ -423,19 +423,31 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
         />
       </div>
 
-      {/* Nav */}
+      {/* Nav — grouped like a real brand hub: Assets / Tools / Resources */}
       <nav className="flex-1 overflow-y-auto py-3 px-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] px-2 mb-2">Sections</p>
-        {config.sections.map((section, i) => (
-          <SidebarItem
-            key={section.id}
-            section={section}
-            index={i}
-            count={config.sections.length}
-            active={active === section.id}
-            onSelect={onSelect}
-          />
-        ))}
+        {([['assets', 'Assets'], ['tools', 'Tools'], ['resources', 'Resources']] as const).map(([groupKey, groupLabel]) => {
+          const items = config.sections
+            .map((section, i) => ({ section, i }))
+            .filter(({ section }) => (section.group || 'assets') === groupKey)
+          if (items.length === 0) return null
+          return (
+            <div key={groupKey} className="mb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] px-2 mb-2">{groupLabel}</p>
+              {items.map(({ section, i }) => (
+                <SidebarItem
+                  key={section.id}
+                  section={section}
+                  index={i}
+                  count={config.sections.length}
+                  active={active === section.id}
+                  onSelect={onSelect}
+                />
+              ))}
+            </div>
+          )
+        })}
+        <div className="hidden">
+        </div>
         {editing && (
           <button
             onClick={addSection}
