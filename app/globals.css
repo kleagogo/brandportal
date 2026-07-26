@@ -2,21 +2,6 @@
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-archivo: var(--font-archivo), system-ui, sans-serif;
-}
-
-/* Basel marketing site tokens */
-.basel {
-  --bl-bg: #f3f2f2;
-  --bl-surface: #eae9e9;
-  --bl-panel: #ffffff;
-  --bl-ink: #201e1d;
-  --bl-ink-70: #444141;
-  --bl-ink-40: #9b9797;
-  --bl-line: #d7d3d3;
-  --bl-accent: #ec3013;
-  --bl-accent-hover: #dd2b0f;
-  --bl-warm: #F6EFE7;
 }
 
 /* Hub theme tokens — dark-first, toggleable */
