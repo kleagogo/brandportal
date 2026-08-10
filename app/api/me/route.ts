@@ -16,6 +16,7 @@ export async function GET() {
       logoUrl: hub.logoUrl || null,
       role,
       hasPin: Boolean(meta.pin),
+      client: meta.client || '',
       updatedAt: hub.updatedAt || null,
     })),
   })

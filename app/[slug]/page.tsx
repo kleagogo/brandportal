@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { canEditHub, getHub, getMeta, isHubOwner } from '@/lib/store'
+import { canEditHub, getHub, getMeta, isExpired, isHubOwner } from '@/lib/store'
 import { getSessionUser, pinCookieName, pinCookieValue } from '@/lib/auth'
 import Hub from '@/app/components/hub/Hub'
 import { PinGate } from '@/app/components/hub/PinGate'
@@ -30,7 +30,12 @@ export default async function HubPage({ params }: { params: Promise<{ slug: stri
   const canEdit = canEditHub(meta, user)
   const isOwner = isHubOwner(meta, user)
 
-  // PIN gate for outside viewers; editors and the owner pass straight through.
+  // Expired share links close to outside viewers; editors keep access.
+  if (isExpired(meta) && !canEdit) {
+    return <PinGate slug={slug} name={hub.name} logoUrl={hub.logoUrl} expired />
+  }
+
+  // PIN/password gate for outside viewers; editors and the owner pass through.
   if (meta.pin && !canEdit) {
     const store = await cookies()
     const unlocked = store.get(pinCookieName(slug))?.value === await pinCookieValue(slug, meta.pin)

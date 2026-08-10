@@ -72,12 +72,28 @@ export interface SectionConfig {
   group?: SectionGroup
 }
 
+export interface AssetVersion {
+  /** v1, v2, … assigned on upload. */
+  label: string
+  file: string
+  format: string
+  /** ISO timestamp. */
+  uploadedAt: string
+  /** Who uploaded it (email), when known. */
+  uploadedBy?: string
+  note?: string
+}
+
 export interface AssetFile {
   name: string
   file: string
   format: string[]
   usage?: string
   tags?: string[]
+  /** Version history, oldest first. The live `file` is the approved one. */
+  versions?: AssetVersion[]
+  /** Label of the approved/current version, e.g. "v3". */
+  approvedVersion?: string
   /** Named sub-group within a section, e.g. "Lockup", "Logomark", "Web". */
   subgroup?: string
   /** Aspect hint for the preview tile: 'wide' (16:9) or 'portrait' (9:16). */

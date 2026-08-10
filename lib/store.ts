@@ -62,10 +62,19 @@ export interface HubMeta {
   ownerId: string | null
   /** Editor emails — matched against the signed-in user's email. */
   editors: string[]
-  /** 4–8 digit viewer PIN, or null for public. */
+  /** Viewer PIN or password (4–64 chars), or null for public. */
   pin: string | null
+  /** ISO date the share link stops working, or null for no expiry. */
+  expiresAt?: string | null
+  /** Client space this hub belongs to — the agency's label for the client. */
+  client?: string
   demo?: boolean
   createdAt: string
+}
+
+/** Has the share link passed its expiry date? */
+export function isExpired(meta: HubMeta): boolean {
+  return Boolean(meta.expiresAt && Date.now() > new Date(meta.expiresAt).getTime())
 }
 
 export async function getMeta(slug: string): Promise<HubMeta> {

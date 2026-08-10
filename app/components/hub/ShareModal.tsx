@@ -11,6 +11,8 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
 
   // Owner-only settings state
   const [pin, setPin] = useState<string | null>(null)
+  const [pinDraft, setPinDraft] = useState('')
+  const [expiresAt, setExpiresAt] = useState<string | null>(null)
   const [editors, setEditors] = useState<string[]>([])
   const [pending, setPending] = useState<Array<{ token: string; email: string; purpose: string }>>([])
   const [loaded, setLoaded] = useState(false)
@@ -31,6 +33,8 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
       if (!res.ok) return
       const data = await res.json()
       setPin(data.pin)
+      setPinDraft(data.pin || '')
+      setExpiresAt(data.expiresAt || null)
       setEditors(data.editors || [])
       setPending(data.pendingInvites || [])
       setLoaded(true)
@@ -45,17 +49,35 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
     setTimeout(() => setCopied(false), 1500)
   }
 
-  async function togglePin() {
+  async function saveSetting(patch: Record<string, unknown>) {
     setError('')
-    const next = pin ? null : String(Math.floor(1000 + Math.random() * 9000))
     const res = await fetch(`/api/hubs/${encodeURIComponent(config.slug)}/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: next }),
+      body: JSON.stringify(patch),
     })
     const data = await res.json()
-    if (!res.ok) { setError(data.error || 'Couldn’t update the PIN'); return }
-    setPin(data.pin)
+    if (!res.ok) { setError(data.error || 'Couldn’t save that'); return null }
+    return data
+  }
+
+  async function togglePin() {
+    const next = pin ? null : String(Math.floor(1000 + Math.random() * 9000))
+    const data = await saveSetting({ pin: next })
+    if (data) { setPin(data.pin); setPinDraft(data.pin || '') }
+  }
+
+  async function savePassword() {
+    const value = pinDraft.trim()
+    if (value === (pin || '')) return
+    const data = await saveSetting({ pin: value.length >= 4 ? value : null })
+    if (data) { setPin(data.pin); setPinDraft(data.pin || '') }
+  }
+
+  async function saveExpiry(value: string) {
+    const iso = value ? new Date(`${value}T23:59:59`).toISOString() : null
+    const data = await saveSetting({ expiresAt: iso })
+    if (data) setExpiresAt(iso)
   }
 
   async function invite(e: React.FormEvent) {
@@ -119,21 +141,61 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
 
         {isOwner && loaded ? (
           <div className="border-t border-dashed border-[var(--hub-border)] pt-4 space-y-5">
-            {/* PIN */}
+            {/* Password / PIN */}
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[13px] font-medium text-[var(--hub-text)]">Password protection</p>
+                  <p className="text-[12px] text-[var(--hub-faint)]">
+                    {pin ? 'Viewers must enter it to open the hub' : 'Anyone with the link can view'}
+                  </p>
+                </div>
+                <button
+                  onClick={togglePin}
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${pin ? 'bg-emerald-500' : 'bg-[var(--hub-soft)]'}`}
+                  title={pin ? 'Turn protection off' : 'Turn protection on'}
+                >
+                  <span className={`absolute top-0.5 w-5 h-5 bg-[var(--hub-panel)] rounded-full shadow transition-all ${pin ? 'left-[18px]' : 'left-0.5'}`} />
+                </button>
+              </div>
+              {pin && (
+                <div className="flex gap-2 mt-2">
+                  <input
+                    value={pinDraft}
+                    onChange={e => setPinDraft(e.target.value)}
+                    onBlur={savePassword}
+                    onKeyDown={e => { if (e.key === 'Enter') savePassword() }}
+                    placeholder="PIN or password"
+                    className="flex-1 text-[13px] font-mono px-3 py-2 rounded-xl border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
+                  />
+                  <button onClick={() => copy(pinDraft)} className="text-[12px] font-semibold px-3 rounded-xl border border-[var(--hub-border)] hover:border-[var(--hub-text)] transition-colors whitespace-nowrap">
+                    {copied ? 'Copied ✓' : 'Copy'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Expiry */}
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[13px] font-medium text-[var(--hub-text)]">PIN protection</p>
+                <p className="text-[13px] font-medium text-[var(--hub-text)]">Link expires</p>
                 <p className="text-[12px] text-[var(--hub-faint)]">
-                  {pin ? <>Viewers need PIN <span className="font-mono font-semibold text-[var(--hub-text)] tracking-widest">{pin}</span></> : 'Anyone with the link can view'}
+                  {expiresAt ? `Stops working ${new Date(expiresAt).toLocaleDateString()}` : 'Never expires'}
                 </p>
               </div>
-              <button
-                onClick={togglePin}
-                className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${pin ? 'bg-emerald-500' : 'bg-[var(--hub-soft)]'}`}
-                title={pin ? 'Turn PIN off' : 'Turn PIN on'}
-              >
-                <span className={`absolute top-0.5 w-5 h-5 bg-[var(--hub-panel)] rounded-full shadow transition-all ${pin ? 'left-[18px]' : 'left-0.5'}`} />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <input
+                  type="date"
+                  value={expiresAt ? new Date(expiresAt).toISOString().slice(0, 10) : ''}
+                  onChange={e => saveExpiry(e.target.value)}
+                  className="text-[12px] px-2.5 py-1.5 rounded-xl border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
+                />
+                {expiresAt && (
+                  <button onClick={() => saveExpiry('')} className="text-[var(--hub-faint)] hover:text-red-500 transition-colors" title="Remove expiry">
+                    <Icon name="close" size={12} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Invites */}

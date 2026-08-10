@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useHub } from './HubContext'
 import { Icon } from './Icon'
 
@@ -8,8 +8,27 @@ import { Icon } from './Icon'
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const { config } = useHub()
   const [slug, setSlug] = useState(config.slug)
+  const [client, setClient] = useState('')
+  const [clientSaved, setClientSaved] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch(`/api/hubs/${encodeURIComponent(config.slug)}/settings`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d) setClient(d.client || '') })
+      .catch(() => {})
+  }, [config.slug])
+
+  async function saveClient() {
+    await fetch(`/api/hubs/${encodeURIComponent(config.slug)}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client }),
+    })
+    setClientSaved(true)
+    setTimeout(() => setClientSaved(false), 1500)
+  }
 
   async function rename(e: React.FormEvent) {
     e.preventDefault()
@@ -54,6 +73,23 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
         <h2 className="text-[17px] font-bold tracking-tight mb-1">Hub settings</h2>
         <p className="text-[13px] text-[var(--hub-muted)] mb-5">Only you, the owner, can see this.</p>
+
+        <div className="mb-6">
+          <label className="block text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-1.5">Client name</label>
+          <div className="flex gap-2">
+            <input
+              value={client}
+              onChange={e => setClient(e.target.value)}
+              onBlur={saveClient}
+              placeholder="e.g. Copperline Coffee"
+              className="flex-1 px-3 py-2.5 text-[13px] rounded-xl border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors placeholder:text-[var(--hub-faint)]"
+            />
+            <button onClick={saveClient} className="text-[13px] font-semibold px-4 rounded-xl border border-[var(--hub-border)] hover:border-[var(--hub-text)] transition-colors whitespace-nowrap">
+              {clientSaved ? 'Saved ✓' : 'Save'}
+            </button>
+          </div>
+          <p className="text-[11.5px] text-[var(--hub-faint)] mt-1.5">Shown on your client-spaces dashboard.</p>
+        </div>
 
         <form onSubmit={rename} className="mb-6">
           <label className="block text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-1.5">Hub address</label>

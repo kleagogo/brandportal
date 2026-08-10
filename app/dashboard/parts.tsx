@@ -26,15 +26,12 @@ export function NewHubButton() {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {error && <p className="text-[12px] text-red-500 w-full text-right">{error}</p>}
-      <a href="/" className="text-[13px] font-semibold border border-[#e8e7e4] text-[#1a1a1a] px-4 py-2.5 rounded-xl hover:border-[#1a1a1a] transition-colors">
-        Scan a website
-      </a>
       <button
         onClick={create}
         disabled={busy}
         className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-4 py-2.5 rounded-xl hover:bg-[#333] transition-colors disabled:opacity-60"
       >
-        {busy ? 'Creating…' : '+ New blank hub'}
+        {busy ? 'Creating…' : '+ New client space'}
       </button>
     </div>
   )

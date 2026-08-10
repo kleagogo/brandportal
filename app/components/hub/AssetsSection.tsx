@@ -186,9 +186,55 @@ function groupBySubgroup(assets: AssetFile[]): Array<{ subgroup: string; items: 
 }
 
 function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
-  const { editing, update } = useHub()
+  const { config, editing, update } = useHub()
   const i = index
   const tileClass = asset.ratio === 'wide' ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
+  const versions = asset.versions || []
+  const current = asset.approvedVersion || versions[versions.length - 1]?.label
+  const [showHistory, setShowHistory] = useState(false)
+  const [uploadingVersion, setUploadingVersion] = useState(false)
+  const versionInput = useRef<HTMLInputElement>(null)
+
+  /** Upload a file as the next version and make it the approved one. */
+  async function uploadVersion(file: File) {
+    setUploadingVersion(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('slug', config.slug)
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      update(c => {
+        const a = c.assets[sectionId][i]
+        const list = a.versions || []
+        // Seed history with the original file the first time.
+        if (list.length === 0) {
+          list.push({ label: 'v1', file: a.file, format: a.format[0] || 'FILE', uploadedAt: new Date(0).toISOString() })
+        }
+        const label = `v${list.length + 1}`
+        list.push({ label, file: data.url, format: data.format, uploadedAt: new Date().toISOString() })
+        a.versions = list
+        a.approvedVersion = label
+        a.file = data.url
+        if (!a.format.includes(data.format)) a.format = [data.format, ...a.format]
+      })
+    } catch { /* keep the current version on failure */ } finally {
+      setUploadingVersion(false)
+    }
+  }
+
+  /** Make an older version the approved/current one. */
+  function approve(label: string) {
+    update(c => {
+      const a = c.assets[sectionId][i]
+      const v = (a.versions || []).find(x => x.label === label)
+      if (!v) return
+      a.approvedVersion = label
+      a.file = v.file
+    })
+    setShowHistory(false)
+  }
 
   return (
     <div className="bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl overflow-hidden group relative">
@@ -200,6 +246,11 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         >
           <Icon name="close" size={11} />
         </button>
+      )}
+      {current && (
+        <span className="absolute top-2 left-2 z-10 text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white uppercase tracking-wide">
+          {current} · Approved
+        </span>
       )}
       <div className={`${tileClass} flex items-center justify-center bg-[var(--hub-tile)] border-b border-[var(--hub-border)] p-6 overflow-hidden`}>
         {isImage(asset.file) ? (
@@ -246,6 +297,62 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
             <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={12} />
           </a>
         </div>
+
+        {/* Versions — history for everyone, uploading for editors */}
+        {(versions.length > 1 || editing) && (
+          <div className="mt-2 pt-2 border-t border-dashed border-[var(--hub-border)] relative">
+            <div className="flex items-center gap-3">
+              {versions.length > 1 && (
+                <button
+                  onClick={() => setShowHistory(h => !h)}
+                  className="text-[11px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors flex items-center gap-1"
+                >
+                  <Icon name="history" size={11} /> {versions.length} versions
+                </button>
+              )}
+              {editing && !asset.external && (
+                <button
+                  onClick={() => versionInput.current?.click()}
+                  className="text-[11px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors flex items-center gap-1 ml-auto"
+                >
+                  <Icon name="upload" size={11} /> {uploadingVersion ? 'Uploading…' : 'New version'}
+                </button>
+              )}
+            </div>
+
+            {showHistory && (
+              <>
+                <div className="fixed inset-0 z-20" onMouseDown={() => setShowHistory(false)} />
+                <div className="absolute left-0 right-0 bottom-7 z-30 bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl shadow-xl overflow-hidden">
+                  {[...versions].reverse().map(v => (
+                    <div key={v.label} className="flex items-center gap-2 px-3 py-2 hover:bg-[var(--hub-soft)] transition-colors">
+                      <span className="text-[11px] font-mono font-semibold w-6 shrink-0">{v.label}</span>
+                      <span className="text-[10px] text-[var(--hub-faint)] flex-1 min-w-0 truncate">
+                        {v.uploadedAt && new Date(v.uploadedAt).getFullYear() > 1971 ? new Date(v.uploadedAt).toLocaleDateString() : 'original'}
+                      </span>
+                      {v.label === current ? (
+                        <span className="text-[9px] font-bold text-emerald-600 uppercase shrink-0">Current</span>
+                      ) : editing ? (
+                        <button onClick={() => approve(v.label)} className="text-[10px] font-semibold text-[var(--hub-text)] hover:underline shrink-0">Make current</button>
+                      ) : (
+                        <a href={downloadHref(v.file)} download className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] shrink-0" title={`Download ${v.label}`}>
+                          <Icon name="download" size={11} />
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <input
+              ref={versionInput}
+              type="file"
+              className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) uploadVersion(f); e.target.value = '' }}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

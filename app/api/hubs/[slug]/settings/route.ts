@@ -20,6 +20,8 @@ export async function GET(
   const pending = await listTokensForSlug(slug)
   return NextResponse.json({
     pin: meta.pin,
+    expiresAt: meta.expiresAt ?? null,
+    client: meta.client ?? '',
     editors: meta.editors,
     slug: meta.slug,
     pendingInvites: pending.map(t => ({ token: t.token, email: t.email, purpose: t.purpose })),
@@ -37,7 +39,7 @@ export async function PUT(
     return NextResponse.json({ error: 'Only the owner can change hub settings' }, { status: 403 })
   }
 
-  let body: { pin?: string | null; removeEditor?: string; newSlug?: string; revokeInvite?: string; transferTo?: string }
+  let body: { pin?: string | null; expiresAt?: string | null; client?: string; removeEditor?: string; newSlug?: string; revokeInvite?: string; transferTo?: string }
   try {
     body = await req.json()
   } catch {
@@ -63,10 +65,22 @@ export async function PUT(
   }
 
   if (body.pin !== undefined) {
-    if (body.pin !== null && !/^\d{4,8}$/.test(String(body.pin))) {
-      return NextResponse.json({ error: 'PIN must be 4–8 digits' }, { status: 400 })
+    // A PIN (digits) or a password (any characters) — both 4+ chars.
+    if (body.pin !== null && String(body.pin).trim().length < 4) {
+      return NextResponse.json({ error: 'Use at least 4 characters' }, { status: 400 })
     }
-    current = await saveMeta({ ...current, pin: body.pin === null ? null : String(body.pin) })
+    current = await saveMeta({ ...current, pin: body.pin === null ? null : String(body.pin).trim().slice(0, 64) })
+  }
+
+  if (body.expiresAt !== undefined) {
+    if (body.expiresAt !== null && Number.isNaN(new Date(body.expiresAt).getTime())) {
+      return NextResponse.json({ error: 'That date isn’t valid' }, { status: 400 })
+    }
+    current = await saveMeta({ ...current, expiresAt: body.expiresAt })
+  }
+
+  if (body.client !== undefined) {
+    current = await saveMeta({ ...current, client: String(body.client).slice(0, 60) })
   }
 
   if (body.removeEditor) {

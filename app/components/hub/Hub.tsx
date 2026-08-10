@@ -14,6 +14,7 @@ import { ShareModal } from './ShareModal'
 import { SettingsModal } from './SettingsModal'
 import { SearchBox } from './SearchBox'
 import { HomeSection } from './HomeSection'
+import { SpaceSwitcher } from './SpaceSwitcher'
 
 function SubBrandPlaceholder({ label }: { label: string }) {
   return (
@@ -479,8 +480,11 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
 
       {/* Footer */}
       <div className="p-4 border-t border-[var(--hub-border)]">
+        <div className="mb-3">
+          <SpaceSwitcher currentSlug={config.slug} currentName={config.name} />
+        </div>
         <a href="/" className="text-[11px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors">
-          Made with Brand Portal
+          Made with Basel
         </a>
         <button
           onClick={onToggleTheme}

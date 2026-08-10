@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   const limits = limitsFor(user)
   if ((await countOwnedHubs(user.id)) >= limits.hubs) {
-    return NextResponse.json({ error: `Your plan includes ${limits.hubs} hub${limits.hubs === 1 ? '' : 's'} — Pro (coming soon) raises the limit` }, { status: 403 })
+    return NextResponse.json({ error: `Your plan includes ${limits.hubs} client spaces — Studio raises the limit` }, { status: 403 })
   }
 
   const hub = await createHub(config, user.id)
