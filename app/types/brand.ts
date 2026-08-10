@@ -120,6 +120,40 @@ export interface AgentConfig {
   prompts?: string[]
 }
 
+/** How a shared portal presents the brand. */
+export type PortalTemplate = 'full' | 'gallery' | 'minimal'
+
+export interface PortalBranding {
+  /** Agency (or client) logo shown instead of the hub's. */
+  logoUrl?: string
+  /** Name in the portal header. */
+  name?: string
+  /** Accent color for buttons and highlights. */
+  accent?: string
+  /** Hide the "Made with Basel" footer credit (white-label). */
+  hideCredit?: boolean
+  /** Short line under the title, e.g. "Prepared by Studio North". */
+  note?: string
+}
+
+export interface SharePortal {
+  /** Random id — the portal's public URL is /s/<id>. */
+  id: string
+  /** Hub this portal shares. */
+  slug: string
+  /** Internal label, e.g. "Client handoff". */
+  name: string
+  template: PortalTemplate
+  /** Section ids to include; empty/undefined means all of them. */
+  sections?: string[]
+  password?: string | null
+  expiresAt?: string | null
+  /** Viewers can download files. */
+  allowDownload: boolean
+  branding?: PortalBranding
+  createdAt: string
+}
+
 export interface BrandConfig {
   /** URL slug the hub lives at, e.g. "meridian" → /meridian */
   slug: string

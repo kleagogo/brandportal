@@ -132,7 +132,14 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
         </div>
       </div>
 
-      {shareOpen && <ShareModal onClose={() => setShareOpen(false)} isOwner={Boolean(access.isOwner)} demo={Boolean(access.demo)} />}
+      {shareOpen && (
+        <ShareModal
+          onClose={() => setShareOpen(false)}
+          isOwner={Boolean(access.isOwner)}
+          canEdit={Boolean(access.canEdit)}
+          demo={Boolean(access.demo)}
+        />
+      )}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <BrandAgent />
     </div>

@@ -7,14 +7,14 @@
 
 import crypto from 'crypto'
 import seed from '@/brand.config'
-import type { BrandConfig } from '@/app/types/brand'
+import type { BrandConfig, SharePortal } from '@/app/types/brand'
 import type { User } from './users'
 import { getStorage } from './db'
 
 export const PREVIEW_TTL_MS = 24 * 60 * 60 * 1000
 
 /** Slugs that can never be hub addresses — they collide with app routes. */
-const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'signup', 'settings', 'dashboard', 'pricing', 'brand', '_next'])
+const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'signup', 'settings', 'dashboard', 'pricing', 'brand', 's', '_next'])
 
 // ─── Hubs ─────────────────────────────────────────────────────────────────────
 
@@ -134,6 +134,7 @@ export async function renameHub(oldSlug: string, wanted: string): Promise<{ slug
 export async function deleteHub(slug: string): Promise<void> {
   await getStorage().deleteJSON('hubs', slug)
   await getStorage().deleteJSON('meta', slug)
+  for (const portal of await listPortals(slug)) await deletePortal(portal.id)
 }
 
 /** How many hubs a user owns (for plan limits). Demo hubs don't count. */
@@ -192,6 +193,51 @@ async function forEachMeta(update: (meta: HubMeta) => Promise<HubMeta | null>): 
     const next = await update(meta)
     if (next) await saveMeta(next)
   }
+}
+
+// ─── Share portals ────────────────────────────────────────────────────────────
+// A portal is one shared view of a hub: a template, a section selection, and
+// optional white-label branding. Each lives at /s/<id> so an agency can hand
+// out several links — a client handoff, a press kit — from the same hub.
+
+export type NewPortal = Omit<SharePortal, 'id' | 'createdAt'>
+
+export async function createPortal(input: NewPortal): Promise<SharePortal> {
+  const portal: SharePortal = {
+    ...input,
+    id: crypto.randomBytes(6).toString('base64url'),
+    createdAt: new Date().toISOString(),
+  }
+  await getStorage().putJSON('portals', portal.id, portal)
+  return portal
+}
+
+export async function getPortal(id: string): Promise<SharePortal | null> {
+  return getStorage().getJSON<SharePortal>('portals', id)
+}
+
+export async function savePortal(portal: SharePortal): Promise<SharePortal> {
+  await getStorage().putJSON('portals', portal.id, portal)
+  return portal
+}
+
+export async function deletePortal(id: string): Promise<void> {
+  await getStorage().deleteJSON('portals', id)
+}
+
+/** Every portal shared from one hub, newest first. */
+export async function listPortals(slug: string): Promise<SharePortal[]> {
+  const ids = await getStorage().listKeys('portals')
+  const out: SharePortal[] = []
+  for (const id of ids) {
+    const portal = await getPortal(id)
+    if (portal?.slug === slug) out.push(portal)
+  }
+  return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+export function isPortalExpired(portal: SharePortal): boolean {
+  return Boolean(portal.expiresAt && Date.now() > new Date(portal.expiresAt).getTime())
 }
 
 // ─── Previews ─────────────────────────────────────────────────────────────────

@@ -12,6 +12,8 @@ interface HubContextValue {
   saveState: SaveState
   /** Apply a mutation to a draft of the config; the result is set and autosaved. */
   update: (mutate: (draft: BrandConfig) => void) => void
+  /** Show download controls. Share portals can turn downloads off. */
+  allowDownload: boolean
 }
 
 const HubContext = createContext<HubContextValue | null>(null)
@@ -24,7 +26,7 @@ export function useHub() {
 
 const SAVE_DEBOUNCE_MS = 800
 
-export function HubProvider({ initial, children }: { initial: BrandConfig; children: React.ReactNode }) {
+export function HubProvider({ initial, children, allowDownload = true }: { initial: BrandConfig; children: React.ReactNode; allowDownload?: boolean }) {
   const [config, setConfig] = useState<BrandConfig>(initial)
   const [editing, setEditing] = useState(false)
   const [saveState, setSaveState] = useState<SaveState>('idle')
@@ -79,7 +81,7 @@ export function HubProvider({ initial, children }: { initial: BrandConfig; child
   }, [])
 
   return (
-    <HubContext.Provider value={{ config, editing, setEditing, saveState, update }}>
+    <HubContext.Provider value={{ config, editing, setEditing, saveState, update, allowDownload }}>
       {children}
     </HubContext.Provider>
   )
