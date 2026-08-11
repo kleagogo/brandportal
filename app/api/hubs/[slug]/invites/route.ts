@@ -48,6 +48,7 @@ export async function POST(
   const token = await createToken({ purpose: 'invite', email, slug })
   const url = `${req.nextUrl.origin}/api/auth/verify?token=${token}`
   const result = await sendMagicLink({ to: email, url, kind: 'invite', hubName: hub?.name })
+  if (result.error) return NextResponse.json({ error: result.error }, { status: 502 })
 
   return NextResponse.json({ ...result, email })
 }

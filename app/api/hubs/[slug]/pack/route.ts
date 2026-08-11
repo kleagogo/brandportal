@@ -7,6 +7,24 @@ import { getStorage } from '@/lib/db'
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public')
 
+/** Biggest remote file worth pulling into a zip on the fly. */
+const REMOTE_LIMIT = 100 * 1024 * 1024
+
+/** Fetch a blob-stored asset so it can be zipped. Any failure → link instead. */
+async function fetchRemote(url: string): Promise<Buffer | null> {
+  try {
+    if (!/^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//i.test(url)) return null
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const length = Number(res.headers.get('content-length') || 0)
+    if (length > REMOTE_LIMIT) return null
+    const buffer = Buffer.from(await res.arrayBuffer())
+    return buffer.length > REMOTE_LIMIT ? null : buffer
+  } catch {
+    return null
+  }
+}
+
 /**
  * Download a section's assets as one zip — the "logo pack" button.
  * Includes locally-stored files (uploads and /public assets); external URLs
@@ -42,6 +60,11 @@ export async function GET(
         const data = await fs.readFile(path.join(PUBLIC_DIR, rel))
         zip.addFile(`${safeName}${path.extname(asset.file)}`, data)
       } catch { external.push(`${asset.name}: file missing`) }
+    } else if (asset.file.startsWith('https://')) {
+      // Files kept in blob storage still belong in the zip.
+      const data = await fetchRemote(asset.file)
+      if (data) zip.addFile(`${safeName}${path.extname(new URL(asset.file).pathname)}`, data)
+      else external.push(`${asset.name}: ${asset.file}`)
     } else {
       external.push(`${asset.name}: ${asset.file}`)
     }

@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { canEditHub, getHub, getMeta } from '@/lib/store'
 import { getSessionUser } from '@/lib/auth'
 import { getStorage } from '@/lib/db'
+import { describeAsset } from '@/lib/vision'
+import { ALLOWED_EXT, blobEnabled, extensionOf, humanSize, serverUploadLimit, storageName } from '@/lib/uploads'
 
-const MAX_SIZE = 15 * 1024 * 1024 // 15MB
-const ALLOWED = new Set(['svg', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'ico', 'pdf', 'zip', 'eps', 'ai', 'mp4', 'woff', 'woff2', 'otf', 'ttf'])
-
+/**
+ * Direct upload — the file is posted here and stored by the driver.
+ *
+ * Serverless hosts cap request bodies, so anything larger than the server
+ * limit goes through /api/upload/blob instead.
+ */
 export async function POST(req: NextRequest) {
   const form = await req.formData()
   const file = form.get('file')
@@ -23,28 +28,25 @@ export async function POST(req: NextRequest) {
   if (!hub || !canEditHub(meta, user)) {
     return NextResponse.json({ error: 'You don’t have permission to upload to this hub' }, { status: 403 })
   }
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: 'File is too large (max 15MB)' }, { status: 413 })
+  const limit = serverUploadLimit()
+  if (file.size > limit) {
+    return NextResponse.json({
+      error: blobEnabled()
+        ? `Files over ${humanSize(limit)} upload straight to storage — reload the page and try again`
+        : `File is too large (max ${humanSize(limit)}). Connect blob storage to upload bigger files.`,
+    }, { status: 413 })
   }
 
-  const ext = (file.name.split('.').pop() || '').toLowerCase()
-  if (!ALLOWED.has(ext)) {
+  const ext = extensionOf(file.name)
+  if (!ALLOWED_EXT.has(ext)) {
     return NextResponse.json({ error: `File type .${ext || '?'} is not supported` }, { status: 415 })
   }
 
-  const base = (file.name.replace(/\.[^.]*$/, '') || 'file')
-    .toLowerCase()
-    .replace(/[^a-z0-9-_]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48) || 'file'
-  const unique = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
-  const filename = `${base}-${unique}.${ext}`
-
+  const filename = storageName(file.name)
   const buffer = Buffer.from(await file.arrayBuffer())
   await getStorage().putFile(filename, buffer)
 
-  // AI assist: for images, let Claude suggest a name, tags, and usage note.
-  const suggestion = await describeImage(buffer, ext, file.name)
+  const suggestion = await describeAsset({ kind: 'buffer', buffer, ext }, file.name)
 
   return NextResponse.json({
     url: `/api/files/${filename}`,
@@ -53,48 +55,4 @@ export async function POST(req: NextRequest) {
     size: file.size,
     ...(suggestion ? { suggestion } : {}),
   })
-}
-
-const VISION_TYPES: Record<string, 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'> = {
-  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
-}
-
-/** Ask Claude to describe an uploaded image. Best-effort: any failure → null. */
-async function describeImage(
-  buffer: Buffer,
-  ext: string,
-  originalName: string
-): Promise<{ name: string; tags: string[]; usage: string } | null> {
-  if (!process.env.ANTHROPIC_API_KEY) return null
-  const mediaType = VISION_TYPES[ext]
-  if (!mediaType || buffer.length > 4 * 1024 * 1024) return null
-
-  try {
-    const Anthropic = (await import('@anthropic-ai/sdk')).default
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const response = await client.messages.create(
-      {
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 200,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') } },
-            { type: 'text', text: `This file ("${originalName}") was uploaded to a brand asset hub. Return ONLY JSON: {"name":"short human title","tags":["3-5 lowercase tags"],"usage":"one short sentence on when to use this asset"}` },
-          ],
-        }],
-      },
-      { timeout: 8000 }
-    )
-    const text = response.content[0].type === 'text' ? response.content[0].text : ''
-    const parsed = JSON.parse(text.match(/\{[\s\S]+\}/)?.[0] || '')
-    if (typeof parsed.name !== 'string' || !Array.isArray(parsed.tags)) return null
-    return {
-      name: parsed.name.slice(0, 60),
-      tags: parsed.tags.filter((t: unknown) => typeof t === 'string').slice(0, 5),
-      usage: typeof parsed.usage === 'string' ? parsed.usage.slice(0, 120) : '',
-    }
-  } catch {
-    return null
-  }
 }

@@ -47,5 +47,7 @@ export async function POST(req: NextRequest) {
 
   const url = `${req.nextUrl.origin}/api/auth/verify?token=${token}`
   const result = await sendMagicLink({ to: email, url, kind: claiming ? 'claim' : 'login', hubName })
+  // A link that couldn't be delivered is a failure, not a quiet success.
+  if (result.error) return NextResponse.json({ error: result.error }, { status: 502 })
   return NextResponse.json(result)
 }

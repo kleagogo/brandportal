@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { canEditHub, deletePortal, getMeta, getPortal, savePortal } from '@/lib/store'
 import { getSessionUser } from '@/lib/auth'
 import { normalizePortalInput } from '@/lib/portal-input'
+import { getPortalStats } from '@/lib/analytics'
 
 /** Update or revoke one share portal. */
 
@@ -12,6 +13,16 @@ async function load(slug: string, id: string) {
   const portal = await getPortal(id)
   if (!portal || portal.slug !== slug) return { error: 'Share link not found', status: 404 as const }
   return { portal }
+}
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string; id: string }> }
+) {
+  const { slug, id } = await params
+  const found = await load(slug, id)
+  if ('error' in found) return NextResponse.json({ error: found.error }, { status: found.status })
+  return NextResponse.json({ portal: found.portal, stats: await getPortalStats(id) })
 }
 
 export async function PUT(
