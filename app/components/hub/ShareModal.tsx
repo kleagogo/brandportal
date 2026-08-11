@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useHub } from './HubContext'
 import { Icon } from './Icon'
+import { PortalManager } from './PortalManager'
 
-export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; isOwner: boolean; demo: boolean }) {
+export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () => void; isOwner: boolean; canEdit: boolean; demo: boolean }) {
   const { config } = useHub()
   const [copied, setCopied] = useState(false)
   const [url, setUrl] = useState('')
@@ -117,7 +118,7 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative bg-[var(--hub-panel)] rounded-2xl border border-[var(--hub-border)] shadow-2xl w-full max-w-[460px] p-6 max-h-[85vh] overflow-y-auto">
+      <div className="relative bg-[var(--hub-panel)] rounded-2xl border border-[var(--hub-border)] shadow-2xl w-full max-w-[520px] p-6 max-h-[85vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-4 text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Close">
           <Icon name="close" size={14} />
         </button>
@@ -138,6 +139,10 @@ export function ShareModal({ onClose, isOwner, demo }: { onClose: () => void; is
         </div>
 
         {error && <p className="text-[12.5px] text-red-500 mb-4">{error}</p>}
+
+        <div className="mb-5">
+          <PortalManager canEdit={canEdit} />
+        </div>
 
         {isOwner && loaded ? (
           <div className="border-t border-dashed border-[var(--hub-border)] pt-4 space-y-5">

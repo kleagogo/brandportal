@@ -6,3 +6,6 @@ node_modules/
 .claude/
 .vercel
 /data/
+
+# typescript
+*.tsbuildinfo

@@ -53,7 +53,7 @@ function downloadHref(file: string): string {
 }
 
 export function AssetsSection({ sectionId }: { sectionId: string }) {
-  const { config, editing, update } = useHub()
+  const { config, editing, update, allowDownload } = useHub()
   const [uploading, setUploading] = useState(0)
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState('')
@@ -100,7 +100,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
     <div>
       <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
         <h1 className="text-[22px] font-bold tracking-tight">{label}</h1>
-        {assets.length > 0 && hasLocalFiles && (
+        {assets.length > 0 && hasLocalFiles && allowDownload && (
           <a
             href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(sectionId)}`}
             className="flex items-center gap-1.5 text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-3.5 py-2 rounded-xl hover:opacity-85 transition-colors"
@@ -186,7 +186,7 @@ function groupBySubgroup(assets: AssetFile[]): Array<{ subgroup: string; items: 
 }
 
 function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
-  const { config, editing, update } = useHub()
+  const { config, editing, update, allowDownload } = useHub()
   const i = index
   const tileClass = asset.ratio === 'wide' ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
   const versions = asset.versions || []
@@ -288,6 +288,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
               <span key={f} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">{f}</span>
             ))}
           </div>
+          {allowDownload && (
           <a
             href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
             {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
@@ -296,6 +297,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
           >
             <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={12} />
           </a>
+          )}
         </div>
 
         {/* Versions — history for everyone, uploading for editors */}
@@ -334,11 +336,11 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
                         <span className="text-[9px] font-bold text-emerald-600 uppercase shrink-0">Current</span>
                       ) : editing ? (
                         <button onClick={() => approve(v.label)} className="text-[10px] font-semibold text-[var(--hub-text)] hover:underline shrink-0">Make current</button>
-                      ) : (
+                      ) : allowDownload ? (
                         <a href={downloadHref(v.file)} download className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] shrink-0" title={`Download ${v.label}`}>
                           <Icon name="download" size={11} />
                         </a>
-                      )}
+                      ) : null}
                     </div>
                   ))}
                 </div>

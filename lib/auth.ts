@@ -78,3 +78,13 @@ export function pinCookieName(slug: string): string {
 export async function pinCookieValue(slug: string, pin: string): Promise<string> {
   return hmac(`pin:${slug}:${pin}`)
 }
+
+// ─── Share-portal password cookies ────────────────────────────────────────────
+
+export function portalCookieName(id: string): string {
+  return `bp_portal_${id.replace(/[^A-Za-z0-9_-]/g, '')}`
+}
+
+export async function portalCookieValue(id: string, password: string): Promise<string> {
+  return hmac(`portal:${id}:${password}`)
+}
