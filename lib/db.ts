@@ -13,7 +13,6 @@
 
 import { promises as fs } from 'fs'
 import path from 'path'
-import { Pool } from 'pg'
 import { r2Enabled, r2Get, r2Put } from './r2'
 import { MIME, extensionOf } from './uploads'
 
@@ -196,14 +195,60 @@ let singleton: Storage | null = null
 
 export function getStorage(): Storage {
   if (!singleton) {
+    const url = process.env.DATABASE_URL
     let store: Storage
-    if (process.env.DATABASE_URL) {
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 })
-      store = new PgStorage((text, params) => pool.query(text, params as never[]))
+    if (url) {
+      store = new PgStorage(onWorkers() ? httpQuery(url) : poolQuery(url))
+    } else if (onWorkers()) {
+      // There's no filesystem here, so say so plainly rather than failing
+      // later inside a write with an unrecognisable error.
+      throw new Error('DATABASE_URL must be set — Cloudflare Workers have no filesystem to fall back to')
     } else {
       store = new FileStorage()
     }
     singleton = r2Enabled() ? new R2Files(store) : store
   }
   return singleton
+}
+
+/** Cloudflare Workers — no long-lived TCP connections to hold a pool open. */
+function onWorkers(): boolean {
+  return typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers'
+}
+
+/**
+ * Node hosts: a normal pooled TCP connection.
+ *
+ * `pg` is loaded through an indirect import so bundlers building the Worker
+ * never follow it — that path can't run there, and its native socket shim
+ * breaks the build if it's pulled in.
+ */
+function poolQuery(connectionString: string): QueryFn {
+  let pool: { query: (text: string, params?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> } | null = null
+  return async (text, params) => {
+    if (!pool) {
+      const load = new Function('m', 'return import(m)') as (m: string) => Promise<typeof import('pg')>
+      const { Pool } = await load('pg')
+      pool = new Pool({ connectionString, max: 5 }) as unknown as typeof pool
+    }
+    return pool!.query(text, params as never[])
+  }
+}
+
+/**
+ * Neon over HTTP: one request per query, which is exactly what a Worker wants.
+ * Every query in this app is a single statement, so nothing is lost.
+ */
+function httpQuery(connectionString: string): QueryFn {
+  let sql: ReturnType<typeof import('@neondatabase/serverless').neon> | null = null
+  return async (text, params) => {
+    if (!sql) {
+      const { neon } = await import('@neondatabase/serverless')
+      sql = neon(connectionString)
+    }
+    const result: unknown = await sql.query(text, params as never[])
+    // The driver returns rows directly, or a full result depending on config.
+    const rows = Array.isArray(result) ? result : (result as { rows?: unknown[] }).rows || []
+    return { rows: rows as Array<Record<string, unknown>> }
+  }
 }

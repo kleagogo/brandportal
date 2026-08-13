@@ -11,6 +11,27 @@ const PUBLIC_DIR = path.join(process.cwd(), 'public')
 /** Biggest remote file worth pulling into a zip on the fly. */
 const REMOTE_LIMIT = 100 * 1024 * 1024
 
+/**
+ * Read a file shipped in /public.
+ *
+ * On a Node host that's a disk read; on Cloudflare Workers there is no
+ * filesystem, so the same file is fetched back from the app's own origin,
+ * where it's served as a static asset.
+ */
+async function readPublic(file: string, origin: string): Promise<Buffer | null> {
+  const rel = path.normalize(file).replace(/^([/\\])+/, '')
+  try {
+    return await fs.readFile(path.join(PUBLIC_DIR, rel))
+  } catch { /* no filesystem here — try the CDN copy */ }
+  try {
+    const res = await fetch(new URL(`/${rel}`, origin))
+    if (!res.ok) return null
+    return Buffer.from(await res.arrayBuffer())
+  } catch {
+    return null
+  }
+}
+
 /** Fetch a blob-stored asset so it can be zipped. Any failure → link instead. */
 async function fetchRemote(url: string): Promise<Buffer | null> {
   try {
@@ -57,11 +78,9 @@ export async function GET(
       if (data) zip.addFile(`${safeName}${path.extname(key)}`, data)
       else external.push(`${asset.name}: file missing`)
     } else if (asset.file.startsWith('/')) {
-      try {
-        const rel = path.normalize(asset.file).replace(/^([/\\])+/, '')
-        const data = await fs.readFile(path.join(PUBLIC_DIR, rel))
-        zip.addFile(`${safeName}${path.extname(asset.file)}`, data)
-      } catch { external.push(`${asset.name}: file missing`) }
+      const data = await readPublic(asset.file, req.nextUrl.origin)
+      if (data) zip.addFile(`${safeName}${path.extname(asset.file)}`, data)
+      else external.push(`${asset.name}: file missing`)
     } else if (asset.file.startsWith('https://')) {
       // Files kept in blob storage still belong in the zip.
       const data = await fetchRemote(asset.file)

@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "basel",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-01",
+  // nodejs_compat: the app uses node:crypto and friends.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // Secrets (DATABASE_URL, AUTH_SECRET, R2_*, RESEND_API_KEY, ANTHROPIC_API_KEY)
+  // are set in the Cloudflare dashboard, not here — they don't belong in git.
+}

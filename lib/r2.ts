@@ -1,10 +1,11 @@
 /**
  * Cloudflare R2 — where uploaded files live once it's configured.
  *
- * R2 speaks S3, so this is the AWS SDK pointed at Cloudflare. Two reasons it's
- * the right home for brand assets: downloads don't cost anything (no egress
- * fees), and files can be served straight off Cloudflare's CDN instead of
- * being proxied through the app.
+ * R2 speaks S3, so this is plain SigV4-signed fetch (aws4fetch, ~7KB) rather
+ * than the AWS SDK: it runs identically on Node and on Workers, and keeps the
+ * Worker bundle small. Two reasons R2 is the right home for brand assets:
+ * downloads cost nothing (no egress fees), and files can be served straight
+ * off Cloudflare's CDN instead of being proxied through the app.
  *
  * Env:
  *   R2_ACCOUNT_ID          from the Cloudflare dashboard
@@ -15,7 +16,7 @@
  *                          when set, viewers download straight from the CDN
  */
 
-import type { GetObjectCommandOutput } from '@aws-sdk/client-s3'
+import { AwsClient } from 'aws4fetch'
 
 export interface R2Config {
   accountId: string
@@ -48,53 +49,73 @@ export function r2PublicUrl(name: string): string | null {
   return `${config.publicBase}/${encodeURIComponent(name)}`
 }
 
-type S3Module = typeof import('@aws-sdk/client-s3')
+let cached: { client: AwsClient; config: R2Config } | null = null
 
-let cached: { client: InstanceType<S3Module['S3Client']>; mod: S3Module; config: R2Config } | null = null
-
-async function connect() {
+function connect(): { client: AwsClient; config: R2Config } {
   const config = r2Config()
   if (!config) throw new Error('R2 is not configured')
-  if (!cached) {
-    const mod = await import('@aws-sdk/client-s3')
-    const client = new mod.S3Client({
-      region: 'auto',
-      endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
-    })
-    cached = { client, mod, config }
+  if (!cached || cached.config.bucket !== config.bucket) {
+    cached = {
+      config,
+      client: new AwsClient({
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+        service: 's3',
+        region: 'auto',
+      }),
+    }
   }
   return cached
 }
 
+function objectUrl(config: R2Config, name: string): string {
+  return `https://${config.bucket}.${config.accountId}.r2.cloudflarestorage.com/${encodeURIComponent(name)}`
+}
+
 export async function r2Get(name: string): Promise<Buffer | null> {
   try {
-    const { client, mod, config } = await connect()
-    const res: GetObjectCommandOutput = await client.send(
-      new mod.GetObjectCommand({ Bucket: config.bucket, Key: name })
-    )
-    if (!res.Body) return null
-    return Buffer.from(await res.Body.transformToByteArray())
+    const { client, config } = connect()
+    const res = await client.fetch(objectUrl(config, name))
+    if (!res.ok) return null
+    return Buffer.from(await res.arrayBuffer())
   } catch {
     return null // missing object, or R2 is having a moment
   }
 }
 
 export async function r2Put(name: string, data: Buffer, contentType?: string): Promise<void> {
-  const { client, mod, config } = await connect()
-  await client.send(new mod.PutObjectCommand({
-    Bucket: config.bucket,
-    Key: name,
-    Body: data,
-    ...(contentType ? { ContentType: contentType } : {}),
-  }))
+  const { client, config } = connect()
+  const res = await client.fetch(objectUrl(config, name), {
+    method: 'PUT',
+    body: new Uint8Array(data),
+    headers: contentType ? { 'Content-Type': contentType } : {},
+  })
+  if (!res.ok) throw new Error(`R2 rejected the upload (${res.status})`)
 }
 
 export async function r2Delete(name: string): Promise<void> {
   try {
-    const { client, mod, config } = await connect()
-    await client.send(new mod.DeleteObjectCommand({ Bucket: config.bucket, Key: name }))
+    const { client, config } = connect()
+    await client.fetch(objectUrl(config, name), { method: 'DELETE' })
   } catch { /* deleting a file that isn't there is fine */ }
+}
+
+/** Sign a URL that carries its own credentials in the query string. */
+async function presign(name: string, method: 'PUT' | 'GET', expiresIn: number, params: Record<string, string> = {}): Promise<string> {
+  const { client, config } = connect()
+  const url = new URL(objectUrl(config, name))
+  url.searchParams.set('X-Amz-Expires', String(expiresIn))
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value)
+  const signed = await client.sign(url.toString(), { method, aws: { signQuery: true } })
+  return signed.url
+}
+
+/**
+ * A short-lived URL the browser can PUT one file to, so big uploads never pass
+ * through the app (and never meet a serverless request-body limit).
+ */
+export function r2PresignUpload(name: string, _contentType: string, expiresIn = 600): Promise<string> {
+  return presign(name, 'PUT', expiresIn)
 }
 
 /**
@@ -103,30 +124,8 @@ export async function r2Delete(name: string): Promise<void> {
  * Used when there's no public domain, or when a file should save rather than
  * open in a tab — either way the bytes come from Cloudflare, not from here.
  */
-export async function r2PresignDownload(name: string, downloadAs?: string): Promise<string> {
-  const { client, mod, config } = await connect()
-  const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner')
-  return getSignedUrl(
-    client,
-    new mod.GetObjectCommand({
-      Bucket: config.bucket,
-      Key: name,
-      ...(downloadAs ? { ResponseContentDisposition: `attachment; filename="${downloadAs}"` } : {}),
-    }),
-    { expiresIn: 3600 }
-  )
-}
-
-/**
- * A short-lived URL the browser can PUT one file to, so big uploads never pass
- * through the app (and never meet a serverless request-body limit).
- */
-export async function r2PresignUpload(name: string, contentType: string, expiresIn = 600): Promise<string> {
-  const { client, mod, config } = await connect()
-  const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner')
-  return getSignedUrl(
-    client,
-    new mod.PutObjectCommand({ Bucket: config.bucket, Key: name, ContentType: contentType }),
-    { expiresIn }
-  )
+export function r2PresignDownload(name: string, downloadAs?: string): Promise<string> {
+  return presign(name, 'GET', 3600, downloadAs
+    ? { 'response-content-disposition': `attachment; filename="${downloadAs}"` }
+    : {})
 }
