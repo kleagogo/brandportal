@@ -9,3 +9,8 @@ node_modules/
 
 # typescript
 *.tsbuildinfo
+
+# cloudflare local secrets
+.dev.vars
+.open-next/
+.wrangler/
