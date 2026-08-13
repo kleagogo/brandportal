@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "basel",
+  "name": "pitho",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-09-01",
   // nodejs_compat: the app uses node:crypto and friends.
