@@ -1,4 +1,4 @@
-# Deploying Basel
+# Deploying Pitho
 
 Everything persists through one storage seam (`lib/db.ts`): records in
 Postgres whenever `DATABASE_URL` is set, files in Cloudflare R2 whenever the
@@ -91,7 +91,7 @@ at $20/month.
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | for real file storage | Cloudflare R2. Without these, files go into Postgres — fine for logos, not for video |
 | `R2_PUBLIC_BASE` | with R2 | Public bucket domain, e.g. `https://assets.yourdomain.com`. Serves files off the CDN |
 | `RESEND_API_KEY` | **yes in production** | Magic-link email. Without it, sign-in is refused in production — see below |
-| `EMAIL_FROM` | with Resend | From address on a verified domain, e.g. `Basel <hello@yourdomain.com>` |
+| `EMAIL_FROM` | with Resend | From address on a verified domain, e.g. `Pitho <hello@yourdomain.com>` |
 | `EMAIL_REPLY_TO` | optional | Reply address |
 | `ALLOW_DEV_LINKS` | escape hatch | `1` shows sign-in links in the browser when mail isn't configured. Private deployments only |
 | `ANTHROPIC_API_KEY` | recommended | Brand Agent chat and AI asset descriptions |
@@ -119,5 +119,5 @@ before real users arrive.
   `/api/files/<name>`, which redirects to the CDN when R2 is on.
 - Uploads over the host's request-body limit go straight from the browser to
   R2 on a presigned URL, up to `UPLOAD_MAX_MB`.
-- The demo hub (`/meridian`) is seeded from `brand.config.ts` and works before
+- The demo hub (`/pitho`) is seeded from `brand.config.ts` and works before
   any database row exists.

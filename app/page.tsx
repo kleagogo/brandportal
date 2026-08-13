@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-// ─── Basel — brand asset management for agencies ──────────────────────────────
+// ─── Pitho — brand asset management for agencies ──────────────────────────────
 // The marketing site, styled in the product hub's design system (warm-neutral,
-// Inter, rounded, soft borders). Product lives at /login and /meridian.
+// Inter, rounded, soft borders). Product lives at /login and /pitho.
 
 const CLIENT_SPACES = [
   { name: 'Copperline Coffee', letter: 'C', color: '#A5502A' },
@@ -29,11 +29,11 @@ const FEATURES = [
 ]
 
 const INTEGRATIONS = [
-  { name: 'Figma', body: 'Push finals straight from your files. Basel versions them and flags anything stale in the design file.' },
+  { name: 'Figma', body: 'Push finals straight from your files. Pitho versions them and flags anything stale in the design file.' },
   { name: 'Slack', body: 'Search the library from any channel. Drop the approved file into the thread — not a guess from Drive.' },
   { name: 'Canva', body: 'Locked templates with the right logos, colors and type — safe for the non-designers on the client side.' },
   { name: 'Notion', body: 'Embed living guidelines and asset grids in your wiki. They update themselves when the library changes.' },
-  { name: 'Google Drive', body: 'Point Basel at the mess once. It migrates, dedupes and tags everything — folders stay behind.' },
+  { name: 'Google Drive', body: 'Point Pitho at the mess once. It migrates, dedupes and tags everything — folders stay behind.' },
   { name: 'Adobe CC', body: 'Open assets in Illustrator, Photoshop and InDesign with version history intact — saves the round-trip back.' },
 ]
 
@@ -61,13 +61,13 @@ const PLANS = [
 function Wordmark({ light = false }: { light?: boolean }) {
   return (
     <Link href="/" className="flex items-center gap-2.5">
-      <span className="w-7 h-7 rounded-md bg-[#1a1a1a] text-white flex items-center justify-center font-bold text-[14px]">B</span>
-      <span className={`text-[16px] font-semibold tracking-tight ${light ? 'text-white' : 'text-[#1a1a1a]'}`}>Basel</span>
+      <span className="w-7 h-7 rounded-md bg-[#1a1a1a] text-white flex items-center justify-center font-bold text-[14px]">P</span>
+      <span className={`text-[16px] font-semibold tracking-tight ${light ? 'text-white' : 'text-[#1a1a1a]'}`}>Pitho</span>
     </Link>
   )
 }
 
-export default function BaselLanding() {
+export default function PithoLanding() {
   const [annual, setAnnual] = useState(false)
 
   return (
@@ -84,7 +84,7 @@ export default function BaselLanding() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/meridian" className="hidden sm:block text-[13.5px] text-[#8a8a85] hover:text-[#1a1a1a] transition-colors">Open the demo</Link>
+            <Link href="/pitho" className="hidden sm:block text-[13.5px] text-[#8a8a85] hover:text-[#1a1a1a] transition-colors">Open the demo</Link>
             <Link href="/login" className="text-[13px] font-semibold px-3.5 py-1.5 rounded-lg bg-[#1a1a1a] text-white hover:bg-[#333] transition-colors">Start free</Link>
           </div>
         </div>
@@ -98,13 +98,13 @@ export default function BaselLanding() {
             Stop hunting for the latest logo.
           </h1>
           <p className="text-[16px] leading-relaxed text-[#6b6b66] max-w-[48ch] mb-8">
-            Basel gives every client one clean brand hub — every asset, every version, findable in seconds. Live in ten minutes. No consultants, no enterprise bloat.
+            Pitho gives every client one clean brand hub — every asset, every version, findable in seconds. Live in ten minutes. No consultants, no enterprise bloat.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Link href="/login" className="text-[14px] font-semibold px-5 py-3 rounded-xl bg-[#1a1a1a] text-white hover:bg-[#333] transition-colors">
               Start free — no card required →
             </Link>
-            <Link href="/meridian" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-[#e8e7e4] hover:border-[#1a1a1a] transition-colors">
+            <Link href="/pitho" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-[#e8e7e4] hover:border-[#1a1a1a] transition-colors">
               See it in action
             </Link>
           </div>
@@ -116,7 +116,7 @@ export default function BaselLanding() {
             <span className="w-2.5 h-2.5 rounded-full bg-[#dddcd6]" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#dddcd6]" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#dddcd6]" />
-            <span className="ml-3 text-[11.5px] font-mono text-[#b0afa9]">app.basel.design</span>
+            <span className="ml-3 text-[11.5px] font-mono text-[#b0afa9]">app.pitho.io</span>
           </div>
           <div className="flex">
             <div className="w-40 shrink-0 border-r border-[#e8e7e4] p-3 hidden sm:block">
@@ -201,7 +201,7 @@ export default function BaselLanding() {
           ))}
         </div>
         <div className="mt-8">
-          <Link href="/meridian" className="text-[14px] font-semibold text-[#1a1a1a] underline underline-offset-4 decoration-[#dddcd6] hover:decoration-[#1a1a1a] transition-colors">
+          <Link href="/pitho" className="text-[14px] font-semibold text-[#1a1a1a] underline underline-offset-4 decoration-[#dddcd6] hover:decoration-[#1a1a1a] transition-colors">
             Click around the live product demo →
           </Link>
         </div>
@@ -215,7 +215,7 @@ export default function BaselLanding() {
             Meets your stack where it already works.
           </h2>
           <p className="text-[15px] text-[#6b6b66] max-w-[56ch] mb-12">
-            Basel is the source of truth — your tools pull from it, so the right asset shows up where the work happens.
+            Pitho is the source of truth — your tools pull from it, so the right asset shows up where the work happens.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {INTEGRATIONS.map(it => (
@@ -280,13 +280,13 @@ export default function BaselLanding() {
             From Drive chaos to brand system in ten minutes.
           </h2>
           <p className="text-[16px] text-[#a6a5a1] max-w-[52ch] mx-auto mb-8">
-            Drag your mess in. Basel tags it, versions it, and gives every client a home.
+            Drag your mess in. Pitho tags it, versions it, and gives every client a home.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link href="/login" className="text-[14px] font-semibold px-5 py-3 rounded-xl bg-white text-[#1a1a1a] hover:bg-white/90 transition-colors">
               Start free — no card required →
             </Link>
-            <Link href="/meridian" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-white/25 hover:border-white transition-colors">
+            <Link href="/pitho" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-white/25 hover:border-white transition-colors">
               Open the demo
             </Link>
           </div>
@@ -297,11 +297,11 @@ export default function BaselLanding() {
       <footer className="border-t border-[#e8e7e4] py-10 bg-white">
         <div className="max-w-[1120px] mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
           <Wordmark />
-          <p className="text-[12px] text-[#b0afa9]">© 2026 Basel — made for agencies</p>
+          <p className="text-[12px] text-[#b0afa9]">© 2026 Pitho — made for agencies</p>
           <div className="flex items-center gap-6 text-[13px] text-[#8a8a85]">
             <a href="#product" className="hover:text-[#1a1a1a] transition-colors">Product</a>
             <a href="#pricing" className="hover:text-[#1a1a1a] transition-colors">Pricing</a>
-            <Link href="/meridian" className="hover:text-[#1a1a1a] transition-colors">Demo</Link>
+            <Link href="/pitho" className="hover:text-[#1a1a1a] transition-colors">Demo</Link>
           </div>
         </div>
       </footer>

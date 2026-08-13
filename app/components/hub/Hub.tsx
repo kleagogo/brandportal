@@ -487,7 +487,7 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
           <SpaceSwitcher currentSlug={config.slug} currentName={config.name} />
         </div>
         <a href="/" className="text-[11px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors">
-          Made with Basel
+          Made with Pitho
         </a>
         <button
           onClick={onToggleTheme}

@@ -9,7 +9,7 @@
  *
  * Env:
  *   RESEND_API_KEY   the provider key; without it, no mail goes out
- *   EMAIL_FROM       "Basel <hello@yourdomain.com>" — must be a verified sender
+ *   EMAIL_FROM       "Pitho <hello@yourdomain.com>" — must be a verified sender
  *   EMAIL_REPLY_TO   optional reply address
  *   ALLOW_DEV_LINKS  set to 1 to keep the dev-link fallback in production
  */
@@ -25,7 +25,7 @@ export interface SendResult {
 type Kind = 'login' | 'claim' | 'invite' | 'transfer'
 
 const SUBJECTS: Record<Kind, (hub?: string) => string> = {
-  login: () => 'Your Basel sign-in link',
+  login: () => 'Your Pitho sign-in link',
   claim: hub => `Claim your brand hub${hub ? ` — ${hub}` : ''}`,
   invite: hub => `You've been invited to edit ${hub || 'a brand hub'}`,
   transfer: hub => `You've been offered ownership of ${hub || 'a brand hub'}`,
@@ -71,7 +71,7 @@ export async function sendMagicLink(opts: {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'Basel <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM || 'Pitho <onboarding@resend.dev>',
         to: opts.to,
         subject,
         ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
@@ -103,7 +103,7 @@ function htmlBody(subject: string, lead: string, action: string, url: string): s
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#ffffff;border:1px solid #e8e7e4;border-radius:16px">
           <tr><td style="padding:32px 32px 28px">
-            <p style="margin:0 0 20px;font-size:13px;font-weight:600;letter-spacing:.02em;color:#1a1a1a">Basel</p>
+            <p style="margin:0 0 20px;font-size:13px;font-weight:600;letter-spacing:.02em;color:#1a1a1a">Pitho</p>
             <h1 style="margin:0 0 8px;font-size:20px;line-height:1.25;font-weight:700;color:#1a1a1a">${subject}</h1>
             <p style="margin:0 0 24px;font-size:14px;line-height:1.5;color:#6f6e6a">${lead}</p>
             <a href="${url}" style="display:inline-block;background:#1a1a1a;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:600">${action}</a>
@@ -112,7 +112,7 @@ function htmlBody(subject: string, lead: string, action: string, url: string): s
             </p>
           </td></tr>
         </table>
-        <p style="margin:16px 0 0;font-size:11px;color:#b0afa9">Sent by Basel — brand hubs for agencies</p>
+        <p style="margin:16px 0 0;font-size:11px;color:#b0afa9">Sent by Pitho — brand hubs for agencies</p>
       </td></tr>
     </table>
   </body>
@@ -120,5 +120,5 @@ function htmlBody(subject: string, lead: string, action: string, url: string): s
 }
 
 function textBody(subject: string, lead: string, url: string): string {
-  return `${subject}\n\n${lead}\n\n${url}\n\nThis link works once and expires. If you didn't request it, ignore this email.\n\n— Basel`
+  return `${subject}\n\n${lead}\n\n${url}\n\nThis link works once and expires. If you didn't request it, ignore this email.\n\n— Pitho`
 }

@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 — the landing page — or `/meridian`, the demo hub
+Open http://localhost:3000 — the landing page — or `/pitho`, the demo hub
 (a fictional travel-gear brand; anyone can edit the demo).
 
 ## Environment variables (all optional)

@@ -18,7 +18,7 @@ import { trackPortal, trackPortalView } from './track'
  *   gallery — everything on one scrolling page
  *   minimal — a download list, nothing else
  * White-label branding replaces the logo, name, and accent, and can drop the
- * Basel credit entirely.
+ * Pitho credit entirely.
  */
 export function PortalView({ config, portal }: { config: BrandConfig; portal: SharePortal }) {
   const branding = portal.branding || {}
@@ -50,7 +50,7 @@ export function PortalView({ config, portal }: { config: BrandConfig; portal: Sh
         {!branding.hideCredit && (
           <footer className="border-t border-[var(--hub-border)] py-5 text-center">
             <a href="/" className="text-[11px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors">
-              Made with Basel
+              Made with Pitho
             </a>
           </footer>
         )}

@@ -348,7 +348,7 @@ function Editor({
             className="text-[12px] px-2.5 py-1.5 rounded-xl bg-[var(--hub-panel)] border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
           />
         </Row>
-        <Row label="White-label" hint="Your logo and colors, no Basel credit">
+        <Row label="White-label" hint="Your logo and colors, no Pitho credit">
           <Toggle
             on={whiteLabel}
             onClick={() => {

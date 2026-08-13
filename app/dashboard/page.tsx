@@ -7,7 +7,7 @@ import { NewHubButton, AccountMenu } from './parts'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Client spaces — Basel' }
+export const metadata = { title: 'Client spaces — Pitho' }
 
 /** Count assets across all sections, for the card subtitle. */
 function assetCount(assets: Record<string, unknown[]>): number {
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
       <nav className="border-b border-[#e8e7e4] bg-white px-5 sm:px-8 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="w-7 h-7 rounded-md bg-[#1a1a1a] text-white flex items-center justify-center font-bold text-[14px]">B</span>
-          <span className="text-[15px] font-semibold tracking-tight">Basel</span>
+          <span className="text-[15px] font-semibold tracking-tight">Pitho</span>
         </Link>
         <AccountMenu email={user.email} />
       </nav>

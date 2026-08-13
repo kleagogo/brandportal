@@ -130,7 +130,7 @@ export interface PortalBranding {
   name?: string
   /** Accent color for buttons and highlights. */
   accent?: string
-  /** Hide the "Made with Basel" footer credit (white-label). */
+  /** Hide the "Made with Pitho" footer credit (white-label). */
   hideCredit?: boolean
   /** Short line under the title, e.g. "Prepared by Studio North". */
   note?: string
@@ -155,7 +155,7 @@ export interface SharePortal {
 }
 
 export interface BrandConfig {
-  /** URL slug the hub lives at, e.g. "meridian" → /meridian */
+  /** URL slug the hub lives at, e.g. "pitho" → /pitho */
   slug: string
   name: string
   tagline: string
