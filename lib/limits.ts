@@ -11,13 +11,18 @@ export interface PlanLimits {
   editorsPerHub: number
 }
 
+/**
+ * Early access: the free tier is deliberately generous so the first agencies
+ * can put their whole roster in without hitting a wall. Tighten when billing
+ * exists — see the pricing page, which advertises the same numbers.
+ */
 export const PLANS: Record<'free' | 'pro', PlanLimits> = {
-  free: { hubs: 2, editorsPerHub: 3 },
-  pro: { hubs: 10, editorsPerHub: 25 },
+  free: { hubs: 25, editorsPerHub: 25 },
+  pro: { hubs: 500, editorsPerHub: 200 },
 }
 
 export function limitsFor(user: User): PlanLimits {
   return PLANS[user.plan === 'pro' ? 'pro' : 'free']
 }
 
-export const UPGRADE_HINT = 'Free includes 2 client spaces. Studio raises it to 10.'
+export const UPGRADE_HINT = 'Early access includes 25 client spaces. Need more? Get in touch.'
