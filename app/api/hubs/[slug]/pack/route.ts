@@ -4,6 +4,7 @@ import path from 'path'
 import AdmZip from 'adm-zip'
 import { getHub } from '@/lib/store'
 import { getStorage } from '@/lib/db'
+import { assetKey } from '@/lib/uploads'
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public')
 
@@ -49,10 +50,11 @@ export async function GET(
 
   for (const asset of assets) {
     const safeName = asset.name.replace(/[^\w\- ]+/g, '').trim() || 'asset'
-    if (asset.file.startsWith('/api/files/')) {
-      const filename = path.basename(asset.file.split('?')[0])
-      const data = await getStorage().getFile(filename)
-      if (data) zip.addFile(`${safeName}${path.extname(filename)}`, data)
+    const key = assetKey(asset.file)
+    if (key) {
+      // Ours, wherever it lives — read it from the driver, not over the wire.
+      const data = await getStorage().getFile(path.basename(key))
+      if (data) zip.addFile(`${safeName}${path.extname(key)}`, data)
       else external.push(`${asset.name}: file missing`)
     } else if (asset.file.startsWith('/')) {
       try {

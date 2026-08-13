@@ -14,6 +14,8 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import { Pool } from 'pg'
+import { r2Enabled, r2Get, r2Put } from './r2'
+import { MIME, extensionOf } from './uploads'
 
 export interface Storage {
   getJSON<T>(ns: string, key: string): Promise<T | null>
@@ -163,18 +165,45 @@ export class PgStorage implements Storage {
   }
 }
 
+// ─── R2 files, records elsewhere ──────────────────────────────────────────────
+
+/**
+ * Keeps records where they were (Postgres or disk) and moves the files to R2.
+ *
+ * Reads fall back to the record store, so files uploaded before R2 existed
+ * keep working — nothing has to be migrated for the switch to be safe.
+ */
+class R2Files implements Storage {
+  constructor(private records: Storage) {}
+
+  getJSON<T>(ns: string, key: string) { return this.records.getJSON<T>(ns, key) }
+  putJSON(ns: string, key: string, value: unknown) { return this.records.putJSON(ns, key, value) }
+  deleteJSON(ns: string, key: string) { return this.records.deleteJSON(ns, key) }
+  listKeys(ns: string) { return this.records.listKeys(ns) }
+
+  async getFile(name: string): Promise<Buffer | null> {
+    return (await r2Get(name)) ?? this.records.getFile(name)
+  }
+
+  async putFile(name: string, data: Buffer): Promise<void> {
+    await r2Put(name, data, MIME[extensionOf(name)])
+  }
+}
+
 // ─── Driver selection ─────────────────────────────────────────────────────────
 
 let singleton: Storage | null = null
 
 export function getStorage(): Storage {
   if (!singleton) {
+    let store: Storage
     if (process.env.DATABASE_URL) {
       const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 })
-      singleton = new PgStorage((text, params) => pool.query(text, params as never[]))
+      store = new PgStorage((text, params) => pool.query(text, params as never[]))
     } else {
-      singleton = new FileStorage()
+      store = new FileStorage()
     }
+    singleton = r2Enabled() ? new R2Files(store) : store
   }
   return singleton
 }
