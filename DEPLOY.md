@@ -34,8 +34,16 @@ Cloudflare dashboard → **Workers & Pages** → *Create* → **Import a reposit
 
 | Setting | Value |
 | --- | --- |
-| Build command | `npx opennextjs-cloudflare build` |
+| Build command | `npm run build` |
 | Deploy command | `npx wrangler deploy` |
+
+Both are what Cloudflare pre-fills, so the defaults are correct — `npm run build`
+builds the Worker (`next build` alone would leave `wrangler deploy` with nothing
+to upload; use `npm run build:next` if you ever want just the Next output).
+
+Name the project **the same as `name` in `wrangler.jsonc`** (`pitho`). If they
+differ, the build runs against one Worker and `wrangler deploy` publishes a
+second — and any variables you set land on the wrong one.
 
 Add the variables from the table below under **Settings → Variables and
 Secrets** (mark the keys as *Secret*), then redeploy.
