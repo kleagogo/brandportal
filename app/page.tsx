@@ -41,7 +41,7 @@ const PLANS = [
   {
     name: 'Free', monthly: '$0', annual: '$0', per: 'forever',
     who: 'For freelancers getting organized',
-    features: ['2 client spaces', '5 GB storage', 'Unlimited seats', 'Search & version history'],
+    features: ['25 client spaces while in early access', 'Generous storage', 'Unlimited seats', 'Search & version history'],
     cta: 'Start free →', popular: false,
   },
   {
