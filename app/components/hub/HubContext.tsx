@@ -14,6 +14,8 @@ interface HubContextValue {
   update: (mutate: (draft: BrandConfig) => void) => void
   /** Show download controls. Share portals can turn downloads off. */
   allowDownload: boolean
+  /** Set when the hub is being viewed through a share portal (/s/<id>). */
+  portalId?: string
 }
 
 const HubContext = createContext<HubContextValue | null>(null)
@@ -26,7 +28,7 @@ export function useHub() {
 
 const SAVE_DEBOUNCE_MS = 800
 
-export function HubProvider({ initial, children, allowDownload = true }: { initial: BrandConfig; children: React.ReactNode; allowDownload?: boolean }) {
+export function HubProvider({ initial, children, allowDownload = true, portalId }: { initial: BrandConfig; children: React.ReactNode; allowDownload?: boolean; portalId?: string }) {
   const [config, setConfig] = useState<BrandConfig>(initial)
   const [editing, setEditing] = useState(false)
   const [saveState, setSaveState] = useState<SaveState>('idle')
@@ -81,7 +83,7 @@ export function HubProvider({ initial, children, allowDownload = true }: { initi
   }, [])
 
   return (
-    <HubContext.Provider value={{ config, editing, setEditing, saveState, update, allowDownload }}>
+    <HubContext.Provider value={{ config, editing, setEditing, saveState, update, allowDownload, portalId }}>
       {children}
     </HubContext.Provider>
   )

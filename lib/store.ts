@@ -10,6 +10,7 @@ import seed from '@/brand.config'
 import type { BrandConfig, SharePortal } from '@/app/types/brand'
 import type { User } from './users'
 import { getStorage } from './db'
+import { deletePortalStats } from './analytics'
 
 export const PREVIEW_TTL_MS = 24 * 60 * 60 * 1000
 
@@ -223,6 +224,7 @@ export async function savePortal(portal: SharePortal): Promise<SharePortal> {
 
 export async function deletePortal(id: string): Promise<void> {
   await getStorage().deleteJSON('portals', id)
+  await deletePortalStats(id)
 }
 
 /** Every portal shared from one hub, newest first. */

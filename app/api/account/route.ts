@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
   const token = await createToken({ purpose: 'email-change', email: newEmail, userId: user.id })
   const url = `${req.nextUrl.origin}/api/auth/verify?token=${token}`
   const result = await sendMagicLink({ to: newEmail, url, kind: 'login' })
+  if (result.error) return NextResponse.json({ error: result.error }, { status: 502 })
   return NextResponse.json(result)
 }
 

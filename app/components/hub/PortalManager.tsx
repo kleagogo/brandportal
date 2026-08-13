@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PortalTemplate, SharePortal } from '@/app/types/brand'
 import { useHub } from './HubContext'
 import { Icon } from './Icon'
+import { uploadAsset } from './upload-client'
 
 const TEMPLATES: Array<{ id: PortalTemplate; label: string; blurb: string }> = [
   { id: 'full',    label: 'Full hub',  blurb: 'Sidebar and every section — the hub, read-only' },
@@ -12,6 +13,8 @@ const TEMPLATES: Array<{ id: PortalTemplate; label: string; blurb: string }> = [
 ]
 
 type Draft = Omit<SharePortal, 'id' | 'slug' | 'createdAt'>
+
+interface PortalSummary { views: number; downloads: number; lastViewAt?: string }
 
 function emptyDraft(name: string): Draft {
   return {
@@ -34,6 +37,8 @@ function emptyDraft(name: string): Draft {
 export function PortalManager({ canEdit }: { canEdit: boolean }) {
   const { config } = useHub()
   const [portals, setPortals] = useState<SharePortal[]>([])
+  const [stats, setStats] = useState<Record<string, PortalSummary>>({})
+  const [activity, setActivity] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [editing, setEditing] = useState<string | null>(null) // portal id, or 'new'
   const [draft, setDraft] = useState<Draft>(emptyDraft(config.name))
@@ -49,6 +54,7 @@ export function PortalManager({ canEdit }: { canEdit: boolean }) {
       if (!res.ok) return
       const data = await res.json()
       setPortals(data.portals || [])
+      setStats(data.stats || {})
     } catch { /* the list just stays empty */ } finally {
       setLoaded(true)
     }
@@ -136,36 +142,98 @@ export function PortalManager({ canEdit }: { canEdit: boolean }) {
           {loaded && portals.length === 0 && (
             <p className="text-[12px] text-[var(--hub-faint)]">No share links yet — create one to send a client a tailored view.</p>
           )}
-          {portals.map(portal => (
-            <div key={portal.id} className="flex items-center gap-2 bg-[var(--hub-soft)] rounded-xl px-3 py-2 group">
-              <div className="min-w-0 flex-1">
-                <p className="text-[12.5px] font-medium truncate">{portal.name}</p>
-                <p className="text-[11px] text-[var(--hub-faint)] truncate">
-                  {TEMPLATES.find(t => t.id === portal.template)?.label}
-                  {portal.password ? ' · password' : ''}
-                  {portal.expiresAt ? ` · until ${new Date(portal.expiresAt).toLocaleDateString()}` : ''}
-                  {portal.branding?.hideCredit ? ' · white-label' : ''}
-                  {!portal.allowDownload ? ' · view only' : ''}
-                </p>
+          {portals.map(portal => {
+            const stat = stats[portal.id] || { views: 0, downloads: 0 }
+            return (
+            <div key={portal.id} className="bg-[var(--hub-soft)] rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12.5px] font-medium truncate">{portal.name}</p>
+                  <p className="text-[11px] text-[var(--hub-faint)] truncate">
+                    {TEMPLATES.find(t => t.id === portal.template)?.label}
+                    {portal.password ? ' · password' : ''}
+                    {portal.expiresAt ? ` · until ${new Date(portal.expiresAt).toLocaleDateString()}` : ''}
+                    {portal.branding?.hideCredit ? ' · white-label' : ''}
+                    {!portal.allowDownload ? ' · view only' : ''}
+                  </p>
+                </div>
+                <button onClick={() => copy(portal)} className="text-[11.5px] font-semibold text-[var(--hub-text)] whitespace-nowrap px-2 py-1 rounded-lg hover:bg-[var(--hub-panel)] transition-colors">
+                  {copiedId === portal.id ? 'Copied ✓' : 'Copy'}
+                </button>
+                <a href={`/s/${portal.id}`} target="_blank" rel="noopener noreferrer" className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Open">
+                  <Icon name="link" size={12} />
+                </a>
+                <button onClick={() => startEdit(portal)} className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Edit">
+                  <Icon name="edit" size={12} />
+                </button>
+                <button onClick={() => destroy(portal.id)} className="text-[var(--hub-faint)] hover:text-red-500 transition-colors" title="Delete">
+                  <Icon name="trash" size={12} />
+                </button>
               </div>
-              <button onClick={() => copy(portal)} className="text-[11.5px] font-semibold text-[var(--hub-text)] whitespace-nowrap px-2 py-1 rounded-lg hover:bg-[var(--hub-panel)] transition-colors">
-                {copiedId === portal.id ? 'Copied ✓' : 'Copy'}
+
+              <button
+                onClick={() => setActivity(activity === portal.id ? null : portal.id)}
+                className="mt-1 flex items-center gap-2.5 text-[11px] text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors"
+              >
+                <span><b className="font-semibold">{stat.views}</b> {stat.views === 1 ? 'view' : 'views'}</span>
+                <span><b className="font-semibold">{stat.downloads}</b> {stat.downloads === 1 ? 'download' : 'downloads'}</span>
+                {stat.lastViewAt && <span className="text-[var(--hub-faint)]">last {relativeTime(stat.lastViewAt)}</span>}
+                {(stat.views > 0 || stat.downloads > 0) && <Icon name={activity === portal.id ? 'up' : 'down'} size={9} />}
               </button>
-              <a href={`/s/${portal.id}`} target="_blank" rel="noopener noreferrer" className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Open">
-                <Icon name="link" size={12} />
-              </a>
-              <button onClick={() => startEdit(portal)} className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Edit">
-                <Icon name="edit" size={12} />
-              </button>
-              <button onClick={() => destroy(portal.id)} className="text-[var(--hub-faint)] hover:text-red-500 transition-colors" title="Delete">
-                <Icon name="trash" size={12} />
-              </button>
+
+              {activity === portal.id && <Activity slug={config.slug} portalId={portal.id} />}
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
   )
+}
+
+// ─── Activity ─────────────────────────────────────────────────────────────────
+
+interface PortalEvent { at: string; type: 'view' | 'download'; label?: string }
+
+/** The recent view/download tail for one share link. */
+function Activity({ slug, portalId }: { slug: string; portalId: string }) {
+  const [events, setEvents] = useState<PortalEvent[] | null>(null)
+
+  useEffect(() => {
+    fetch(`/api/hubs/${encodeURIComponent(slug)}/portals/${portalId}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setEvents(d?.stats?.recent || []))
+      .catch(() => setEvents([]))
+  }, [slug, portalId])
+
+  if (!events) return <p className="text-[11px] text-[var(--hub-faint)] mt-2">Loading…</p>
+  if (events.length === 0) return <p className="text-[11px] text-[var(--hub-faint)] mt-2">Nothing yet — no one has opened this link.</p>
+
+  return (
+    <div className="mt-2 pt-2 border-t border-dashed border-[var(--hub-border)] space-y-1 max-h-40 overflow-y-auto">
+      {events.map((event, i) => (
+        <div key={`${event.at}-${i}`} className="flex items-center gap-2 text-[11px]">
+          <Icon name={event.type === 'view' ? 'link' : 'download'} size={10} />
+          <span className="text-[var(--hub-muted)] truncate flex-1">
+            {event.type === 'view' ? 'Opened the link' : `Downloaded ${event.label || 'a file'}`}
+          </span>
+          <span className="text-[var(--hub-faint)] shrink-0">{relativeTime(event.at)}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const minutes = Math.round(diff / 60_000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.round(hours / 24)
+  if (days < 30) return `${days}d ago`
+  return new Date(iso).toLocaleDateString()
 }
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
@@ -203,12 +271,8 @@ function Editor({
   async function uploadLogo(file: File) {
     setLogoBusy(true)
     try {
-      const form = new FormData()
-      form.append('file', file)
-      form.append('slug', config.slug)
-      const res = await fetch('/api/upload', { method: 'POST', body: form })
-      const data = await res.json()
-      if (res.ok) setBranding({ logoUrl: data.url })
+      const data = await uploadAsset(file, config.slug)
+      setBranding({ logoUrl: data.url })
     } catch { /* keep whatever logo is set */ } finally {
       setLogoBusy(false)
     }

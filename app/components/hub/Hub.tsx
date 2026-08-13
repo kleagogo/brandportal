@@ -15,6 +15,7 @@ import { SettingsModal } from './SettingsModal'
 import { SearchBox } from './SearchBox'
 import { HomeSection } from './HomeSection'
 import { SpaceSwitcher } from './SpaceSwitcher'
+import { uploadAsset } from './upload-client'
 
 function SubBrandPlaceholder({ label }: { label: string }) {
   return (
@@ -387,12 +388,7 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
   async function uploadLogo(file: File) {
     setLogoUploading(true)
     try {
-      const form = new FormData()
-      form.append('file', file)
-      form.append('slug', config.slug)
-      const res = await fetch('/api/upload', { method: 'POST', body: form })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
+      const data = await uploadAsset(file, config.slug)
       update(c => { c.logoUrl = data.url })
     } catch {
       // Leave the current logo in place on failure.

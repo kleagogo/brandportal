@@ -4,6 +4,8 @@ import { useRef, useState } from 'react'
 import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
+import { trackPortal } from '../portal/track'
+import { uploadAsset } from './upload-client'
 import type { AssetFile } from '@/app/types/brand'
 
 function isImage(file: string): boolean {
@@ -48,13 +50,17 @@ function TagRow({ tags, onAdd, onRemove }: { tags: string[]; onAdd: (t: string) 
   )
 }
 
-function downloadHref(file: string): string {
-  return file.startsWith('/api/files/') ? `${file}?dl=1` : file
+export function downloadHref(file: string): string {
+  if (file.startsWith('/api/files/')) return `${file}?dl=1`
+  // Blob-hosted files download instead of opening when asked to.
+  if (file.includes('.blob.vercel-storage.com')) return `${file}${file.includes('?') ? '&' : '?'}download=1`
+  return file
 }
 
 export function AssetsSection({ sectionId }: { sectionId: string }) {
-  const { config, editing, update, allowDownload } = useHub()
+  const { config, editing, update, allowDownload, portalId } = useHub()
   const [uploading, setUploading] = useState(0)
+  const [progress, setProgress] = useState<{ name: string; percent: number } | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -68,12 +74,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
     setUploading(u => u + list.length)
     for (const file of list) {
       try {
-        const form = new FormData()
-        form.append('file', file)
-        form.append('slug', config.slug)
-        const res = await fetch('/api/upload', { method: 'POST', body: form })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || 'Upload failed')
+        const data = await uploadAsset(file, config.slug, percent => setProgress({ name: file.name, percent }))
         // If Claude described the image, its name/tags/usage prefill the card.
         const asset: AssetFile = {
           name: data.suggestion?.name || file.name.replace(/\.[^.]*$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()),
@@ -90,6 +91,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
         setError(e instanceof Error ? e.message : 'Upload failed')
       } finally {
         setUploading(u => u - 1)
+        setProgress(null)
       }
     }
   }
@@ -103,6 +105,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
         {assets.length > 0 && hasLocalFiles && allowDownload && (
           <a
             href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(sectionId)}`}
+            onClick={() => trackPortal(portalId, 'download', `${label} (.zip)`)}
             className="flex items-center gap-1.5 text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-3.5 py-2 rounded-xl hover:opacity-85 transition-colors"
           >
             <Icon name="download" size={13} /> Download all (.zip)
@@ -154,8 +157,16 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                 className="w-full min-h-[120px] border-2 border-dashed border-[var(--hub-border)] rounded-xl text-[var(--hub-faint)] hover:border-[var(--hub-text)] hover:text-[var(--hub-text)] transition-colors flex flex-col items-center justify-center gap-2 p-6"
               >
                 <Icon name="upload" size={20} />
-                <span className="text-[13px] font-medium">{uploading > 0 ? `Uploading ${uploading}…` : 'Add files'}</span>
-                <span className="text-[11px]">drop here or click to browse</span>
+                <span className="text-[13px] font-medium">
+                  {progress ? `${progress.name} — ${Math.round(progress.percent)}%` : uploading > 0 ? `Uploading ${uploading}…` : 'Add files'}
+                </span>
+                {progress ? (
+                  <span className="w-40 h-1 rounded-full bg-[var(--hub-border)] overflow-hidden">
+                    <span className="block h-full bg-[var(--hub-text)] transition-all" style={{ width: `${progress.percent}%` }} />
+                  </span>
+                ) : (
+                  <span className="text-[11px]">drop here or click to browse</span>
+                )}
               </button>
             )}
           </div>
@@ -186,7 +197,7 @@ function groupBySubgroup(assets: AssetFile[]): Array<{ subgroup: string; items: 
 }
 
 function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
-  const { config, editing, update, allowDownload } = useHub()
+  const { config, editing, update, allowDownload, portalId } = useHub()
   const i = index
   const tileClass = asset.ratio === 'wide' ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
   const versions = asset.versions || []
@@ -199,12 +210,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
   async function uploadVersion(file: File) {
     setUploadingVersion(true)
     try {
-      const form = new FormData()
-      form.append('file', file)
-      form.append('slug', config.slug)
-      const res = await fetch('/api/upload', { method: 'POST', body: form })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
+      const data = await uploadAsset(file, config.slug)
       update(c => {
         const a = c.assets[sectionId][i]
         const list = a.versions || []
@@ -292,6 +298,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
           <a
             href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
             {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
+            onClick={() => trackPortal(portalId, 'download', asset.name)}
             className="w-7 h-7 rounded-lg border border-[var(--hub-border)] flex items-center justify-center hover:bg-[var(--hub-btn)] hover:text-[var(--hub-btn-text)] hover:border-[var(--hub-text)] transition-colors text-[var(--hub-muted)] shrink-0"
             title={asset.external ? `Open ${asset.name}` : `Download ${asset.name}`}
           >

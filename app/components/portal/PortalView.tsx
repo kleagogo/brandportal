@@ -1,13 +1,14 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { BrandConfig, SectionConfig, SharePortal } from '@/app/types/brand'
 import { HubProvider, useHub } from '../hub/HubContext'
 import { Icon } from '../hub/Icon'
 import { ColorsSection } from '../hub/ColorsSection'
 import { TypographySection } from '../hub/TypographySection'
-import { AssetsSection } from '../hub/AssetsSection'
+import { AssetsSection, downloadHref } from '../hub/AssetsSection'
 import { GuidelinesSection } from '../hub/GuidelinesSection'
+import { trackPortal, trackPortalView } from './track'
 
 /**
  * The read-only view a client sees at /s/<id>.
@@ -26,6 +27,9 @@ export function PortalView({ config, portal }: { config: BrandConfig; portal: Sh
     ? ({ '--hub-btn': accent, '--hub-btn-text': readableOn(accent) } as React.CSSProperties)
     : undefined
 
+  // One view per browser session — the owner sees this in the Share modal.
+  useEffect(() => { trackPortalView(portal.id) }, [portal.id])
+
   const fontUrls = useMemo(() => {
     const urls = new Set<string>()
     for (const group of config.typography) {
@@ -35,7 +39,7 @@ export function PortalView({ config, portal }: { config: BrandConfig; portal: Sh
   }, [config.typography])
 
   return (
-    <HubProvider initial={config} allowDownload={portal.allowDownload}>
+    <HubProvider initial={config} allowDownload={portal.allowDownload} portalId={portal.id}>
       <div className="hub-light min-h-screen bg-[var(--hub-bg)] text-[var(--hub-text)] flex flex-col" style={style}>
         {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
         {portal.template === 'full'
@@ -189,7 +193,7 @@ function GalleryTemplate({ config, portal }: { config: BrandConfig; portal: Shar
 // ─── Minimal: downloads only ──────────────────────────────────────────────────
 
 function MinimalTemplate({ config, portal }: { config: BrandConfig; portal: SharePortal }) {
-  const { allowDownload } = useHub()
+  const { allowDownload, portalId } = useHub()
   const sections = visibleSections(config).filter(s => (config.assets[s.id] || []).length > 0)
 
   return (
@@ -214,6 +218,7 @@ function MinimalTemplate({ config, portal }: { config: BrandConfig; portal: Shar
               {allowDownload && hasLocalFiles && (
                 <a
                   href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(section.id)}`}
+                  onClick={() => trackPortal(portalId, 'download', `${section.label} (.zip)`)}
                   className="text-[12px] font-semibold text-[var(--hub-text)] underline underline-offset-2 whitespace-nowrap"
                 >
                   Download all
@@ -239,8 +244,9 @@ function MinimalTemplate({ config, portal }: { config: BrandConfig; portal: Shar
                   </div>
                   {allowDownload && (
                     <a
-                      href={asset.file.startsWith('/api/files/') ? `${asset.file}?dl=1` : asset.file}
+                      href={downloadHref(asset.file)}
                       {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
+                      onClick={() => trackPortal(portalId, 'download', asset.name)}
                       className="text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[var(--hub-btn)] text-[var(--hub-btn-text)] hover:opacity-85 transition-colors whitespace-nowrap shrink-0"
                     >
                       {asset.external ? 'Open' : 'Download'}

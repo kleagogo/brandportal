@@ -60,7 +60,8 @@ export async function PUT(
     const hub = await getHub(slug)
     const token = await createToken({ purpose: 'transfer', email, slug })
     const url = `${req.nextUrl.origin}/api/auth/verify?token=${token}`
-    const result = await sendMagicLink({ to: email, url, kind: 'invite', hubName: hub?.name })
+    const result = await sendMagicLink({ to: email, url, kind: 'transfer', hubName: hub?.name })
+    if (result.error) return NextResponse.json({ error: result.error }, { status: 502 })
     return NextResponse.json({ ...result, transfer: email })
   }
 
