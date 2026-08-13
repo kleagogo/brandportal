@@ -81,6 +81,22 @@ export function storageName(originalName: string): string {
   return `${base}-${unique}.${ext}`
 }
 
+/**
+ * The storage key behind an asset URL, for files this app holds — whether
+ * they're proxied (/api/files/x.png) or served from the CDN. Returns null for
+ * genuinely external links.
+ */
+export function assetKey(fileUrl: string): string | null {
+  if (fileUrl.startsWith('/api/files/')) {
+    return decodeURIComponent(fileUrl.split('?')[0].slice('/api/files/'.length))
+  }
+  const base = process.env.R2_PUBLIC_BASE?.replace(/\/+$/, '')
+  if (base && fileUrl.startsWith(`${base}/`)) {
+    return decodeURIComponent(fileUrl.split('?')[0].slice(base.length + 1))
+  }
+  return null
+}
+
 export function humanSize(bytes: number): string {
   if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)}GB`
   if (bytes >= 1024 * 1024) return `${Math.round(bytes / 1024 / 1024)}MB`

@@ -18,6 +18,9 @@ export interface UploadResult {
 }
 
 interface UploadConfig {
+  /** Cloudflare R2 — presigned PUT straight from the browser. */
+  r2: boolean
+  /** Vercel Blob — the same idea, different provider. */
   blob: boolean
   directLimit: number
   maxBytes: number
@@ -30,7 +33,7 @@ export function uploadConfig(): Promise<UploadConfig> {
   if (!cached) {
     cached = fetch('/api/upload/config')
       .then(r => r.json())
-      .catch(() => ({ blob: false, directLimit: 4 * 1024 * 1024, maxBytes: 4 * 1024 * 1024, allowed: [] }))
+      .catch(() => ({ r2: false, blob: false, directLimit: 4 * 1024 * 1024, maxBytes: 4 * 1024 * 1024, allowed: [] }))
   }
   return cached
 }
@@ -39,6 +42,44 @@ export function humanSize(bytes: number): string {
   if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)}GB`
   if (bytes >= 1024 * 1024) return `${Math.round(bytes / 1024 / 1024)}MB`
   return `${Math.max(1, Math.round(bytes / 1024))}KB`
+}
+
+/** PUT a file to a presigned URL, reporting progress as it goes. */
+function putWithProgress(
+  url: string,
+  file: File,
+  contentType: string,
+  onProgress?: (percent: number) => void
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', url)
+    xhr.setRequestHeader('Content-Type', contentType)
+    xhr.upload.onprogress = event => {
+      if (event.lengthComputable) onProgress?.((event.loaded / event.total) * 100)
+    }
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300
+      ? resolve()
+      : reject(new Error(`Upload failed (${xhr.status})`)))
+    xhr.onerror = () => reject(new Error(`Couldn’t upload ${file.name}`))
+    xhr.send(file)
+  })
+}
+
+/** Ask for a name/tags suggestion for a file that bypassed the server. */
+async function describeStored(body: { key?: string; url?: string; name: string; slug: string }) {
+  try {
+    const res = await fetch('/api/upload/describe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) return {}
+    const suggestion = (await res.json()).suggestion
+    return suggestion ? { suggestion } : {}
+  } catch {
+    return {} // suggestions are a bonus, never a blocker
+  }
 }
 
 export async function uploadAsset(
@@ -57,6 +98,25 @@ export async function uploadAsset(
     )
   }
 
+  if (config.r2 && file.size > config.directLimit) {
+    const res = await fetch('/api/upload/presign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: file.name, slug, size: file.size }),
+    })
+    const signed = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(signed.error || `Couldn’t upload ${file.name}`)
+
+    await putWithProgress(signed.uploadUrl, file, signed.contentType, onProgress)
+
+    return {
+      url: signed.url,
+      format: signed.format,
+      size: file.size,
+      ...(await describeStored({ key: signed.key, name: file.name, slug })),
+    }
+  }
+
   if (config.blob && file.size > config.directLimit) {
     onProgress?.(0)
     const blob = await upload(file.name, file, {
@@ -67,18 +127,12 @@ export async function uploadAsset(
       onUploadProgress: event => onProgress?.(event.percentage),
     })
     onProgress?.(100)
-    // The file never touched the server, so ask for suggestions separately.
-    let suggestion: UploadResult['suggestion']
-    try {
-      const res = await fetch('/api/upload/describe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: blob.url, name: file.name, slug }),
-      })
-      if (res.ok) suggestion = (await res.json()).suggestion || undefined
-    } catch { /* suggestions are a bonus, never a blocker */ }
-
-    return { url: blob.url, format: ext.toUpperCase(), size: file.size, ...(suggestion ? { suggestion } : {}) }
+    return {
+      url: blob.url,
+      format: ext.toUpperCase(),
+      size: file.size,
+      ...(await describeStored({ url: blob.url, name: file.name, slug })),
+    }
   }
 
   const form = new FormData()

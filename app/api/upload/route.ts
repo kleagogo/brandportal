@@ -4,6 +4,7 @@ import { getSessionUser } from '@/lib/auth'
 import { getStorage } from '@/lib/db'
 import { describeAsset } from '@/lib/vision'
 import { ALLOWED_EXT, blobEnabled, extensionOf, humanSize, serverUploadLimit, storageName } from '@/lib/uploads'
+import { r2Enabled } from '@/lib/r2'
 
 /**
  * Direct upload — the file is posted here and stored by the driver.
@@ -31,9 +32,9 @@ export async function POST(req: NextRequest) {
   const limit = serverUploadLimit()
   if (file.size > limit) {
     return NextResponse.json({
-      error: blobEnabled()
+      error: blobEnabled() || r2Enabled()
         ? `Files over ${humanSize(limit)} upload straight to storage — reload the page and try again`
-        : `File is too large (max ${humanSize(limit)}). Connect blob storage to upload bigger files.`,
+        : `File is too large (max ${humanSize(limit)}). Connect object storage to upload bigger files.`,
     }, { status: 413 })
   }
 
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest) {
   const suggestion = await describeAsset({ kind: 'buffer', buffer, ext }, file.name)
 
   return NextResponse.json({
+    // Always an app URL — /api/files redirects to the CDN when R2 is on.
     url: `/api/files/${filename}`,
     originalName: file.name,
     format: ext.toUpperCase(),
