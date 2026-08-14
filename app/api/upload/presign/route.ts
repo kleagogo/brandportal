@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { canEditHub, getHub, getMeta } from '@/lib/store'
 import { getSessionUser } from '@/lib/auth'
-import { r2Enabled, r2PresignUpload } from '@/lib/r2'
+import { r2DirectUploads, r2PresignUpload } from '@/lib/r2'
 import { ALLOWED_EXT, MIME, extensionOf, maxUploadBytes, storageName } from '@/lib/uploads'
 
 /**
@@ -12,7 +12,7 @@ import { ALLOWED_EXT, MIME, extensionOf, maxUploadBytes, storageName } from '@/l
  * hub gets a URL, and it's scoped to a single generated key.
  */
 export async function POST(req: NextRequest) {
-  if (!r2Enabled()) {
+  if (!r2DirectUploads()) {
     return NextResponse.json({ error: 'Direct uploads aren’t configured on this deployment' }, { status: 501 })
   }
 

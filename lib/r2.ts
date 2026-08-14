@@ -1,11 +1,19 @@
 /**
  * Cloudflare R2 — where uploaded files live once it's configured.
  *
- * R2 speaks S3, so this is plain SigV4-signed fetch (aws4fetch, ~7KB) rather
- * than the AWS SDK: it runs identically on Node and on Workers, and keeps the
- * Worker bundle small. Two reasons R2 is the right home for brand assets:
- * downloads cost nothing (no egress fees), and files can be served straight
- * off Cloudflare's CDN instead of being proxied through the app.
+ * Two reasons R2 is the right home for brand assets: downloads cost nothing
+ * (no egress fees), and files can be served straight off Cloudflare's CDN
+ * instead of being proxied through the app.
+ *
+ * There are two ways to reach the bucket, and the app takes whichever it has:
+ *  - A Worker binding (`r2_buckets` in wrangler.jsonc). Nothing to configure
+ *    beyond the binding itself, and no credentials to leak or rotate.
+ *  - The S3 API, SigV4-signed with aws4fetch (~7KB, no AWS SDK). This is the
+ *    only way to presign a URL, which is what lets the browser send a large
+ *    file straight to R2 without it passing through the app.
+ *
+ * So the two questions are answered separately: r2Enabled() means "files can
+ * live in R2", r2DirectUploads() means "the browser can talk to R2 itself".
  *
  * Env:
  *   R2_ACCOUNT_ID          from the Cloudflare dashboard
@@ -17,6 +25,28 @@
  */
 
 import { AwsClient } from 'aws4fetch'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
+
+/** The slice of Cloudflare's R2Bucket this app actually uses. */
+interface R2BucketBinding {
+  get(key: string): Promise<{ arrayBuffer(): Promise<ArrayBuffer> } | null>
+  put(key: string, value: ArrayBuffer, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>
+  delete(key: string): Promise<void>
+}
+
+/**
+ * The bound bucket, when running on Workers with `r2_buckets` configured.
+ * There's no Cloudflare context under `next dev` or at build time, so a
+ * missing binding is an ordinary state here rather than a failure.
+ */
+function bucketBinding(): R2BucketBinding | null {
+  try {
+    const env = getCloudflareContext().env as unknown as { ASSETS_BUCKET?: R2BucketBinding }
+    return env.ASSETS_BUCKET ?? null
+  } catch {
+    return null
+  }
+}
 
 export interface R2Config {
   accountId: string
@@ -38,7 +68,17 @@ export function r2Config(): R2Config | null {
   }
 }
 
+/** Can uploaded files live in R2 — whether by binding or by API keys? */
 export function r2Enabled(): boolean {
+  return bucketBinding() !== null || r2Config() !== null
+}
+
+/**
+ * Can the browser reach R2 without going through the app? Presigning is an
+ * S3-API trick, so a binding alone doesn't grant it — uploads fall back to
+ * being posted here and forwarded on.
+ */
+export function r2DirectUploads(): boolean {
   return r2Config() !== null
 }
 
@@ -73,6 +113,15 @@ function objectUrl(config: R2Config, name: string): string {
 }
 
 export async function r2Get(name: string): Promise<Buffer | null> {
+  const bucket = bucketBinding()
+  if (bucket) {
+    try {
+      const object = await bucket.get(name)
+      return object ? Buffer.from(await object.arrayBuffer()) : null
+    } catch {
+      return null
+    }
+  }
   try {
     const { client, config } = connect()
     const res = await client.fetch(objectUrl(config, name))
@@ -84,6 +133,12 @@ export async function r2Get(name: string): Promise<Buffer | null> {
 }
 
 export async function r2Put(name: string, data: Buffer, contentType?: string): Promise<void> {
+  const bucket = bucketBinding()
+  if (bucket) {
+    const body = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer
+    await bucket.put(name, body, contentType ? { httpMetadata: { contentType } } : undefined)
+    return
+  }
   const { client, config } = connect()
   const res = await client.fetch(objectUrl(config, name), {
     method: 'PUT',
@@ -94,6 +149,11 @@ export async function r2Put(name: string, data: Buffer, contentType?: string): P
 }
 
 export async function r2Delete(name: string): Promise<void> {
+  const bucket = bucketBinding()
+  if (bucket) {
+    await bucket.delete(name).catch(() => {})
+    return
+  }
   try {
     const { client, config } = connect()
     await client.fetch(objectUrl(config, name), { method: 'DELETE' })

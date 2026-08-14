@@ -11,7 +11,15 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  // Uploaded assets. Binding the bucket means no S3 API token to issue,
+  // store, or rotate — see lib/r2.ts for what the binding can and can't do.
+  "r2_buckets": [
+    {
+      "binding": "ASSETS_BUCKET",
+      "bucket_name": "pitho-assets"
+    }
+  ]
   // Secrets (DATABASE_URL, AUTH_SECRET, R2_*, RESEND_API_KEY, ANTHROPIC_API_KEY)
   // are set in the Cloudflare dashboard, not here — they don't belong in git.
 }

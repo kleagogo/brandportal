@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/auth'
 import { getStorage } from '@/lib/db'
 import { describeAsset } from '@/lib/vision'
 import { ALLOWED_EXT, blobEnabled, extensionOf, humanSize, serverUploadLimit, storageName } from '@/lib/uploads'
-import { r2Enabled } from '@/lib/r2'
+import { r2DirectUploads } from '@/lib/r2'
 
 /**
  * Direct upload — the file is posted here and stored by the driver.
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const limit = serverUploadLimit()
   if (file.size > limit) {
     return NextResponse.json({
-      error: blobEnabled() || r2Enabled()
+      error: blobEnabled() || r2DirectUploads()
         ? `Files over ${humanSize(limit)} upload straight to storage — reload the page and try again`
         : `File is too large (max ${humanSize(limit)}). Connect object storage to upload bigger files.`,
     }, { status: 413 })
