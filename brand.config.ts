@@ -13,7 +13,7 @@ import type { BrandConfig } from './app/types/brand'
 
 const config: BrandConfig = {
   // ─── Identity ───────────────────────────────────────────────────────────────
-  slug: 'pitho',
+  slug: 'demo',
   name: 'Pitho',
   tagline: 'One clean brand hub for every client.',
   logoUrl: '/brand/pitho-mark.svg',

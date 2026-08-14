@@ -119,5 +119,5 @@ before real users arrive.
   `/api/files/<name>`, which redirects to the CDN when R2 is on.
 - Uploads over the host's request-body limit go straight from the browser to
   R2 on a presigned URL, up to `UPLOAD_MAX_MB`.
-- The demo hub (`/pitho`) is seeded from `brand.config.ts` and works before
+- The demo hub (`/demo`) is seeded from `brand.config.ts` and works before
   any database row exists.

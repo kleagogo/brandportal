@@ -211,6 +211,18 @@ export function getStorage(): Storage {
   return singleton
 }
 
+/**
+ * Is there a store to read from at all?
+ *
+ * False only on Workers with no `DATABASE_URL`, where `getStorage()` throws.
+ * Read paths that have a static fallback — the seed demo hub — check this so a
+ * fresh deployment still serves something instead of a 500. Writes don't: they
+ * have nowhere to go, and the thrown error names the missing variable.
+ */
+export function storageConfigured(): boolean {
+  return Boolean(process.env.DATABASE_URL) || !onWorkers()
+}
+
 /** Cloudflare Workers — no long-lived TCP connections to hold a pool open. */
 function onWorkers(): boolean {
   return typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers'

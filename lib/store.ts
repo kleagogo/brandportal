@@ -9,7 +9,7 @@ import crypto from 'crypto'
 import seed from '@/brand.config'
 import type { BrandConfig, SharePortal } from '@/app/types/brand'
 import type { User } from './users'
-import { getStorage } from './db'
+import { getStorage, storageConfigured } from './db'
 import { deletePortalStats } from './analytics'
 
 export const PREVIEW_TTL_MS = 24 * 60 * 60 * 1000
@@ -20,9 +20,10 @@ const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'sign
 // ─── Hubs ─────────────────────────────────────────────────────────────────────
 
 export async function getHub(slug: string): Promise<BrandConfig | null> {
-  const hub = await getStorage().getJSON<BrandConfig>('hubs', slug)
+  const hub = storageConfigured() ? await getStorage().getJSON<BrandConfig>('hubs', slug) : null
   if (hub) return hub
-  // The seed hub exists even before its record is first written.
+  // The seed hub exists even before its record is first written — and before
+  // there's a database at all, so the demo works on a fresh deployment.
   return slug === seed.slug ? seed : null
 }
 
@@ -79,7 +80,7 @@ export function isExpired(meta: HubMeta): boolean {
 }
 
 export async function getMeta(slug: string): Promise<HubMeta> {
-  const meta = await getStorage().getJSON<HubMeta>('meta', slug)
+  const meta = storageConfigured() ? await getStorage().getJSON<HubMeta>('meta', slug) : null
   if (meta) return meta
   // No meta: the seed demo hub, or a pre-accounts hub. Both stay open demos.
   return { slug, ownerId: null, editors: [], pin: null, demo: true, createdAt: new Date(0).toISOString() }

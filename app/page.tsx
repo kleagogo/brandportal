@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 // ─── Pitho — brand asset management for agencies ──────────────────────────────
 // The marketing site, styled in the product hub's design system (warm-neutral,
-// Inter, rounded, soft borders). Product lives at /login and /pitho.
+// Inter, rounded, soft borders). Product lives at /login and /demo.
 
 const CLIENT_SPACES = [
   { name: 'Copperline Coffee', letter: 'C', color: '#A5502A' },
@@ -84,7 +84,7 @@ export default function PithoLanding() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/pitho" className="hidden sm:block text-[13.5px] text-[#8a8a85] hover:text-[#1a1a1a] transition-colors">Open the demo</Link>
+            <Link href="/demo" className="hidden sm:block text-[13.5px] text-[#8a8a85] hover:text-[#1a1a1a] transition-colors">Open the demo</Link>
             <Link href="/login" className="text-[13px] font-semibold px-3.5 py-1.5 rounded-lg bg-[#1a1a1a] text-white hover:bg-[#333] transition-colors">Start free</Link>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function PithoLanding() {
             <Link href="/login" className="text-[14px] font-semibold px-5 py-3 rounded-xl bg-[#1a1a1a] text-white hover:bg-[#333] transition-colors">
               Start free — no card required →
             </Link>
-            <Link href="/pitho" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-[#e8e7e4] hover:border-[#1a1a1a] transition-colors">
+            <Link href="/demo" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-[#e8e7e4] hover:border-[#1a1a1a] transition-colors">
               See it in action
             </Link>
           </div>
@@ -201,7 +201,7 @@ export default function PithoLanding() {
           ))}
         </div>
         <div className="mt-8">
-          <Link href="/pitho" className="text-[14px] font-semibold text-[#1a1a1a] underline underline-offset-4 decoration-[#dddcd6] hover:decoration-[#1a1a1a] transition-colors">
+          <Link href="/demo" className="text-[14px] font-semibold text-[#1a1a1a] underline underline-offset-4 decoration-[#dddcd6] hover:decoration-[#1a1a1a] transition-colors">
             Click around the live product demo →
           </Link>
         </div>
@@ -286,7 +286,7 @@ export default function PithoLanding() {
             <Link href="/login" className="text-[14px] font-semibold px-5 py-3 rounded-xl bg-white text-[#1a1a1a] hover:bg-white/90 transition-colors">
               Start free — no card required →
             </Link>
-            <Link href="/pitho" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-white/25 hover:border-white transition-colors">
+            <Link href="/demo" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-white/25 hover:border-white transition-colors">
               Open the demo
             </Link>
           </div>
@@ -301,7 +301,7 @@ export default function PithoLanding() {
           <div className="flex items-center gap-6 text-[13px] text-[#8a8a85]">
             <a href="#product" className="hover:text-[#1a1a1a] transition-colors">Product</a>
             <a href="#pricing" className="hover:text-[#1a1a1a] transition-colors">Pricing</a>
-            <Link href="/pitho" className="hover:text-[#1a1a1a] transition-colors">Demo</Link>
+            <Link href="/demo" className="hover:text-[#1a1a1a] transition-colors">Demo</Link>
           </div>
         </div>
       </footer>
