@@ -1,12 +1,24 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
 import { trackPortal } from '../portal/track'
-import { uploadAsset } from './upload-client'
+import { uploadAsset, uploadConfig } from './upload-client'
+import {
+  expandArchives,
+  filesFromDrop,
+  filesFromInput,
+  splitByAllowed,
+  stripCommonRoot,
+  type PickedFile,
+} from './pick-files'
 import type { AssetFile } from '@/app/types/brand'
+
+/** How many files to upload at once. Enough to keep the pipe busy, not so
+ *  many that a folder of 300 logos opens 300 sockets. */
+const CONCURRENCY = 4
 
 function isImage(file: string): boolean {
   return /\.(svg|png|jpg|jpeg|webp|gif|ico)(\?|$)/i.test(file)
@@ -59,41 +71,98 @@ export function downloadHref(file: string): string {
 
 export function AssetsSection({ sectionId }: { sectionId: string }) {
   const { config, editing, update, allowDownload, portalId } = useHub()
-  const [uploading, setUploading] = useState(0)
-  const [progress, setProgress] = useState<{ name: string; percent: number } | null>(null)
+  const [progress, setProgress] = useState<{ done: number; total: number; name: string; percent: number } | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
+
+  // Folder pickers are opt-in per input and React has no prop for it, so the
+  // attributes go on directly.
+  useEffect(() => {
+    const input = folderInputRef.current
+    if (!input) return
+    input.setAttribute('webkitdirectory', '')
+    input.setAttribute('directory', '')
+  }, [])
 
   const assets = config.assets[sectionId] || []
   const label = config.sections.find(s => s.id === sectionId)?.label || 'Assets'
 
-  async function uploadFiles(files: FileList | File[]) {
+  /**
+   * Take everything the user picked — files, folders, archives — and add it.
+   *
+   * Archives are opened and folders flattened first, so what gets uploaded is
+   * always plain files; the folder each one came from is kept as its subgroup
+   * so a dropped brand folder arrives organised rather than as a heap.
+   */
+  async function addFiles(picked: PickedFile[]) {
     setError('')
-    const list = Array.from(files)
-    setUploading(u => u + list.length)
-    for (const file of list) {
-      try {
-        const data = await uploadAsset(file, config.slug, percent => setProgress({ name: file.name, percent }))
-        // If Claude described the image, its name/tags/usage prefill the card.
-        const asset: AssetFile = {
-          name: data.suggestion?.name || file.name.replace(/\.[^.]*$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()),
-          file: data.url,
-          format: [data.format],
-          usage: data.suggestion?.usage || '',
-          tags: data.suggestion?.tags || [],
+    setNotice('')
+    if (!picked.length) return
+
+    const caps = await uploadConfig()
+    const prepared = stripCommonRoot(await expandArchives(picked))
+    const { usable, skipped } = splitByAllowed(prepared, caps.allowed)
+
+    if (!usable.length) {
+      setError(skipped
+        ? `None of those ${skipped} file${skipped > 1 ? 's are' : ' is'} a supported type`
+        : 'Nothing to upload')
+      return
+    }
+
+    const total = usable.length
+    const queue = [...usable]
+    const failed: string[] = []
+    let done = 0
+    setProgress({ done: 0, total, name: usable[0].file.name, percent: 0 })
+
+    async function worker() {
+      for (;;) {
+        const item = queue.shift()
+        if (!item) return
+        try {
+          // Per-file percentages only mean something when there's one file;
+          // in a batch the count is the useful signal.
+          const data = await uploadAsset(
+            item.file,
+            config.slug,
+            total === 1 ? percent => setProgress({ done, total, name: item.file.name, percent }) : undefined
+          )
+          const asset: AssetFile = {
+            name: data.suggestion?.name || item.file.name.replace(/\.[^.]*$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()),
+            file: data.url,
+            format: [data.format],
+            usage: data.suggestion?.usage || '',
+            tags: data.suggestion?.tags || [],
+            ...(item.path ? { subgroup: item.path } : {}),
+          }
+          update(c => {
+            if (!c.assets[sectionId]) c.assets[sectionId] = []
+            c.assets[sectionId].push(asset)
+          })
+        } catch (e) {
+          failed.push(item.file.name)
+          // Keep the first real reason; the rest are usually the same one.
+          setError(prev => prev || (e instanceof Error ? e.message : 'Upload failed'))
+        } finally {
+          done++
+          setProgress({ done, total, name: item.file.name, percent: 100 })
         }
-        update(c => {
-          if (!c.assets[sectionId]) c.assets[sectionId] = []
-          c.assets[sectionId].push(asset)
-        })
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Upload failed')
-      } finally {
-        setUploading(u => u - 1)
-        setProgress(null)
       }
     }
+
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, total) }, worker))
+    setProgress(null)
+
+    const added = total - failed.length
+    const parts: string[] = []
+    if (added) parts.push(`${added} file${added > 1 ? 's' : ''} added`)
+    if (failed.length) parts.push(`${failed.length} failed`)
+    if (skipped) parts.push(`${skipped} skipped as unsupported`)
+    if (parts.length > 1 || skipped) setNotice(parts.join(' · '))
   }
 
   const hasLocalFiles = assets.some(a => a.file.startsWith('/'))
@@ -114,13 +183,14 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
       </div>
       <p className="text-[14px] text-[var(--hub-muted)] mb-8">
         {editing
-          ? 'Drop files anywhere below to add them, and click names, notes, or tags to edit.'
+          ? 'Drop files, folders, or a .zip anywhere below to add them, and click names, notes, or tags to edit.'
           : sectionId === 'logo'
             ? 'Our logo system. Download approved assets and follow usage guidelines.'
             : `${label} — download for presentations, product, and marketing.`}
       </p>
 
       {error && <p className="text-[13px] text-red-500 mb-4">{error}</p>}
+      {notice && <p className="text-[13px] text-[var(--hub-muted)] mb-4">{notice}</p>}
 
       <div
         onDragOver={e => { if (editing) { e.preventDefault(); setDragOver(true) } }}
@@ -129,7 +199,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
           if (!editing) return
           e.preventDefault()
           setDragOver(false)
-          if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files)
+          filesFromDrop(e.dataTransfer).then(addFiles)
         }}
         className={`rounded-2xl transition-colors ${dragOver ? 'bg-[var(--hub-soft)] outline-2 outline-dashed outline-[#1a1a1a]' : ''}`}
       >
@@ -158,15 +228,31 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
               >
                 <Icon name="upload" size={20} />
                 <span className="text-[13px] font-medium">
-                  {progress ? `${progress.name} — ${Math.round(progress.percent)}%` : uploading > 0 ? `Uploading ${uploading}…` : 'Add files'}
+                  {progress
+                    ? progress.total === 1
+                      ? `${progress.name} — ${Math.round(progress.percent)}%`
+                      : `Uploading ${progress.done}/${progress.total} — ${progress.name}`
+                    : 'Add files'}
                 </span>
                 {progress ? (
                   <span className="w-40 h-1 rounded-full bg-[var(--hub-border)] overflow-hidden">
-                    <span className="block h-full bg-[var(--hub-text)] transition-all" style={{ width: `${progress.percent}%` }} />
+                    <span
+                      className="block h-full bg-[var(--hub-text)] transition-all"
+                      style={{ width: `${progress.total === 1 ? progress.percent : (progress.done / progress.total) * 100}%` }}
+                    />
                   </span>
                 ) : (
-                  <span className="text-[11px]">drop here or click to browse</span>
+                  <span className="text-[11px]">drop files, a folder, or a .zip — or click to browse</span>
                 )}
+              </button>
+            )}
+
+            {editing && !progress && (
+              <button
+                onClick={() => folderInputRef.current?.click()}
+                className="w-full -mt-4 text-[12px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors"
+              >
+                or add a whole folder
               </button>
             )}
           </div>
@@ -178,7 +264,14 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
         type="file"
         multiple
         className="hidden"
-        onChange={e => { if (e.target.files?.length) uploadFiles(e.target.files); e.target.value = '' }}
+        onChange={e => { if (e.target.files?.length) addFiles(filesFromInput(e.target.files)); e.target.value = '' }}
+      />
+      <input
+        ref={folderInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={e => { if (e.target.files?.length) addFiles(filesFromInput(e.target.files)); e.target.value = '' }}
       />
     </div>
   )
