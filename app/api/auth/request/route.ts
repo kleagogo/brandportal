@@ -28,22 +28,35 @@ export async function POST(req: NextRequest) {
   }
 
   const claiming = typeof body.previewId === 'string' && body.previewId.length > 0
-  let hubName: string | undefined
-  if (claiming) {
-    const preview = await getPreview(body.previewId!)
-    if (!preview) {
-      return NextResponse.json({ error: 'This preview has expired — scan your site again' }, { status: 410 })
-    }
-    hubName = preview.name
-  }
-
   const redirect = typeof body.redirect === 'string' && body.redirect.startsWith('/') ? body.redirect : undefined
-  const token = await createToken({
-    purpose: claiming ? 'claim' : 'login',
-    email,
-    previewId: claiming ? body.previewId : undefined,
-    redirect,
-  })
+
+  // Issuing a link touches storage. On an unconfigured deployment that throws,
+  // and an uncaught throw here becomes an empty 500 the browser can't parse —
+  // so say what's actually wrong instead.
+  let hubName: string | undefined
+  let token: string
+  try {
+    if (claiming) {
+      const preview = await getPreview(body.previewId!)
+      if (!preview) {
+        return NextResponse.json({ error: 'This preview has expired — scan your site again' }, { status: 410 })
+      }
+      hubName = preview.name
+    }
+
+    token = await createToken({
+      purpose: claiming ? 'claim' : 'login',
+      email,
+      previewId: claiming ? body.previewId : undefined,
+      redirect,
+    })
+  } catch (err) {
+    console.error('[auth] Could not issue a sign-in token:', err)
+    return NextResponse.json(
+      { error: 'Sign-in is unavailable — this deployment has no database configured (see /api/health)' },
+      { status: 503 },
+    )
+  }
 
   const url = `${req.nextUrl.origin}/api/auth/verify?token=${token}`
   const result = await sendMagicLink({ to: email, url, kind: claiming ? 'claim' : 'login', hubName })

@@ -26,8 +26,12 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Something went wrong')
+      // A crashed route answers with an empty body or an HTML error page, and
+      // res.json() then fails with a parser message no one can act on.
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data) {
+        throw new Error(data?.error || `Sign-in is temporarily unavailable (server error ${res.status})`)
+      }
       setDevLink(data.devLink || '')
       setState('sent')
     } catch (err) {
