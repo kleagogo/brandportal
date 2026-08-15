@@ -1,3 +1,4 @@
+import { PRIVATE_PAGE } from '@/lib/seo'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSessionUser } from '@/lib/auth'
@@ -7,7 +8,7 @@ import { NewHubButton, AccountMenu } from './parts'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Client spaces — Pitho' }
+export const metadata = { ...PRIVATE_PAGE, title: 'Client spaces — Pitho' }
 
 /** Count assets across all sections, for the card subtitle. */
 function assetCount(assets: Record<string, unknown[]>): number {

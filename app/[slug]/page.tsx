@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { PRIVATE_PAGE } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { canEditHub, getHub, getMeta, isExpired, isHubOwner } from '@/lib/store'
@@ -12,8 +13,10 @@ export const dynamic = 'force-dynamic'
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const hub = await getHub(slug)
-  if (!hub) return {}
+  // Even the title of a hub that doesn't exist shouldn't be indexable.
+  if (!hub) return PRIVATE_PAGE
   return {
+    ...PRIVATE_PAGE,
     title: `${hub.name} — Brand Hub`,
     description: hub.tagline,
     ...(hub.logoUrl ? { icons: { icon: hub.logoUrl } } : {}),

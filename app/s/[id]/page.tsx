@@ -1,3 +1,4 @@
+import { PRIVATE_PAGE } from '@/lib/seo'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
@@ -13,11 +14,13 @@ export const dynamic = 'force-dynamic'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const portal = await getPortal(id)
-  if (!portal) return {}
+  if (!portal) return {
+    ...PRIVATE_PAGE,}
   const hub = await getHub(portal.slug)
   const name = portal.branding?.name || hub?.name || 'Brand files'
   const logo = portal.branding?.logoUrl || hub?.logoUrl
   return {
+    ...PRIVATE_PAGE,
     title: name,
     description: portal.branding?.note || hub?.tagline,
     // A white-labelled portal shouldn't be indexed as the agency's own page.

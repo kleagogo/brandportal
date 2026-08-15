@@ -1,3 +1,4 @@
+import { PRIVATE_PAGE } from '@/lib/seo'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { getPreview } from '@/lib/store'
@@ -8,8 +9,10 @@ export const dynamic = 'force-dynamic'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const config = await getPreview(id)
-  if (!config) return { title: 'Preview expired — Brand Portal' }
+  if (!config) return {
+    ...PRIVATE_PAGE, title: 'Preview expired — Brand Portal' }
   return {
+    ...PRIVATE_PAGE,
     title: `${config.name} — brand hub preview`,
     description: config.tagline,
     robots: { index: false },

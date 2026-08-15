@@ -1,3 +1,4 @@
+import { PRIVATE_PAGE } from '@/lib/seo'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSessionUser } from '@/lib/auth'
@@ -7,7 +8,7 @@ import { ChangeEmail, LeaveHubButton, DeleteAccount } from './parts'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Account settings — Brand Portal' }
+export const metadata = { ...PRIVATE_PAGE, title: 'Account settings — Pitho' }
 
 export default async function SettingsPage() {
   const user = await getSessionUser()
