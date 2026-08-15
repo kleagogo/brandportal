@@ -16,8 +16,23 @@ export async function POST(req: NextRequest) {
   let fullUrl: string
   let hostname: string
   try {
-    fullUrl = url.startsWith('http') ? url : `https://${url}`
-    hostname = new URL(fullUrl).hostname.replace('www.', '')
+    // Prefixing https:// blindly turns "file:///etc/passwd" into a URL with
+    // the host "file", so anything carrying its own scheme must declare a
+    // usable one rather than being quietly rewritten.
+    const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(url)
+    if (hasScheme && !/^https?:\/\//i.test(url)) throw new Error('scheme')
+    fullUrl = hasScheme ? url : `https://${url}`
+
+    const parsed = new URL(fullUrl)
+    // This fetches whatever it's given, server-side and following redirects,
+    // so it must only ever be pointed at the public web.
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('scheme')
+    // A real site has a dot in its name; "file" or "localhost" do not.
+    if (!parsed.hostname.includes('.') || parsed.hostname.endsWith('.')) throw new Error('host')
+    if (isPrivateHost(parsed.hostname)) {
+      return NextResponse.json({ error: 'That address isn’t reachable from here' }, { status: 400 })
+    }
+    hostname = parsed.hostname.replace('www.', '')
   } catch {
     return NextResponse.json({ error: 'That doesn’t look like a valid URL' }, { status: 400 })
   }
@@ -35,6 +50,22 @@ export async function POST(req: NextRequest) {
   const previewId = await savePreview(config)
 
   return NextResponse.json({ previewId, brandName: brand.brandName })
+}
+
+
+/** Loopback, link-local, and the private ranges — never worth scanning. */
+function isPrivateHost(host: string): boolean {
+  const h = host.toLowerCase().replace(/^\[|\]$/g, '')
+  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.internal') || h.endsWith('.local')) return true
+  if (h === '::1' || h.startsWith('fc') || h.startsWith('fd') || h.startsWith('fe80:')) return true
+  const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (!v4) return false
+  const [a, b] = [Number(v4[1]), Number(v4[2])]
+  return a === 0 || a === 10 || a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 100 && b >= 64 && b <= 127)
 }
 
 /**

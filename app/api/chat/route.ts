@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getHub } from '@/lib/store'
+import { canViewHub, getHub, getMeta } from '@/lib/store'
 import { allow, clientIp } from '@/lib/ratelimit'
+import { getSessionUser } from '@/lib/auth'
 import type { BrandConfig } from '@/app/types/brand'
 
 function buildSystemPrompt(config: BrandConfig) {
@@ -38,8 +39,17 @@ export async function POST(req: NextRequest) {
   if (!message) return NextResponse.json({ error: 'Message required' }, { status: 400 })
 
   // Each hub's agent answers from THAT hub's data.
-  const config = await getHub(typeof slug === 'string' ? slug : '')
+  const hubSlug = typeof slug === 'string' ? slug : ''
+  const config = await getHub(hubSlug)
   if (!config) return NextResponse.json({ error: 'Hub not found' }, { status: 404 })
+
+  // The prompt below contains the whole brand — colours, voice, every asset
+  // name. Answering without checking is the PIN gate leaking through a chat
+  // box, so ask exactly what the hub page asks.
+  const meta = await getMeta(hubSlug)
+  if (!(await canViewHub(hubSlug, meta, await getSessionUser()))) {
+    return NextResponse.json({ error: 'This hub is locked' }, { status: 401 })
+  }
 
   if (!allow(`chat:${clientIp(req)}`, 30, 60 * 60_000)) {
     return NextResponse.json({ reply: 'The Brand Agent is taking a breather — try again in a little while.' })
