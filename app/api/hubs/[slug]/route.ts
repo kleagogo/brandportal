@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { canEditHub, getHub, getMeta, saveHub } from '@/lib/store'
+import { canEditHub, canViewHub, getHub, getMeta, saveHub } from '@/lib/store'
 import { getSessionUser } from '@/lib/auth'
 import type { BrandConfig } from '@/app/types/brand'
 
@@ -10,6 +10,13 @@ export async function GET(
   const { slug } = await params
   const hub = await getHub(slug)
   if (!hub) return NextResponse.json({ error: 'Hub not found' }, { status: 404 })
+
+  // A PIN-protected hub must not hand its contents to an unlocked caller —
+  // otherwise the gate on the page is decoration and this is the way around it.
+  const meta = await getMeta(slug)
+  if (!(await canViewHub(slug, meta, await getSessionUser()))) {
+    return NextResponse.json({ error: 'This hub is locked' }, { status: 401 })
+  }
   return NextResponse.json(hub)
 }
 

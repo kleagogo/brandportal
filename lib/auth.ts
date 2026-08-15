@@ -49,8 +49,12 @@ export async function verifySessionValue(value: string | undefined): Promise<str
   if (!value) return null
   const [payload, sig] = value.split('.')
   if (!payload || !sig) return null
-  const expected = await hmac(payload)
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null
+  const given = Buffer.from(sig)
+  const expected = Buffer.from(await hmac(payload))
+  // timingSafeEqual throws on a length mismatch, and the cookie is attacker
+  // controlled — compare lengths first so a junk cookie logs you out rather
+  // than turning every request into a 500.
+  if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return null
   try {
     const { u, e } = JSON.parse(Buffer.from(payload, 'base64url').toString())
     if (typeof u !== 'string' || Date.now() > e) return null

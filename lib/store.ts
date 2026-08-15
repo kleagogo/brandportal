@@ -6,10 +6,12 @@
  */
 
 import crypto from 'crypto'
+import { cookies } from 'next/headers'
 import seed from '@/brand.config'
 import type { BrandConfig, SharePortal } from '@/app/types/brand'
 import type { User } from './users'
 import { getStorage, storageConfigured } from './db'
+import { pinCookieName, pinCookieValue } from './auth'
 import { deletePortalStats } from './analytics'
 
 export const PREVIEW_TTL_MS = 24 * 60 * 60 * 1000
@@ -99,6 +101,21 @@ export function canEditHub(meta: HubMeta, user: User | null): boolean {
 
 export function isHubOwner(meta: HubMeta, user: User | null): boolean {
   return Boolean(user && meta.ownerId === user.id)
+}
+
+/**
+ * May this request see what's inside the hub?
+ *
+ * The PIN gate on the page is only half the answer: anything that hands back
+ * hub data or asset files has to ask the same question, or the gate protects
+ * the rendering and nothing else. Editors are always allowed; a hub with no
+ * PIN is open to anyone holding the link; otherwise the unlock cookie decides.
+ */
+export async function canViewHub(slug: string, meta: HubMeta, user: User | null): Promise<boolean> {
+  if (canEditHub(meta, user)) return true
+  if (!meta.pin) return true
+  const store = await cookies()
+  return store.get(pinCookieName(slug))?.value === (await pinCookieValue(slug, meta.pin))
 }
 
 /** Every hub the user owns or can edit, for the dashboard. */

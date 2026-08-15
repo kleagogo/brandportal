@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPortal } from '@/lib/store'
 import { portalCookieName, portalCookieValue } from '@/lib/auth'
+import { allow, clientIp } from '@/lib/ratelimit'
 
 /** Viewers unlock a password-protected share portal here. */
 export async function POST(
@@ -13,6 +14,11 @@ export async function POST(
     ({ password } = await req.json())
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  // Same reasoning as the hub PIN: guessing must cost something.
+  if (!allow(`portal:${id}:${clientIp(req)}`, 10, 15 * 60_000) || !allow(`portal:${id}`, 60, 15 * 60_000)) {
+    return NextResponse.json({ error: 'Too many attempts — try again in a few minutes' }, { status: 429 })
   }
 
   const portal = await getPortal(id)

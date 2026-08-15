@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
 import AdmZip from 'adm-zip'
-import { getHub } from '@/lib/store'
+import { canViewHub, getHub, getMeta } from '@/lib/store'
 import { getStorage } from '@/lib/db'
+import { getSessionUser } from '@/lib/auth'
 import { assetKey } from '@/lib/uploads'
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public')
@@ -59,6 +60,13 @@ export async function GET(
   const { slug } = await params
   const hub = await getHub(slug)
   if (!hub) return NextResponse.json({ error: 'Hub not found' }, { status: 404 })
+
+  // This returns the actual files, so it needs the same permission as the hub
+  // itself — a zip is not a lesser thing to hand out than the page.
+  const meta = await getMeta(slug)
+  if (!(await canViewHub(slug, meta, await getSessionUser()))) {
+    return NextResponse.json({ error: 'This hub is locked' }, { status: 401 })
+  }
 
   const sectionId = req.nextUrl.searchParams.get('section') || 'logo'
   const assets = hub.assets[sectionId] || []

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getMeta } from '@/lib/store'
 import { pinCookieName, pinCookieValue } from '@/lib/auth'
+import { allow, clientIp } from '@/lib/ratelimit'
 
 /** Viewers unlock a PIN-protected hub here; success sets a per-hub cookie. */
 export async function POST(
@@ -13,6 +14,11 @@ export async function POST(
     ({ pin } = await req.json())
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  // A short PIN falls in seconds to an unlimited guesser.
+  if (!allow(`pin:${slug}:${clientIp(req)}`, 10, 15 * 60_000) || !allow(`pin:${slug}`, 60, 15 * 60_000)) {
+    return NextResponse.json({ error: 'Too many attempts — try again in a few minutes' }, { status: 429 })
   }
 
   const meta = await getMeta(slug)

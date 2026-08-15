@@ -7,6 +7,8 @@
  * short-lived token this app hands out.
  */
 
+import crypto from 'crypto'
+
 /**
  * Largest file a plain POST to /api/upload can carry.
  *
@@ -77,7 +79,10 @@ export function storageName(originalName: string): string {
     .replace(/[^a-z0-9-_]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 48) || 'file'
-  const unique = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+  // /api/files serves by name with no session check, so the name *is* the
+  // capability: it has to be unguessable, not merely unique. Math.random and
+  // four characters were neither secret nor long enough.
+  const unique = crypto.randomBytes(12).toString('base64url')
   return `${base}-${unique}.${ext}`
 }
 
