@@ -13,7 +13,7 @@
 
 import { promises as fs } from 'fs'
 import path from 'path'
-import { r2Enabled, r2Get, r2Put } from './r2'
+import { r2Delete, r2Enabled, r2Get, r2Put } from './r2'
 import { MIME, extensionOf } from './uploads'
 
 export interface Storage {
@@ -23,6 +23,8 @@ export interface Storage {
   listKeys(ns: string): Promise<string[]>
   getFile(name: string): Promise<Buffer | null>
   putFile(name: string, data: Buffer): Promise<void>
+  /** Remove a stored file. Deleting one that isn't there is not an error. */
+  deleteFile(name: string): Promise<void>
 }
 
 // ─── File driver ──────────────────────────────────────────────────────────────
@@ -89,6 +91,10 @@ class FileStorage implements Storage {
   async putFile(name: string, data: Buffer): Promise<void> {
     await fs.mkdir(path.join(DATA_DIR, 'uploads'), { recursive: true })
     await fs.writeFile(this.filePath(name), data)
+  }
+
+  async deleteFile(name: string): Promise<void> {
+    await fs.unlink(this.filePath(name)).catch(() => {})
   }
 }
 
@@ -162,6 +168,11 @@ export class PgStorage implements Storage {
       [name, data]
     )
   }
+
+  async deleteFile(name: string): Promise<void> {
+    await this.init()
+    await this.query('DELETE FROM blobs WHERE name = $1', [name])
+  }
 }
 
 // ─── R2 files, records elsewhere ──────────────────────────────────────────────
@@ -186,6 +197,13 @@ class R2Files implements Storage {
 
   async putFile(name: string, data: Buffer): Promise<void> {
     await r2Put(name, data, MIME[extensionOf(name)])
+  }
+
+  async deleteFile(name: string): Promise<void> {
+    // Anything uploaded before R2 was switched on still sits in the record
+    // store, so a delete has to reach both or the file survives in one of them.
+    await r2Delete(name)
+    await this.records.deleteFile(name)
   }
 }
 

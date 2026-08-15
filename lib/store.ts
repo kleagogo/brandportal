@@ -11,6 +11,7 @@ import seed from '@/brand.config'
 import type { BrandConfig, SharePortal } from '@/app/types/brand'
 import type { User } from './users'
 import { getStorage, storageConfigured } from './db'
+import { assetKey } from './uploads'
 import { pinCookieName, pinCookieValue } from './auth'
 import { deletePortalStats } from './analytics'
 
@@ -151,9 +152,38 @@ export async function renameHub(oldSlug: string, wanted: string): Promise<{ slug
 }
 
 export async function deleteHub(slug: string): Promise<void> {
+  // Take the files first. Dropping only the record would leave every asset
+  // sitting in storage, still reachable by name through /api/files — deleting
+  // a client's hub has to mean their work is actually gone.
+  const hub = await getHub(slug)
+  if (hub) {
+    for (const name of assetKeysOf(hub)) {
+      await getStorage().deleteFile(name).catch(() => {})
+    }
+  }
   await getStorage().deleteJSON('hubs', slug)
   await getStorage().deleteJSON('meta', slug)
   for (const portal of await listPortals(slug)) await deletePortal(portal.id)
+}
+
+/** Every stored file a hub refers to, as storage keys. */
+export function assetKeysOf(hub: BrandConfig): string[] {
+  const names = new Set<string>()
+  for (const files of Object.values(hub.assets || {})) {
+    for (const asset of files || []) {
+      const key = assetKey(asset.file)
+      if (key) names.add(basename(key))
+    }
+  }
+  // The logo is referenced on its own, not through a section.
+  const logo = hub.logoUrl ? assetKey(hub.logoUrl) : null
+  if (logo) names.add(basename(logo))
+  return [...names]
+}
+
+/** Storage keys are flat names; never let a path climb out of the bucket. */
+function basename(key: string): string {
+  return key.split('/').pop() || key
 }
 
 /** How many hubs a user owns (for plan limits). Demo hubs don't count. */
