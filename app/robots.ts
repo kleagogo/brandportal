@@ -20,7 +20,6 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/dashboard',
           '/settings',
-          '/welcome',
           '/s/', // share portals
         ],
       },
