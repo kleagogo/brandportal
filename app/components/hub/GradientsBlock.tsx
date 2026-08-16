@@ -5,6 +5,8 @@ import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
 import type { GradientDef } from '@/app/types/brand'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 
 /** Gradient presets and downloadable gradient backgrounds. */
 export function GradientsBlock() {
@@ -99,7 +101,7 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden group relative">
+    <Card size="sm" className="gap-0 py-0 group relative">
       {editing && (
         <button onClick={onDelete} className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-card/80 text-foreground/90 hover:text-destructive items-center justify-center hidden group-hover:flex" title="Remove gradient">
           <Icon name="close" size={11} />
@@ -110,13 +112,17 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
         <p className="text-[13px] font-medium text-foreground min-w-0 truncate">
           <Editable value={grad.name} placeholder="Gradient name" onChange={onName} />
         </p>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={grad.downloadable ? download : copy}
-          className="shrink-0 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 text-muted-foreground"
           title={grad.downloadable ? 'Download PNG' : 'Copy CSS'}
         >
-          {grad.downloadable ? <><Icon name="download" size={12} /> Download</> : (copied ? 'Copied ✓' : <Icon name="copy" size={13} />)}
-        </button>
+          {grad.downloadable
+            ? <><Icon name="download" size={14} /> Download</>
+            : <><Icon name="copy" size={14} /> {copied ? 'Copied' : 'Copy CSS'}</>}
+        </Button>
       </div>
       {editing && (
         <div className="px-3 pb-3">
@@ -128,6 +134,6 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
           />
         </div>
       )}
-    </div>
+    </Card>
   )
 }

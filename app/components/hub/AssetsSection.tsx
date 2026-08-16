@@ -16,6 +16,7 @@ import {
   type PickedFile,
 } from './pick-files'
 import type { AssetFile } from '@/app/types/brand'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
 /** How many files to upload at once. Enough to keep the pipe busy, not so
@@ -515,15 +516,23 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
             ))}
           </div>
           {allowDownload && (
-          <a
-            href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
-            {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
-            onClick={() => trackPortal(portalId, 'download', asset.name)}
-            className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-ring transition-colors text-muted-foreground shrink-0"
+          <Button
+            nativeButton={false}
+            variant="ghost"
+            size="sm"
+            className="shrink-0 text-muted-foreground"
             title={asset.external ? `Open ${asset.name}` : `Download ${asset.name}`}
+            render={
+              <a
+                href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
+                {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
+                onClick={() => trackPortal(portalId, 'download', asset.name)}
+              />
+            }
           >
-            <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={12} />
-          </a>
+            <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={14} />
+            {asset.external || asset.file.startsWith('http') ? 'Open' : 'Download'}
+          </Button>
           )}
         </div>
 
