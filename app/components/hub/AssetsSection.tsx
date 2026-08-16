@@ -143,7 +143,7 @@ function EmptyDropzone({
         </button>
         <button
           onClick={onPickFolder}
-          className="text-[13px] font-semibold border border-border text-foreground px-4 py-2.5 rounded-xl hover:border-ring transition-colors"
+          className="text-[13px] font-semibold bg-highlight text-highlight-foreground px-4 py-2.5 rounded-xl hover:brightness-95 transition-all"
         >
           Choose a folder
         </button>
