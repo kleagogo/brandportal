@@ -1627,3 +1627,12 @@ html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
 [data-slot="sidebar-menu-item"] [data-slot="sidebar-menu-action"]:hover {
   color: var(--foreground);
 }
+
+/* The sidebar sizes action icons with `[&>svg]:size-4`, which only matches
+   direct children — so an icon nested inside an icon-swap keeps whatever size
+   it was given and reads smaller than its neighbours. */
+[data-slot="sidebar-menu-action"] .t-icon-swap svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}

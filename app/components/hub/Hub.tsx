@@ -366,7 +366,7 @@ function HubSidebarItem({
               setEditingSection(isEditing ? null : section.id)
             }}
           >
-            <IconSwap on={isEditing} a={<Icon name="edit" size={11} />} b={<Icon name="check" size={11} />} />
+            <IconSwap on={isEditing} a={<Icon name="edit" size={16} />} b={<Icon name="check" size={16} />} />
           </SidebarMenuAction>
           <SidebarMenuAction
             showOnHover
