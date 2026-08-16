@@ -17,9 +17,11 @@ export async function POST(req: NextRequest) {
 
   let name = ''
   let studio = false
+  let primaryColor: string | undefined
   try {
     const body = await req.json()
     if (typeof body?.name === 'string' && body.name.trim()) name = body.name.trim().slice(0, 60)
+    if (typeof body?.primaryColor === 'string' && body.primaryColor.trim()) primaryColor = body.primaryColor.trim()
     studio = body?.studio === true
   } catch { /* empty body is fine */ }
 
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (existing) {
       return NextResponse.json({ slug: existing.hub.slug, existing: true })
     }
-    const hub = await createHub(blankHubConfig(name || 'Our studio', { kind: 'studio' }), user.id, { studio: true })
+    const hub = await createHub(blankHubConfig(name || 'Our studio', { kind: 'studio', primaryColor }), user.id, { studio: true })
     return NextResponse.json({ slug: hub.slug })
   }
 
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
   const layout = studioHub?.hub.sections.filter(section => !section.studioOnly)
 
   const hub = await createHub(
-    blankHubConfig(name || 'Untitled brand', { kind: 'client', layout }),
+    blankHubConfig(name || 'Untitled brand', { kind: 'client', layout, primaryColor }),
     user.id,
     name ? { client: name } : {},
   )

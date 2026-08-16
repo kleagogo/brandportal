@@ -41,7 +41,6 @@ const BRAND_SECTIONS: SectionConfig[] = [
  * when a client space copies this hub's layout.
  */
 const STUDIO_SECTIONS: SectionConfig[] = [
-  { id: 'templates', label: 'Templates', type: 'assets', icon: 'templates', group: 'resources', studioOnly: true },
   { id: 'case-studies', label: 'Case Studies', type: 'assets', icon: 'file', group: 'resources', studioOnly: true },
   { id: 'decks', label: 'Proposal Decks', type: 'assets', icon: 'screenshots', group: 'resources', studioOnly: true },
   { id: 'signatures', label: 'Email Signatures', type: 'assets', icon: 'mail', group: 'resources', studioOnly: true },

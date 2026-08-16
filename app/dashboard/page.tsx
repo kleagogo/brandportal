@@ -5,7 +5,7 @@ import { getSessionUser } from '@/lib/auth'
 import { isExpired, listHubsForUser } from '@/lib/store'
 import { limitsFor } from '@/lib/limits'
 import { labelsFor } from '@/lib/labels'
-import { NewHubButton, AccountMenu, StudioSetup, AccountTypePicker } from './parts'
+import { NewHubButton, AccountMenu, StudioSetup } from './parts'
 import { HubCardStack } from './HubCardStack'
 
 export const dynamic = 'force-dynamic'
@@ -43,10 +43,6 @@ export default async function DashboardPage() {
   const ownedClients = clients.filter(h => h.role === 'owner').length
   const sharedCount = clients.length - ownedClients
 
-  // Asked once, on a genuinely empty account. Anyone already using Pitho keeps
-  // the wording they've had rather than being stopped for a question.
-  const askWhatFor = !user.accountType && hubs.length === 0
-
   return (
     <div className="min-h-screen bg-background">
       <nav className="border-b border-border bg-card px-5 sm:px-8 h-14 flex items-center justify-between">
@@ -59,10 +55,6 @@ export default async function DashboardPage() {
 
       <main className="max-w-[900px] mx-auto px-5 sm:px-8 py-10 flex flex-col gap-10">
 
-        {askWhatFor ? (
-          <AccountTypePicker />
-        ) : (
-          <>
             {/* ── The account's own brand — hub zero ────────────────────────── */}
             <section>
               <div className="mb-4">
@@ -153,8 +145,6 @@ export default async function DashboardPage() {
                 </div>
               )}
             </section>
-          </>
-        )}
       </main>
     </div>
   )

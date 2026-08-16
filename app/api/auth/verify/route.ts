@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { consumeToken } from '@/lib/tokens'
 import { ensureUser, getUserById, updateUserEmail } from '@/lib/users'
 import { SESSION_COOKIE, createSessionValue } from '@/lib/auth'
-import { getMeta, renameEditorEmail, saveMeta, transferOwnership } from '@/lib/store'
+import { getMeta, listHubsForUser, renameEditorEmail, saveMeta, transferOwnership } from '@/lib/store'
 
 /** The destination of every magic link: sign in, then act on the token's purpose. */
 export async function GET(req: NextRequest) {
@@ -31,6 +31,12 @@ export async function GET(req: NextRequest) {
 
   const user = await ensureUser(record.email)
   let destination = record.redirect || '/dashboard'
+
+  // First sign-in with nothing set up yet: onboarding, not an empty dashboard.
+  // Anyone with hubs or a recorded account type has been here before.
+  if (!record.redirect && !user.accountType && (await listHubsForUser(user)).length === 0) {
+    destination = '/welcome'
+  }
 
   if (record.purpose === 'invite' && record.slug) {
     const meta = await getMeta(record.slug)
