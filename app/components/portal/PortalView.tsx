@@ -43,7 +43,7 @@ export function PortalView({ config, portal }: { config: BrandConfig; portal: Sh
 
   return (
     <HubProvider initial={config} allowDownload={portal.allowDownload} portalId={portal.id}>
-      <div className="min-h-screen bg-background text-foreground flex flex-col" style={style}>
+      <div className="h-screen overflow-hidden bg-background text-foreground flex flex-col" style={style}>
         {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
         {portal.template === 'full'
           ? <FullTemplate config={config} portal={portal} />
@@ -111,7 +111,7 @@ function FullTemplate({ config, portal }: { config: BrandConfig; portal: SharePo
   const section = sections.find(s => s.id === active) || sections[0]
 
   return (
-    <div className="flex-1 flex">
+    <div className="flex-1 flex min-h-0">
       {navOpen && <div className="fixed inset-0 bg-foreground/20 z-30 md:hidden" onClick={() => setNavOpen(false)} />}
 
       <aside className={`w-60 shrink-0 border-r border-border bg-card flex flex-col h-screen z-40 transition-transform
@@ -136,7 +136,7 @@ function FullTemplate({ config, portal }: { config: BrandConfig; portal: SharePo
         </nav>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <header className="h-14 shrink-0 bg-card border-b border-border flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
           <button onClick={() => setNavOpen(o => !o)} className="md:hidden text-muted-foreground hover:text-foreground transition-colors" title="Menu">
             <Icon name="menu" size={18} />

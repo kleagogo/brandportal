@@ -1414,3 +1414,14 @@ html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
   border: 0;
   background: transparent;
 }
+
+/* The dissolve's render target carries no size in the recipe, so at rest it
+   falls back to a canvas element's intrinsic 300×150 and hangs out of its
+   stage. One per asset card meant the lowest card pushed the document 300px
+   past the viewport — which is what stopped the hub sidebar sticking. The
+   driver sets left/top/width/height inline before it draws, so those win. */
+.t-smoky-canvas {
+  inset: 0;
+  width: 0;
+  height: 0;
+}

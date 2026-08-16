@@ -96,12 +96,12 @@ function HubShell({ access }: { access: HubAccess }) {
   }
 
   return (
-    <div className={`${dark ? 'dark' : ''} min-h-screen bg-background text-foreground flex flex-col`}>
+    <div className={`${dark ? 'dark' : ''} h-screen overflow-hidden bg-background text-foreground flex flex-col`}>
       {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
 
       <WelcomeToast />
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* Mobile nav backdrop */}
         {navOpen && <div className="fixed inset-0 bg-foreground/20 z-30 md:hidden" onClick={() => setNavOpen(false)} />}
 
@@ -113,7 +113,7 @@ function HubShell({ access }: { access: HubAccess }) {
           onToggleTheme={toggleTheme}
         />
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
           <TopBar
             onMenu={() => setNavOpen(o => !o)}
             onShare={() => setShareOpen(true)}
@@ -125,7 +125,7 @@ function HubShell({ access }: { access: HubAccess }) {
             sectionLabel={activeSection?.label || ''}
             access={access}
           />
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 min-h-0 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
               {renderContent()}
             </div>
