@@ -1605,3 +1605,25 @@ html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
 @media (prefers-reduced-motion: reduce) {
   .t-text-swap { transition: none !important; }
 }
+
+/* ── Sidebar row actions ─────────────────────────────────────────────────────
+   The component reveals them on `focus-within`, so clicking a row leaves its
+   actions stuck open on the selected item. Hover is the affordance; keyboard
+   still gets them via :has(:focus-visible), so nothing becomes unreachable.
+   `data-active` also darkens them to accent-foreground, which made the selected
+   row's actions compete with its label. */
+@media (min-width: 768px) {
+  [data-slot="sidebar-menu-item"]:focus-within [data-slot="sidebar-menu-action"] {
+    opacity: 0;
+  }
+  [data-slot="sidebar-menu-item"]:hover [data-slot="sidebar-menu-action"],
+  [data-slot="sidebar-menu-item"]:has(:focus-visible) [data-slot="sidebar-menu-action"] {
+    opacity: 1;
+  }
+}
+[data-slot="sidebar-menu-item"] [data-slot="sidebar-menu-action"] {
+  color: var(--muted-foreground);
+}
+[data-slot="sidebar-menu-item"] [data-slot="sidebar-menu-action"]:hover {
+  color: var(--foreground);
+}
