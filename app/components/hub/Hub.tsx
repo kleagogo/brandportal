@@ -23,13 +23,13 @@ function SubBrandPlaceholder({ label }: { label: string }) {
   return (
     <div>
       <h1 className="text-[22px] font-bold tracking-tight mb-1">{label}</h1>
-      <p className="text-[14px] text-[var(--hub-muted)] mb-8">A sub-brand with its own colors, type, and assets.</p>
-      <div className="border-2 border-dashed border-[var(--hub-border)] rounded-2xl p-12 text-center">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#d96e30] bg-[#f7e1d3] px-2.5 py-1 rounded-full mb-3">
+      <p className="text-[14px] text-muted-foreground mb-8">A sub-brand with its own colors, type, and assets.</p>
+      <div className="border-2 border-dashed border-border rounded-2xl p-12 text-center">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary bg-primary/15 px-2.5 py-1 rounded-full mb-3">
           <Icon name="sparkles" size={11} /> Pro feature
         </span>
-        <p className="text-[14px] font-medium text-[var(--hub-text)] mb-1">Sub-brands are coming to Pro</p>
-        <p className="text-[12px] text-[var(--hub-faint)]">Nest a product line or campaign brand under this hub, with its own palette and assets.</p>
+        <p className="text-[14px] font-medium text-foreground mb-1">Sub-brands are coming to Pro</p>
+        <p className="text-[12px] text-muted-foreground/60">Nest a product line or campaign brand under this hub, with its own palette and assets.</p>
       </div>
     </div>
   )
@@ -96,14 +96,14 @@ function HubShell({ access }: { access: HubAccess }) {
   }
 
   return (
-    <div className={`${dark ? 'hub-dark' : 'hub-light'} min-h-screen bg-[var(--hub-bg)] text-[var(--hub-text)] flex flex-col`}>
+    <div className={`${dark ? 'dark' : ''} min-h-screen bg-background text-foreground flex flex-col`}>
       {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
 
       <WelcomeToast />
 
       <div className="flex-1 flex">
         {/* Mobile nav backdrop */}
-        {navOpen && <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setNavOpen(false)} />}
+        {navOpen && <div className="fixed inset-0 bg-foreground/20 z-30 md:hidden" onClick={() => setNavOpen(false)} />}
 
         <Sidebar
           active={activeSection?.id || ''}
@@ -188,17 +188,17 @@ function TopBar({
   access: HubAccess
 }) {
   return (
-    <header className="h-14 shrink-0 bg-[var(--hub-panel)] border-b border-[var(--hub-border)] flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
-      <button onClick={onMenu} className="md:hidden text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors" title="Menu">
+    <header className="h-14 shrink-0 bg-card border-b border-border flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
+      <button onClick={onMenu} className="md:hidden text-muted-foreground hover:text-foreground transition-colors" title="Menu">
         <Icon name="menu" size={18} />
       </button>
-      <p className="text-[13px] font-medium text-[var(--hub-muted)] truncate">{sectionLabel}</p>
+      <p className="text-[13px] font-medium text-muted-foreground truncate">{sectionLabel}</p>
       <SearchBox onNavigate={onNavigate} />
 
       <div className="ml-auto flex items-center gap-2.5">
         {editing && (
           <span className={`text-[12px] font-medium hidden sm:flex items-center gap-1.5 ${
-            saveState === 'error' ? 'text-red-500' : 'text-[var(--hub-muted)]'
+            saveState === 'error' ? 'text-destructive' : 'text-muted-foreground'
           }`}>
             {saveState === 'error' ? (
               'Couldn’t save — retrying on next edit'
@@ -217,14 +217,14 @@ function TopBar({
         )}
 
         {access.demo && access.canEdit && (
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--hub-muted)] bg-[var(--hub-soft)] px-2 py-1 rounded-md hidden sm:block">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-1 rounded-md hidden sm:block">
             Demo — anyone can edit
           </span>
         )}
 
         <button
           onClick={onShare}
-          className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--hub-text)] border border-[var(--hub-border)] hover:border-[var(--hub-text)] rounded-lg px-3 py-1.5 transition-colors"
+          className="flex items-center gap-1.5 text-[13px] font-medium text-foreground border border-border hover:border-foreground rounded-lg px-3 py-1.5 transition-colors"
         >
           <Icon name="share" size={13} /> Share
         </button>
@@ -232,7 +232,7 @@ function TopBar({
         {access.isOwner && (
           <button
             onClick={onSettings}
-            className="flex items-center text-[var(--hub-muted)] hover:text-[var(--hub-text)] border border-[var(--hub-border)] hover:border-[var(--hub-text)] rounded-lg px-2 py-1.5 transition-colors"
+            className="flex items-center text-muted-foreground hover:text-foreground border border-border hover:border-foreground rounded-lg px-2 py-1.5 transition-colors"
             title="Hub settings"
           >
             <Icon name="gear" size={15} />
@@ -244,8 +244,8 @@ function TopBar({
             onClick={() => setEditing(!editing)}
             className={`flex items-center gap-1.5 text-[13px] font-semibold rounded-lg px-3.5 py-1.5 transition-colors ${
               editing
-                ? 'bg-[var(--hub-btn)] text-[var(--hub-btn-text)] hover:opacity-85'
-                : 'border border-[var(--hub-border)] text-[var(--hub-text)] hover:border-[var(--hub-text)]'
+                ? 'bg-primary text-primary-foreground hover:opacity-85'
+                : 'border border-border text-foreground hover:border-foreground'
             }`}
           >
             {editing ? <><Icon name="check" size={13} /> Done</> : <><Icon name="edit" size={13} /> Edit</>}
@@ -253,7 +253,7 @@ function TopBar({
         ) : !access.signedIn ? (
           <Link
             href="/login"
-            className="text-[13px] font-medium text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors"
+            className="text-[13px] font-medium text-muted-foreground/60 hover:text-foreground transition-colors"
           >
             Sign in
           </Link>
@@ -300,15 +300,15 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
   }
 
   return (
-    <aside className={`w-60 shrink-0 border-r border-[var(--hub-border)] bg-[var(--hub-panel)] flex flex-col h-screen z-40 transition-transform
+    <aside className={`w-60 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col h-screen z-40 transition-transform
       fixed inset-y-0 left-0 ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:sticky md:top-0`}>
       {/* Identity */}
-      <div className="px-4 py-4 border-b border-[var(--hub-border)]">
+      <div className="px-4 py-4 border-b border-border">
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => editing && logoInputRef.current?.click()}
             className={`w-9 h-9 shrink-0 rounded-lg overflow-hidden flex items-center justify-center ${
-              editing ? 'cursor-pointer ring-1 ring-dashed ring-[#d6d4cd] hover:ring-[#1a1a1a]' : ''
+              editing ? 'cursor-pointer ring-1 ring-dashed ring-border hover:ring-foreground' : ''
             } ${logoUploading ? 'animate-pulse' : ''}`}
             title={editing ? 'Change logo' : undefined}
             disabled={!editing}
@@ -317,14 +317,14 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
               // eslint-disable-next-line @next/next/no-img-element
               <img src={config.logoUrl} alt={config.name} className="w-full h-full object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
             ) : (
-              <div className="w-full h-full bg-[#1a1a1a] rounded-lg" />
+              <div className="w-full h-full bg-primary rounded-lg" />
             )}
           </button>
           <div className="min-w-0 flex-1">
             <p className="text-[13px] font-semibold leading-tight truncate">
               <Editable value={config.name} placeholder="Brand name" onChange={v => update(c => { c.name = v })} />
             </p>
-            <p className="text-[10px] text-[var(--hub-faint)] leading-tight mt-0.5">
+            <p className="text-[10px] text-muted-foreground/60 leading-tight mt-0.5">
               <Editable value={config.tagline} placeholder="Tagline" onChange={v => update(c => { c.tagline = v })} />
             </p>
           </div>
@@ -347,7 +347,7 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
           if (items.length === 0) return null
           return (
             <div key={groupKey} className="mb-4">
-              {groupLabel && <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] px-2 mb-2">{groupLabel}</p>}
+              {groupLabel && <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-2 mb-2">{groupLabel}</p>}
               {items.map(({ section, i }) => (
                 <SidebarItem
                   key={section.id}
@@ -367,7 +367,7 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-[var(--hub-border)]">
+      <div className="p-4 border-t border-border">
         {editing && (
           <div className="mb-3 flex justify-center">
             {/* The plus splits into the section kinds — it used to always make an
@@ -387,12 +387,12 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
         <div className="mb-3">
           <SpaceSwitcher currentSlug={config.slug} currentName={config.name} />
         </div>
-        <Link href="/" className="text-[11px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors">
+        <Link href="/" className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors">
           Made with Pitho
         </Link>
         <button
           onClick={onToggleTheme}
-          className="mt-2 w-full flex items-center gap-2 text-[12px] text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors"
+          className="mt-2 w-full flex items-center gap-2 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
         >
           <Icon name={dark ? 'sun' : 'moon'} size={13} /> {dark ? 'Light mode' : 'Dark mode'}
         </button>
@@ -420,7 +420,7 @@ function SidebarItem({
         href={section.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-[var(--hub-muted)] hover:text-[var(--hub-text)] hover:bg-[var(--hub-soft)] transition-colors"
+        className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
       >
         <Icon name={section.icon} size={14} />
         {section.label}
@@ -434,7 +434,7 @@ function SidebarItem({
       <button
         onClick={() => onSelect(section.id)}
         className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] transition-colors text-left ${
-          active ? 'bg-[var(--hub-soft)] text-[var(--hub-text)] font-medium' : 'text-[var(--hub-muted)] hover:text-[var(--hub-text)] hover:bg-[var(--hub-soft)]'
+          active ? 'bg-muted text-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
         }`}
       >
         <Icon name={section.icon} size={14} />
@@ -445,15 +445,15 @@ function SidebarItem({
 
   // Edit mode: label is editable, with reorder/delete controls on hover.
   return (
-    <div className={`group flex items-center gap-1.5 px-2 py-1 rounded-lg ${active ? 'bg-[var(--hub-soft)]' : 'hover:bg-[var(--hub-soft)]'}`}>
-      <button onClick={() => onSelect(section.id)} className="text-[var(--hub-muted)]" title="Open section">
+    <div className={`group flex items-center gap-1.5 px-2 py-1 rounded-lg ${active ? 'bg-muted' : 'hover:bg-muted'}`}>
+      <button onClick={() => onSelect(section.id)} className="text-muted-foreground" title="Open section">
         <Icon name={section.icon} size={14} />
       </button>
       <input
         value={section.label}
         onChange={e => update(c => { c.sections[index].label = e.target.value })}
         onFocus={() => onSelect(section.id)}
-        className="flex-1 min-w-0 text-[13px] bg-transparent outline-none border border-dashed border-transparent hover:border-[var(--hub-border)] focus:border-[var(--hub-text)] rounded px-1 text-[var(--hub-text)]"
+        className="flex-1 min-w-0 text-[13px] bg-transparent outline-none border border-dashed border-transparent hover:border-border focus:border-foreground rounded px-1 text-foreground"
       />
       <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
         <button
@@ -462,7 +462,7 @@ function SidebarItem({
             c.sections.splice(index - 1, 0, s)
           })}
           disabled={index === 0}
-          className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] disabled:opacity-30 p-0.5"
+          className="text-muted-foreground/60 hover:text-foreground disabled:opacity-30 p-0.5"
           title="Move up"
         >
           <Icon name="up" size={11} />
@@ -473,7 +473,7 @@ function SidebarItem({
             c.sections.splice(index + 1, 0, s)
           })}
           disabled={index === count - 1}
-          className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] disabled:opacity-30 p-0.5"
+          className="text-muted-foreground/60 hover:text-foreground disabled:opacity-30 p-0.5"
           title="Move down"
         >
           <Icon name="down" size={11} />
@@ -483,7 +483,7 @@ function SidebarItem({
             if (!window.confirm(`Delete the "${section.label}" section?`)) return
             update(c => { c.sections.splice(index, 1) })
           }}
-          className="text-[var(--hub-faint)] hover:text-red-500 p-0.5"
+          className="text-muted-foreground/60 hover:text-destructive p-0.5"
           title="Delete section"
         >
           <Icon name="trash" size={11} />

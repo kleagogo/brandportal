@@ -49,13 +49,13 @@ export function HomeSection() {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={config.logoUrl} alt={config.name} className="w-14 h-14 object-contain mb-5" />
         ) : (
-          <div className="w-14 h-14 rounded-2xl bg-[var(--hub-text)] mb-5" />
+          <div className="w-14 h-14 rounded-2xl bg-foreground mb-5" />
         )}
         <h1 className="text-[30px] font-bold tracking-tight mb-2">{agent.name}</h1>
-        <p className="text-[15px] text-[var(--hub-muted)] leading-relaxed mb-2 max-w-[440px]">
+        <p className="text-[15px] text-muted-foreground leading-relaxed mb-2 max-w-[440px]">
           {agent.home || `Your AI-powered assistant for everything ${config.name} brand — from guidelines to copy to asset discovery.`}
         </p>
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#d96e30] bg-[#f7e1d3] px-2.5 py-1 rounded-full mb-8">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary bg-primary/15 px-2.5 py-1 rounded-full mb-8">
           <Icon name="sparkles" size={11} /> Pro feature
         </span>
 
@@ -64,11 +64,11 @@ export function HomeSection() {
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-[14px] leading-relaxed ${
-                  m.role === 'user' ? 'bg-[var(--hub-btn)] text-[var(--hub-btn-text)]' : 'bg-[var(--hub-soft)] text-[var(--hub-text)]'
+                  m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
                 }`}>{m.text}</div>
               </div>
             ))}
-            {loading && <p className="text-[13px] text-[var(--hub-faint)]">Thinking…</p>}
+            {loading && <p className="text-[13px] text-muted-foreground/60">Thinking…</p>}
             <div ref={bottomRef} />
           </div>
         )}
@@ -78,25 +78,25 @@ export function HomeSection() {
             <button
               key={p}
               onClick={() => send(p)}
-              className="text-[13px] text-[var(--hub-text)] border border-[var(--hub-border)] rounded-full px-3.5 py-1.5 hover:border-[var(--hub-text)] transition-colors"
+              className="text-[13px] text-foreground border border-border rounded-full px-3.5 py-1.5 hover:border-foreground transition-colors"
             >
               {p}
             </button>
           ))}
         </div>
 
-        <div className="w-full flex items-center gap-2 border-[1.5px] border-[var(--hub-border)] rounded-2xl px-4 py-3 focus-within:border-[var(--hub-text)] transition-colors">
+        <div className="w-full flex items-center gap-2 border-[1.5px] border-border rounded-2xl px-4 py-3 focus-within:border-foreground transition-colors">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && send()}
             placeholder={`Ask the ${agent.name} anything…`}
-            className="flex-1 min-w-0 bg-transparent text-[14px] outline-none placeholder:text-[var(--hub-faint)]"
+            className="flex-1 min-w-0 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground/60"
           />
           <button
             onClick={() => send()}
             disabled={loading || !input.trim()}
-            className="w-8 h-8 rounded-full bg-[var(--hub-btn)] text-[var(--hub-btn-text)] flex items-center justify-center disabled:opacity-40 hover:opacity-85 transition-opacity shrink-0"
+            className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 hover:opacity-85 transition-opacity shrink-0"
           >
             <Icon name="up" size={14} />
           </button>

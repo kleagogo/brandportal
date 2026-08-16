@@ -65,37 +65,37 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative bg-[var(--hub-panel)] rounded-2xl border border-[var(--hub-border)] shadow-2xl w-full max-w-[440px] p-6">
-        <button onClick={onClose} className="absolute top-4 right-4 text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Close">
+      <div className="absolute inset-0 bg-foreground/30" onClick={onClose} />
+      <div className="relative bg-card rounded-2xl border border-border shadow-2xl w-full max-w-[440px] p-6">
+        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground/60 hover:text-foreground transition-colors" title="Close">
           <Icon name="close" size={14} />
         </button>
 
         <h2 className="text-[17px] font-bold tracking-tight mb-1">Hub settings</h2>
-        <p className="text-[13px] text-[var(--hub-muted)] mb-5">Only you, the owner, can see this.</p>
+        <p className="text-[13px] text-muted-foreground mb-5">Only you, the owner, can see this.</p>
 
         <div className="mb-6">
-          <label className="block text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-1.5">Client name</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Client name</label>
           <div className="flex gap-2">
             <input
               value={client}
               onChange={e => setClient(e.target.value)}
               onBlur={saveClient}
               placeholder="e.g. Copperline Coffee"
-              className="flex-1 px-3 py-2.5 text-[13px] rounded-xl border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors placeholder:text-[var(--hub-faint)]"
+              className="flex-1 px-3 py-2.5 text-[13px] rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
             />
-            <button onClick={saveClient} className="text-[13px] font-semibold px-4 rounded-xl border border-[var(--hub-border)] hover:border-[var(--hub-text)] transition-colors whitespace-nowrap">
+            <button onClick={saveClient} className="text-[13px] font-semibold px-4 rounded-xl border border-border hover:border-foreground transition-colors whitespace-nowrap">
               {clientSaved ? 'Saved ✓' : 'Save'}
             </button>
           </div>
-          <p className="text-[11.5px] text-[var(--hub-faint)] mt-1.5">Shown on your client-spaces dashboard.</p>
+          <p className="text-[11.5px] text-muted-foreground/60 mt-1.5">Shown on your client-spaces dashboard.</p>
         </div>
 
         <form onSubmit={rename} className="mb-6">
-          <label className="block text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-1.5">Hub address</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Hub address</label>
           <div className="flex gap-2">
-            <div className="flex items-center flex-1 rounded-xl border-[1.5px] border-[var(--hub-border)] focus-within:border-[var(--hub-text)] transition-colors overflow-hidden">
-              <span className="pl-3 text-[13px] text-[var(--hub-faint)] font-mono">/</span>
+            <div className="flex items-center flex-1 rounded-xl border-[1.5px] border-border focus-within:border-foreground transition-colors overflow-hidden">
+              <span className="pl-3 text-[13px] text-muted-foreground/60 font-mono">/</span>
               <input
                 value={slug}
                 onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
@@ -105,27 +105,27 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             <button
               type="submit"
               disabled={busy || slug.trim() === config.slug}
-              className="text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-4 py-2.5 rounded-xl hover:opacity-85 transition-colors disabled:opacity-40 whitespace-nowrap"
+              className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:opacity-85 transition-colors disabled:opacity-40 whitespace-nowrap"
             >
               Change
             </button>
           </div>
-          <p className="text-[11.5px] text-[var(--hub-faint)] mt-1.5">Changing the address breaks previously shared links.</p>
+          <p className="text-[11.5px] text-muted-foreground/60 mt-1.5">Changing the address breaks previously shared links.</p>
         </form>
 
-        {error && <p className="text-[12.5px] text-red-500 mb-4">{error}</p>}
+        {error && <p className="text-[12.5px] text-destructive mb-4">{error}</p>}
 
         <TransferSection slug={config.slug} name={config.name} />
 
-        <div className="border-t border-dashed border-[var(--hub-border)] pt-4 flex items-center justify-between gap-3">
+        <div className="border-t border-dashed border-border pt-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[13px] font-medium text-[var(--hub-text)]">Delete this hub</p>
-            <p className="text-[12px] text-[var(--hub-faint)]">Removes the hub and its share link forever</p>
+            <p className="text-[13px] font-medium text-foreground">Delete this hub</p>
+            <p className="text-[12px] text-muted-foreground/60">Removes the hub and its share link forever</p>
           </div>
           <button
             onClick={destroy}
             disabled={busy}
-            className="text-[13px] font-semibold text-red-600 border-[1.5px] border-red-200 px-3.5 py-2 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50 whitespace-nowrap"
+            className="text-[13px] font-semibold text-destructive border-[1.5px] border-destructive/30 px-3.5 py-2 rounded-xl hover:bg-destructive/10 transition-colors disabled:opacity-50 whitespace-nowrap"
           >
             Delete hub
           </button>
@@ -168,28 +168,28 @@ function TransferSection({ slug, name }: { slug: string; name: string }) {
   }
 
   return (
-    <div className="border-t border-dashed border-[var(--hub-border)] pt-4 mb-6">
+    <div className="border-t border-dashed border-border pt-4 mb-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[13px] font-medium text-[var(--hub-text)]">Hand off to a client</p>
-          <p className="text-[12px] text-[var(--hub-faint)]">Transfer ownership — they accept by email, you stay on as an editor</p>
+          <p className="text-[13px] font-medium text-foreground">Hand off to a client</p>
+          <p className="text-[12px] text-muted-foreground/60">Transfer ownership — they accept by email, you stay on as an editor</p>
         </div>
         {!open && !sentTo && (
-          <button onClick={() => setOpen(true)} className="text-[13px] font-semibold border-[1.5px] border-[var(--hub-border)] text-[var(--hub-text)] px-3.5 py-2 rounded-xl hover:border-[var(--hub-text)] transition-colors whitespace-nowrap">
+          <button onClick={() => setOpen(true)} className="text-[13px] font-semibold border-[1.5px] border-border text-foreground px-3.5 py-2 rounded-xl hover:border-foreground transition-colors whitespace-nowrap">
             Transfer…
           </button>
         )}
       </div>
 
       {sentTo ? (
-        <div className="bg-[var(--hub-soft)] rounded-xl p-3 mt-3">
-          <p className="text-[12px] text-[var(--hub-muted)]">
+        <div className="bg-muted rounded-xl p-3 mt-3">
+          <p className="text-[12px] text-muted-foreground">
             Transfer offer sent to <b>{sentTo}</b>. The hub stays yours until they accept.
           </p>
           {devLink && (
             <button
               onClick={() => navigator.clipboard.writeText(devLink)}
-              className="text-[12px] font-semibold text-[var(--hub-text)] underline underline-offset-2 mt-1"
+              className="text-[12px] font-semibold text-foreground underline underline-offset-2 mt-1"
             >
               Copy their accept link (email not configured)
             </button>
@@ -204,18 +204,18 @@ function TransferSection({ slug, name }: { slug: string; name: string }) {
             placeholder="client@theircompany.com"
             required
             autoFocus
-            className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors placeholder:text-[var(--hub-faint)]"
+            className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
           />
           <button
             type="submit"
             disabled={busy}
-            className="text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-3.5 py-2 rounded-xl hover:opacity-85 transition-colors disabled:opacity-50 whitespace-nowrap"
+            className="text-[13px] font-semibold bg-primary text-primary-foreground px-3.5 py-2 rounded-xl hover:opacity-85 transition-colors disabled:opacity-50 whitespace-nowrap"
           >
             {busy ? 'Sending…' : 'Send offer'}
           </button>
         </form>
       )}
-      {error && <p className="text-[12px] text-red-500 mt-2">{error}</p>}
+      {error && <p className="text-[12px] text-destructive mt-2">{error}</p>}
     </div>
   )
 }

@@ -125,52 +125,52 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative bg-[var(--hub-panel)] rounded-2xl border border-[var(--hub-border)] shadow-2xl w-full max-w-[520px] p-6 max-h-[85vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-4 right-4 text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Close">
+      <div className="absolute inset-0 bg-foreground/30" onClick={onClose} />
+      <div className="relative bg-card rounded-2xl border border-border shadow-2xl w-full max-w-[520px] p-6 max-h-[85vh] overflow-y-auto">
+        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground/60 hover:text-foreground transition-colors" title="Close">
           <Icon name="close" size={14} />
         </button>
 
         <h2 className="text-[17px] font-bold tracking-tight mb-1">Share this hub</h2>
-        <p className="text-[13px] text-[var(--hub-muted)] mb-5">Anyone with the link can view — no account needed.</p>
+        <p className="text-[13px] text-muted-foreground mb-5">Anyone with the link can view — no account needed.</p>
 
         <div ref={stageRef} className="t-confetti-stage flex gap-2 mb-5">
           <canvas ref={confettiCanvas} className="t-confetti-canvas" aria-hidden="true" />
-          <div className="flex-1 px-3 py-2.5 bg-[var(--hub-soft)] rounded-xl text-[13px] font-mono text-[var(--hub-text)] truncate">
+          <div className="flex-1 px-3 py-2.5 bg-muted rounded-xl text-[13px] font-mono text-foreground truncate">
             {url || `/${config.slug}`}
           </div>
           <button
             ref={copyBtn}
             onClick={() => copy(url)}
-            className="px-4 py-2.5 bg-[var(--hub-btn)] text-[var(--hub-btn-text)] text-[13px] font-semibold rounded-xl hover:opacity-85 transition-colors whitespace-nowrap"
+            className="px-4 py-2.5 bg-primary text-primary-foreground text-[13px] font-semibold rounded-xl hover:opacity-85 transition-colors whitespace-nowrap"
           >
             {copied ? 'Copied ✓' : 'Copy link'}
           </button>
         </div>
 
-        {error && <p className="text-[12.5px] text-red-500 mb-4">{error}</p>}
+        {error && <p className="text-[12.5px] text-destructive mb-4">{error}</p>}
 
         <div className="mb-5">
           <PortalManager canEdit={canEdit} />
         </div>
 
         {isOwner && loaded ? (
-          <div className="border-t border-dashed border-[var(--hub-border)] pt-4 space-y-5">
+          <div className="border-t border-dashed border-border pt-4 space-y-5">
             {/* Password / PIN */}
             <div>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[13px] font-medium text-[var(--hub-text)]">Password protection</p>
-                  <p className="text-[12px] text-[var(--hub-faint)]">
+                  <p className="text-[13px] font-medium text-foreground">Password protection</p>
+                  <p className="text-[12px] text-muted-foreground/60">
                     {pin ? 'Viewers must enter it to open the hub' : 'Anyone with the link can view'}
                   </p>
                 </div>
                 <button
                   onClick={togglePin}
-                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${pin ? 'bg-emerald-500' : 'bg-[var(--hub-soft)]'}`}
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${pin ? 'bg-emerald-500' : 'bg-muted'}`}
                   title={pin ? 'Turn protection off' : 'Turn protection on'}
                 >
-                  <span className={`absolute top-0.5 w-5 h-5 bg-[var(--hub-panel)] rounded-full shadow transition-all ${pin ? 'left-[18px]' : 'left-0.5'}`} />
+                  <span className={`absolute top-0.5 w-5 h-5 bg-card rounded-full shadow transition-all ${pin ? 'left-[18px]' : 'left-0.5'}`} />
                 </button>
               </div>
               {pin && (
@@ -181,9 +181,9 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
                     onBlur={savePassword}
                     onKeyDown={e => { if (e.key === 'Enter') savePassword() }}
                     placeholder="PIN or password"
-                    className="flex-1 text-[13px] font-mono px-3 py-2 rounded-xl border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
+                    className="flex-1 text-[13px] font-mono px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
                   />
-                  <button onClick={() => copy(pinDraft)} className="text-[12px] font-semibold px-3 rounded-xl border border-[var(--hub-border)] hover:border-[var(--hub-text)] transition-colors whitespace-nowrap">
+                  <button onClick={() => copy(pinDraft)} className="text-[12px] font-semibold px-3 rounded-xl border border-border hover:border-foreground transition-colors whitespace-nowrap">
                     {copied ? 'Copied ✓' : 'Copy'}
                   </button>
                 </div>
@@ -193,8 +193,8 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
             {/* Expiry */}
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[13px] font-medium text-[var(--hub-text)]">Link expires</p>
-                <p className="text-[12px] text-[var(--hub-faint)]">
+                <p className="text-[13px] font-medium text-foreground">Link expires</p>
+                <p className="text-[12px] text-muted-foreground/60">
                   {expiresAt ? `Stops working ${new Date(expiresAt).toLocaleDateString()}` : 'Never expires'}
                 </p>
               </div>
@@ -203,10 +203,10 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
                   type="date"
                   value={expiresAt ? new Date(expiresAt).toISOString().slice(0, 10) : ''}
                   onChange={e => saveExpiry(e.target.value)}
-                  className="text-[12px] px-2.5 py-1.5 rounded-xl border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
+                  className="text-[12px] px-2.5 py-1.5 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
                 />
                 {expiresAt && (
-                  <button onClick={() => saveExpiry('')} className="text-[var(--hub-faint)] hover:text-red-500 transition-colors" title="Remove expiry">
+                  <button onClick={() => saveExpiry('')} className="text-muted-foreground/60 hover:text-destructive transition-colors" title="Remove expiry">
                     <Icon name="close" size={12} />
                   </button>
                 )}
@@ -215,26 +215,26 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
 
             {/* Invites */}
             <div>
-              <p className="text-[13px] font-medium text-[var(--hub-text)] mb-1.5">Invite editors</p>
+              <p className="text-[13px] font-medium text-foreground mb-1.5">Invite editors</p>
               <form onSubmit={invite} className="flex gap-2 mb-2">
                 <input
                   type="email"
                   value={inviteEmail}
                   onChange={e => setInviteEmail(e.target.value)}
                   placeholder="colleague@company.com"
-                  className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors placeholder:text-[var(--hub-faint)]"
+                  className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
                 />
                 <button
                   type="submit"
                   disabled={inviteBusy}
-                  className="text-[13px] font-semibold border-[1.5px] border-[var(--hub-text)] text-[var(--hub-text)] px-3.5 py-2 rounded-xl hover:bg-[var(--hub-text)] hover:text-[var(--hub-bg)] transition-colors disabled:opacity-50 whitespace-nowrap"
+                  className="text-[13px] font-semibold border-[1.5px] border-foreground text-foreground px-3.5 py-2 rounded-xl hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
                   {inviteBusy ? 'Inviting…' : 'Invite'}
                 </button>
               </form>
               {inviteSentTo && (
-                <div className="bg-[var(--hub-soft)] rounded-xl p-3 mb-2">
-                  <p className="text-[12px] text-[var(--hub-muted)] mb-1.5">
+                <div className="bg-muted rounded-xl p-3 mb-2">
+                  <p className="text-[12px] text-muted-foreground mb-1.5">
                     {inviteLink
                       ? <>Invite created for <b>{inviteSentTo}</b>. Email isn’t configured yet — copy the invite link and send it yourself:</>
                       : <>Invite emailed to <b>{inviteSentTo}</b>.</>}
@@ -242,7 +242,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
                   {inviteLink && (
                     <button
                       onClick={() => copy(inviteLink)}
-                      className="text-[12px] font-semibold text-[var(--hub-text)] underline underline-offset-2"
+                      className="text-[12px] font-semibold text-foreground underline underline-offset-2"
                     >
                       {copied ? 'Copied ✓' : 'Copy invite link'}
                     </button>
@@ -252,11 +252,11 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
               {(editors.length > 0 || pending.length > 0) && (
                 <div className="space-y-1">
                   {editors.map(email => (
-                    <div key={email} className="flex items-center justify-between text-[12.5px] text-[var(--hub-muted)] px-1 py-1 group">
+                    <div key={email} className="flex items-center justify-between text-[12.5px] text-muted-foreground px-1 py-1 group">
                       <span className="truncate">✎ {email}</span>
                       <button
                         onClick={() => removeEditor(email)}
-                        className="text-[var(--hub-faint)] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                        className="text-muted-foreground/60 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
                         title="Remove editor"
                       >
                         <Icon name="close" size={11} />
@@ -264,7 +264,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
                     </div>
                   ))}
                   {pending.map(p => (
-                    <div key={p.token} className="flex items-center justify-between text-[12.5px] text-[var(--hub-faint)] px-1 py-1 group">
+                    <div key={p.token} className="flex items-center justify-between text-[12.5px] text-muted-foreground/60 px-1 py-1 group">
                       <span className="truncate">✉ {p.email} · invited, not yet accepted</span>
                       <button
                         onClick={async () => {
@@ -275,7 +275,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
                           })
                           setPending(list => list.filter(x => x.token !== p.token))
                         }}
-                        className="text-[var(--hub-faint)] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                        className="text-muted-foreground/60 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
                         title="Revoke invite"
                       >
                         <Icon name="close" size={11} />
@@ -287,21 +287,21 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
             </div>
           </div>
         ) : (
-          <div className="border-t border-dashed border-[var(--hub-border)] pt-4 space-y-3">
+          <div className="border-t border-dashed border-border pt-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[13px] font-medium text-[var(--hub-text)]">PIN protection & editor invites</p>
-                <p className="text-[12px] text-[var(--hub-faint)]">
+                <p className="text-[13px] font-medium text-foreground">PIN protection & editor invites</p>
+                <p className="text-[12px] text-muted-foreground/60">
                   {demo ? 'Not available on the demo hub — claim your own to use these' : 'Only the hub owner can manage access'}
                 </p>
               </div>
             </div>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[13px] font-medium text-[var(--hub-text)]">Custom domain</p>
-                <p className="text-[12px] text-[var(--hub-faint)]">brand.yourcompany.com</p>
+                <p className="text-[13px] font-medium text-foreground">Custom domain</p>
+                <p className="text-[12px] text-muted-foreground/60">brand.yourcompany.com</p>
               </div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#d96e30] bg-[#f7e1d3] px-2 py-1 rounded-md whitespace-nowrap">Pro</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/15 px-2 py-1 rounded-md whitespace-nowrap">Pro</span>
             </div>
           </div>
         )}

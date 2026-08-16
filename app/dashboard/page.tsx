@@ -48,10 +48,10 @@ export default async function DashboardPage() {
   const askWhatFor = !user.accountType && hubs.length === 0
 
   return (
-    <div className="min-h-screen bg-[#f9f9f8]">
-      <nav className="border-b border-[#e8e7e4] bg-white px-5 sm:px-8 h-14 flex items-center justify-between">
+    <div className="min-h-screen bg-background">
+      <nav className="border-b border-border bg-card px-5 sm:px-8 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="w-7 h-7 rounded-md bg-[#1a1a1a] text-white flex items-center justify-center font-bold text-[14px]">P</span>
+          <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold text-[14px]">P</span>
           <span className="text-[15px] font-semibold tracking-tight">Pitho</span>
         </Link>
         <AccountMenu email={user.email} />
@@ -66,31 +66,31 @@ export default async function DashboardPage() {
             {/* ── The account's own brand — hub zero ────────────────────────── */}
             <section>
               <div className="mb-4">
-                <h2 className="text-[13px] font-semibold uppercase tracking-widest text-[#b0afa9]">{labels.ownHeading}</h2>
+                <h2 className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground/60">{labels.ownHeading}</h2>
               </div>
 
               {studio ? (
                 <Link
                   href={`/${studio.hub.slug}`}
-                  className="block bg-white border border-[#e8e7e4] rounded-2xl p-5 hover:border-[#1a1a1a] transition-colors"
+                  className="block bg-card border border-border rounded-2xl p-5 hover:border-foreground transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 shrink-0 rounded-xl bg-[#f9f9f8] border border-[#e8e7e4] flex items-center justify-center p-2.5">
+                    <div className="w-14 h-14 shrink-0 rounded-xl bg-background border border-border flex items-center justify-center p-2.5">
                       {studio.hub.logoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={studio.hub.logoUrl} alt="" className="max-h-full max-w-full object-contain" />
                       ) : (
-                        <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] text-white flex items-center justify-center font-bold text-[14px]">
+                        <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-[14px]">
                           {studio.hub.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[16px] font-semibold text-[#1a1a1a] truncate">{studio.hub.name}</p>
-                      <p className="text-[12.5px] text-[#8a8a85] truncate">
+                      <p className="text-[16px] font-semibold text-foreground truncate">{studio.hub.name}</p>
+                      <p className="text-[12.5px] text-muted-foreground truncate">
                         {assetCount(studio.hub.assets)} assets · /{studio.hub.slug}
                       </p>
-                      <p className="text-[12px] text-[#b0afa9] mt-1.5">{labels.ownCardNote}</p>
+                      <p className="text-[12px] text-muted-foreground/60 mt-1.5">{labels.ownCardNote}</p>
                     </div>
                   </div>
                 </Link>
@@ -103,8 +103,8 @@ export default async function DashboardPage() {
             <section>
               <div className="flex items-end justify-between gap-4 mb-4 flex-wrap">
                 <div>
-                  <h2 className="text-[13px] font-semibold uppercase tracking-widest text-[#b0afa9] mb-1">{labels.othersHeading}</h2>
-                  <p className="text-[13.5px] text-[#8a8a85]">
+                  <h2 className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">{labels.othersHeading}</h2>
+                  <p className="text-[13.5px] text-muted-foreground">
                     {ownedClients} of {limits.hubs} used{sharedCount > 0 ? ` · ${sharedCount} shared with you` : ''}
                   </p>
                 </div>
@@ -112,9 +112,9 @@ export default async function DashboardPage() {
               </div>
 
               {clients.length === 0 ? (
-                <div className="border-2 border-dashed border-[#e8e7e4] rounded-2xl p-10 text-center">
-                  <p className="text-[15px] font-medium text-[#1a1a1a] mb-1">{labels.emptyTitle}</p>
-                  <p className="text-[13px] text-[#8a8a85]">{labels.emptyBody}</p>
+                <div className="border-2 border-dashed border-border rounded-2xl p-10 text-center">
+                  <p className="text-[15px] font-medium text-foreground mb-1">{labels.emptyTitle}</p>
+                  <p className="text-[13px] text-muted-foreground">{labels.emptyBody}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -122,9 +122,9 @@ export default async function DashboardPage() {
                     <Link
                       key={hub.slug}
                       href={`/${hub.slug}`}
-                      className="bg-white border border-[#e8e7e4] rounded-2xl overflow-hidden hover:border-[#1a1a1a] transition-colors group"
+                      className="bg-card border border-border rounded-2xl overflow-hidden hover:border-foreground transition-colors group"
                     >
-                      <div className="h-24 bg-[#f9f9f8] border-b border-[#e8e7e4] flex items-center justify-center p-5">
+                      <div className="h-24 bg-background border-b border-border flex items-center justify-center p-5">
                         {/* Three assets from inside, fanning on hover — the card
                             shows what the space holds, not just its initial. */}
                         <HubCardStack
@@ -134,17 +134,17 @@ export default async function DashboardPage() {
                         />
                       </div>
                       <div className="p-4">
-                        <p className="text-[15px] font-semibold text-[#1a1a1a] truncate">{meta.client || hub.name}</p>
-                        <p className="text-[12px] text-[#b0afa9] mb-3 truncate">
+                        <p className="text-[15px] font-semibold text-foreground truncate">{meta.client || hub.name}</p>
+                        <p className="text-[12px] text-muted-foreground/60 mb-3 truncate">
                           {assetCount(hub.assets)} assets · /{hub.slug}
                         </p>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#f0efec] text-[#8a8a85]">{role}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground">{role}</span>
                           {meta.pin && (
-                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#f0efec] text-[#8a8a85]">Protected</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground">Protected</span>
                           )}
                           {isExpired(meta) && (
-                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-50 text-red-500">Link expired</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-destructive/10 text-destructive">Link expired</span>
                           )}
                         </div>
                       </div>

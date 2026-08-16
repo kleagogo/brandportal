@@ -17,13 +17,13 @@ export function GradientsBlock() {
       {groups.map((group, gi) => (
         <div key={gi} className="mb-10">
           <div className="flex items-center gap-2 mb-4 group/head">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)]">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               <Editable inline value={group.group} placeholder="Group name" onChange={v => update(c => { c.gradients![gi].group = v })} />
             </p>
             {editing && (
               <button
                 onClick={() => update(c => { c.gradients!.splice(gi, 1) })}
-                className="opacity-0 group-hover/head:opacity-100 text-[var(--hub-faint)] hover:text-red-500 transition-all"
+                className="opacity-0 group-hover/head:opacity-100 text-muted-foreground/60 hover:text-destructive transition-all"
                 title="Delete group"
               >
                 <Icon name="trash" size={13} />
@@ -44,7 +44,7 @@ export function GradientsBlock() {
             {editing && (
               <button
                 onClick={() => update(c => { c.gradients![gi].gradients.push({ name: 'New gradient', css: 'linear-gradient(90deg, #6366f1 0%, #ec4899 100%)', downloadable: true }) })}
-                className="min-h-[160px] border-2 border-dashed border-[var(--hub-border)] rounded-xl text-[var(--hub-faint)] hover:border-[var(--hub-text)] hover:text-[var(--hub-text)] transition-colors flex items-center justify-center"
+                className="min-h-[160px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex items-center justify-center"
               >
                 <Icon name="plus" size={16} />
               </button>
@@ -56,7 +56,7 @@ export function GradientsBlock() {
       {editing && (
         <button
           onClick={() => update(c => { if (!c.gradients) c.gradients = []; c.gradients.push({ group: 'New gradient group', gradients: [] }) })}
-          className="text-[13px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] border border-dashed border-[var(--hub-border)] hover:border-[var(--hub-text)] rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors"
+          className="text-[13px] font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-foreground rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors"
         >
           <Icon name="plus" size={13} /> Add gradient group
         </button>
@@ -99,20 +99,20 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
   }
 
   return (
-    <div className="bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl overflow-hidden group relative">
+    <div className="bg-card border border-border rounded-xl overflow-hidden group relative">
       {editing && (
-        <button onClick={onDelete} className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-white/80 text-[#333] hover:text-red-500 items-center justify-center hidden group-hover:flex" title="Remove gradient">
+        <button onClick={onDelete} className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-card/80 text-foreground/90 hover:text-destructive items-center justify-center hidden group-hover:flex" title="Remove gradient">
           <Icon name="close" size={11} />
         </button>
       )}
       <div className="h-32" style={{ background: grad.css }} />
       <div className="p-3 flex items-center justify-between gap-2">
-        <p className="text-[13px] font-medium text-[var(--hub-text)] min-w-0 truncate">
+        <p className="text-[13px] font-medium text-foreground min-w-0 truncate">
           <Editable value={grad.name} placeholder="Gradient name" onChange={onName} />
         </p>
         <button
           onClick={grad.downloadable ? download : copy}
-          className="shrink-0 flex items-center gap-1.5 text-[12px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors"
+          className="shrink-0 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors"
           title={grad.downloadable ? 'Download PNG' : 'Copy CSS'}
         >
           {grad.downloadable ? <><Icon name="download" size={12} /> Download</> : (copied ? 'Copied ✓' : <Icon name="copy" size={13} />)}
@@ -123,7 +123,7 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
           <input
             value={grad.css}
             onChange={e => onCss(e.target.value)}
-            className="w-full text-[11px] font-mono px-2 py-1.5 border border-[var(--hub-border)] rounded-lg outline-none focus:border-[var(--hub-text)] bg-[var(--hub-bg)]"
+            className="w-full text-[11px] font-mono px-2 py-1.5 border border-border rounded-lg outline-none focus:border-foreground bg-background"
             placeholder="linear-gradient(…)"
           />
         </div>

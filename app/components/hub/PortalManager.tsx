@@ -111,23 +111,23 @@ export function PortalManager({ canEdit }: { canEdit: boolean }) {
   if (!canEdit) return null
 
   return (
-    <div className="border-t border-dashed border-[var(--hub-border)] pt-4">
+    <div className="border-t border-dashed border-border pt-4">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div>
-          <p className="text-[13px] font-medium text-[var(--hub-text)]">Share links</p>
-          <p className="text-[12px] text-[var(--hub-faint)]">Pick a template, choose sections, white-label it</p>
+          <p className="text-[13px] font-medium text-foreground">Share links</p>
+          <p className="text-[12px] text-muted-foreground/60">Pick a template, choose sections, white-label it</p>
         </div>
         {!editing && (
           <button
             onClick={startNew}
-            className="text-[12.5px] font-semibold border-[1.5px] border-[var(--hub-text)] px-3 py-1.5 rounded-xl hover:bg-[var(--hub-text)] hover:text-[var(--hub-bg)] transition-colors whitespace-nowrap"
+            className="text-[12.5px] font-semibold border-[1.5px] border-foreground px-3 py-1.5 rounded-xl hover:bg-foreground hover:text-background transition-colors whitespace-nowrap"
           >
             New link
           </button>
         )}
       </div>
 
-      {error && <p className="text-[12.5px] text-red-500 mb-3">{error}</p>}
+      {error && <p className="text-[12.5px] text-destructive mb-3">{error}</p>}
 
       {editing ? (
         <Editor
@@ -140,16 +140,16 @@ export function PortalManager({ canEdit }: { canEdit: boolean }) {
       ) : (
         <div className="space-y-2">
           {loaded && portals.length === 0 && (
-            <p className="text-[12px] text-[var(--hub-faint)]">No share links yet — create one to send a client a tailored view.</p>
+            <p className="text-[12px] text-muted-foreground/60">No share links yet — create one to send a client a tailored view.</p>
           )}
           {portals.map(portal => {
             const stat = stats[portal.id] || { views: 0, downloads: 0 }
             return (
-            <div key={portal.id} className="bg-[var(--hub-soft)] rounded-xl px-3 py-2">
+            <div key={portal.id} className="bg-muted rounded-xl px-3 py-2">
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-[12.5px] font-medium truncate">{portal.name}</p>
-                  <p className="text-[11px] text-[var(--hub-faint)] truncate">
+                  <p className="text-[11px] text-muted-foreground/60 truncate">
                     {TEMPLATES.find(t => t.id === portal.template)?.label}
                     {portal.password ? ' · password' : ''}
                     {portal.expiresAt ? ` · until ${new Date(portal.expiresAt).toLocaleDateString()}` : ''}
@@ -157,27 +157,27 @@ export function PortalManager({ canEdit }: { canEdit: boolean }) {
                     {!portal.allowDownload ? ' · view only' : ''}
                   </p>
                 </div>
-                <button onClick={() => copy(portal)} className="text-[11.5px] font-semibold text-[var(--hub-text)] whitespace-nowrap px-2 py-1 rounded-lg hover:bg-[var(--hub-panel)] transition-colors">
+                <button onClick={() => copy(portal)} className="text-[11.5px] font-semibold text-foreground whitespace-nowrap px-2 py-1 rounded-lg hover:bg-card transition-colors">
                   {copiedId === portal.id ? 'Copied ✓' : 'Copy'}
                 </button>
-                <a href={`/s/${portal.id}`} target="_blank" rel="noopener noreferrer" className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Open">
+                <a href={`/s/${portal.id}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground/60 hover:text-foreground transition-colors" title="Open">
                   <Icon name="link" size={12} />
                 </a>
-                <button onClick={() => startEdit(portal)} className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors" title="Edit">
+                <button onClick={() => startEdit(portal)} className="text-muted-foreground/60 hover:text-foreground transition-colors" title="Edit">
                   <Icon name="edit" size={12} />
                 </button>
-                <button onClick={() => destroy(portal.id)} className="text-[var(--hub-faint)] hover:text-red-500 transition-colors" title="Delete">
+                <button onClick={() => destroy(portal.id)} className="text-muted-foreground/60 hover:text-destructive transition-colors" title="Delete">
                   <Icon name="trash" size={12} />
                 </button>
               </div>
 
               <button
                 onClick={() => setActivity(activity === portal.id ? null : portal.id)}
-                className="mt-1 flex items-center gap-2.5 text-[11px] text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors"
+                className="mt-1 flex items-center gap-2.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
               >
                 <span><b className="font-semibold">{stat.views}</b> {stat.views === 1 ? 'view' : 'views'}</span>
                 <span><b className="font-semibold">{stat.downloads}</b> {stat.downloads === 1 ? 'download' : 'downloads'}</span>
-                {stat.lastViewAt && <span className="text-[var(--hub-faint)]">last {relativeTime(stat.lastViewAt)}</span>}
+                {stat.lastViewAt && <span className="text-muted-foreground/60">last {relativeTime(stat.lastViewAt)}</span>}
                 {(stat.views > 0 || stat.downloads > 0) && <Icon name={activity === portal.id ? 'up' : 'down'} size={9} />}
               </button>
 
@@ -206,18 +206,18 @@ function Activity({ slug, portalId }: { slug: string; portalId: string }) {
       .catch(() => setEvents([]))
   }, [slug, portalId])
 
-  if (!events) return <p className="text-[11px] text-[var(--hub-faint)] mt-2">Loading…</p>
-  if (events.length === 0) return <p className="text-[11px] text-[var(--hub-faint)] mt-2">Nothing yet — no one has opened this link.</p>
+  if (!events) return <p className="text-[11px] text-muted-foreground/60 mt-2">Loading…</p>
+  if (events.length === 0) return <p className="text-[11px] text-muted-foreground/60 mt-2">Nothing yet — no one has opened this link.</p>
 
   return (
-    <div className="mt-2 pt-2 border-t border-dashed border-[var(--hub-border)] space-y-1 max-h-40 overflow-y-auto">
+    <div className="mt-2 pt-2 border-t border-dashed border-border space-y-1 max-h-40 overflow-y-auto">
       {events.map((event, i) => (
         <div key={`${event.at}-${i}`} className="flex items-center gap-2 text-[11px]">
           <Icon name={event.type === 'view' ? 'link' : 'download'} size={10} />
-          <span className="text-[var(--hub-muted)] truncate flex-1">
+          <span className="text-muted-foreground truncate flex-1">
             {event.type === 'view' ? 'Opened the link' : `Downloaded ${event.label || 'a file'}`}
           </span>
-          <span className="text-[var(--hub-faint)] shrink-0">{relativeTime(event.at)}</span>
+          <span className="text-muted-foreground/60 shrink-0">{relativeTime(event.at)}</span>
         </div>
       ))}
     </div>
@@ -279,12 +279,12 @@ function Editor({
   }
 
   return (
-    <div className="bg-[var(--hub-soft)] rounded-2xl p-3.5 space-y-4">
+    <div className="bg-muted rounded-2xl p-3.5 space-y-4">
       <input
         value={draft.name}
         onChange={e => set({ name: e.target.value })}
         placeholder="What is this link for?"
-        className="w-full text-[13px] font-medium px-3 py-2 rounded-xl bg-[var(--hub-panel)] border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
+        className="w-full text-[13px] font-medium px-3 py-2 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
       />
 
       {/* Template */}
@@ -294,19 +294,19 @@ function Editor({
             key={t.id}
             onClick={() => set({ template: t.id })}
             className={`text-left p-2.5 rounded-xl border-[1.5px] transition-colors ${
-              draft.template === t.id ? 'border-[var(--hub-text)] bg-[var(--hub-panel)]' : 'border-[var(--hub-border)] hover:border-[var(--hub-muted)]'
+              draft.template === t.id ? 'border-foreground bg-card' : 'border-border hover:border-muted-foreground'
             }`}
           >
             <TemplateThumb template={t.id} />
             <p className="text-[12px] font-semibold mt-2">{t.label}</p>
-            <p className="text-[10.5px] text-[var(--hub-faint)] leading-tight mt-0.5">{t.blurb}</p>
+            <p className="text-[10.5px] text-muted-foreground/60 leading-tight mt-0.5">{t.blurb}</p>
           </button>
         ))}
       </div>
 
       {/* Sections */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-1.5">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5">
           Sections {chosen.length === 0 ? '· all' : `· ${chosen.length} of ${shareable.length}`}
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -317,7 +317,7 @@ function Editor({
                 key={section.id}
                 onClick={() => toggleSection(section.id)}
                 className={`text-[11.5px] px-2.5 py-1 rounded-lg border transition-colors ${
-                  on ? 'bg-[var(--hub-btn)] text-[var(--hub-btn-text)] border-[var(--hub-btn)]' : 'border-[var(--hub-border)] text-[var(--hub-muted)] hover:border-[var(--hub-text)]'
+                  on ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-foreground'
                 }`}
               >
                 {section.label}
@@ -337,7 +337,7 @@ function Editor({
             value={draft.password || ''}
             onChange={e => set({ password: e.target.value || null })}
             placeholder="Optional"
-            className="w-32 text-[12px] px-2.5 py-1.5 rounded-xl bg-[var(--hub-panel)] border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
+            className="w-32 text-[12px] px-2.5 py-1.5 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
           />
         </Row>
         <Row label="Expires" hint={draft.expiresAt ? `Stops working ${new Date(draft.expiresAt).toLocaleDateString()}` : 'Never expires'}>
@@ -345,7 +345,7 @@ function Editor({
             type="date"
             value={draft.expiresAt ? new Date(draft.expiresAt).toISOString().slice(0, 10) : ''}
             onChange={e => set({ expiresAt: e.target.value ? new Date(`${e.target.value}T23:59:59`).toISOString() : null })}
-            className="text-[12px] px-2.5 py-1.5 rounded-xl bg-[var(--hub-panel)] border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
+            className="text-[12px] px-2.5 py-1.5 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
           />
         </Row>
         <Row label="White-label" hint="Your logo and colors, no Pitho credit">
@@ -361,11 +361,11 @@ function Editor({
       </div>
 
       {whiteLabel && (
-        <div className="space-y-2 border-t border-dashed border-[var(--hub-border)] pt-3">
+        <div className="space-y-2 border-t border-dashed border-border pt-3">
           <div className="flex gap-2 items-center">
             <button
               onClick={() => logoInput.current?.click()}
-              className={`w-10 h-10 shrink-0 rounded-xl border-[1.5px] border-dashed border-[var(--hub-border)] hover:border-[var(--hub-text)] flex items-center justify-center overflow-hidden transition-colors ${logoBusy ? 'animate-pulse' : ''}`}
+              className={`w-10 h-10 shrink-0 rounded-xl border-[1.5px] border-dashed border-border hover:border-foreground flex items-center justify-center overflow-hidden transition-colors ${logoBusy ? 'animate-pulse' : ''}`}
               title="Upload a logo"
             >
               {draft.branding?.logoUrl ? (
@@ -379,13 +379,13 @@ function Editor({
               value={draft.branding?.name || ''}
               onChange={e => setBranding({ name: e.target.value })}
               placeholder={config.name}
-              className="flex-1 min-w-0 text-[12.5px] px-3 py-2 rounded-xl bg-[var(--hub-panel)] border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
+              className="flex-1 min-w-0 text-[12.5px] px-3 py-2 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
             />
             <input
               type="color"
               value={draft.branding?.accent || '#1a1a1a'}
               onChange={e => setBranding({ accent: e.target.value })}
-              className="w-10 h-10 shrink-0 rounded-xl border-[1.5px] border-[var(--hub-border)] bg-[var(--hub-panel)] cursor-pointer"
+              className="w-10 h-10 shrink-0 rounded-xl border-[1.5px] border-border bg-card cursor-pointer"
               title="Accent color"
             />
           </div>
@@ -393,7 +393,7 @@ function Editor({
             value={draft.branding?.note || ''}
             onChange={e => setBranding({ note: e.target.value })}
             placeholder="Prepared by Studio North"
-            className="w-full text-[12.5px] px-3 py-2 rounded-xl bg-[var(--hub-panel)] border-[1.5px] border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] transition-colors"
+            className="w-full text-[12.5px] px-3 py-2 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
           />
           <input
             ref={logoInput}
@@ -406,13 +406,13 @@ function Editor({
       )}
 
       <div className="flex gap-2 justify-end pt-1">
-        <button onClick={onCancel} className="text-[12.5px] font-semibold px-3 py-2 rounded-xl text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors">
+        <button onClick={onCancel} className="text-[12.5px] font-semibold px-3 py-2 rounded-xl text-muted-foreground hover:text-foreground transition-colors">
           Cancel
         </button>
         <button
           onClick={onSave}
           disabled={busy}
-          className="text-[12.5px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-4 py-2 rounded-xl hover:opacity-85 transition-colors disabled:opacity-50"
+          className="text-[12.5px] font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:opacity-85 transition-colors disabled:opacity-50"
         >
           {busy ? 'Saving…' : 'Save link'}
         </button>
@@ -425,8 +425,8 @@ function Row({ label, hint, children }: { label: string; hint: string; children:
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="text-[12.5px] font-medium text-[var(--hub-text)]">{label}</p>
-        <p className="text-[11px] text-[var(--hub-faint)] truncate">{hint}</p>
+        <p className="text-[12.5px] font-medium text-foreground">{label}</p>
+        <p className="text-[11px] text-muted-foreground/60 truncate">{hint}</p>
       </div>
       <div className="shrink-0">{children}</div>
     </div>
@@ -437,18 +437,18 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className={`relative w-10 h-6 rounded-full transition-colors ${on ? 'bg-emerald-500' : 'bg-[var(--hub-border)]'}`}
+      className={`relative w-10 h-6 rounded-full transition-colors ${on ? 'bg-emerald-500' : 'bg-border'}`}
     >
-      <span className={`absolute top-0.5 w-5 h-5 bg-[var(--hub-panel)] rounded-full shadow transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
+      <span className={`absolute top-0.5 w-5 h-5 bg-card rounded-full shadow transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
     </button>
   )
 }
 
 /** Tiny wireframe of what each template looks like. */
 function TemplateThumb({ template }: { template: PortalTemplate }) {
-  const bar = 'bg-[var(--hub-border)] rounded-[2px]'
+  const bar = 'bg-border rounded-[2px]'
   return (
-    <div className="h-9 rounded-lg bg-[var(--hub-panel)] border border-[var(--hub-border)] p-1 flex gap-1 overflow-hidden">
+    <div className="h-9 rounded-lg bg-card border border-border p-1 flex gap-1 overflow-hidden">
       {template === 'full' && (
         <>
           <div className={`w-3 ${bar}`} />

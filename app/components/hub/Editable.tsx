@@ -35,7 +35,7 @@ export function Editable({
     return <span className={className} style={style}>{value}</span>
   }
 
-  const editCls = `${className} bg-transparent rounded-md outline-none border border-dashed border-[var(--hub-border)] hover:border-[var(--hub-muted)] focus:border-[var(--hub-text)] focus:bg-[var(--hub-panel)] px-1 -mx-1 transition-colors placeholder:text-[var(--hub-faint)]`
+  const editCls = `${className} bg-transparent rounded-md outline-none border border-dashed border-border hover:border-muted-foreground focus:border-foreground focus:bg-card px-1 -mx-1 transition-colors placeholder:text-muted-foreground/60`
 
   if (multiline) {
     return (

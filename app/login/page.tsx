@@ -41,32 +41,30 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f9f9f8] flex flex-col">
-      <nav className="border-b border-[#e8e7e4] bg-white px-5 sm:px-8 h-14 flex items-center">
+    <div className="min-h-screen bg-background flex flex-col">
+      <nav className="border-b border-border bg-card px-5 sm:px-8 h-14 flex items-center">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#1a1a1a] rounded-md flex items-center justify-center">
-            <div className="w-3 h-3 rounded-sm border-[1.5px] border-white" />
-          </div>
-          <span className="text-[15px] font-semibold tracking-tight">Brand Portal</span>
+          <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold text-[14px]">P</span>
+          <span className="text-[15px] font-semibold tracking-tight">Pitho</span>
         </Link>
       </nav>
 
       <main className="flex-1 flex items-center justify-center px-6">
-        <div className="w-full max-w-[380px] bg-white border border-[#e8e7e4] rounded-2xl p-7">
+        <div className="w-full max-w-[380px] bg-card border border-border rounded-2xl p-7">
           {state === 'sent' ? (
             <div>
               <h1 className="text-[19px] font-bold tracking-tight mb-2">Check your email</h1>
-              <p className="text-[13.5px] text-[#8a8a85] leading-relaxed mb-4">
-                We sent a sign-in link to <span className="font-medium text-[#1a1a1a]">{email}</span>. It works once and expires in an hour.
+              <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-4">
+                We sent a sign-in link to <span className="font-medium text-foreground">{email}</span>. It works once and expires in an hour.
               </p>
               {devLink && (
-                <div className="border-t border-dashed border-[#e8e7e4] pt-4">
-                  <p className="text-[12px] text-[#b0afa9] mb-2">
+                <div className="border-t border-dashed border-border pt-4">
+                  <p className="text-[12px] text-muted-foreground/60 mb-2">
                     Email sending isn’t configured yet (no RESEND_API_KEY) — use your link directly:
                   </p>
                   <a
                     href={devLink}
-                    className="block text-center text-[13px] font-semibold bg-[#1a1a1a] text-white px-4 py-2.5 rounded-xl hover:bg-[#333] transition-colors"
+                    className="block text-center text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-colors"
                   >
                     Open my sign-in link →
                   </a>
@@ -76,7 +74,7 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={submit}>
               <h1 className="text-[19px] font-bold tracking-tight mb-1">Sign in</h1>
-              <p className="text-[13.5px] text-[#8a8a85] mb-5">No password — we email you a link.</p>
+              <p className="text-[13.5px] text-muted-foreground mb-5">No password — we email you a link.</p>
               <input
                 type="email"
                 value={email}
@@ -84,17 +82,17 @@ export default function LoginPage() {
                 placeholder="you@company.com"
                 required
                 autoFocus
-                className="w-full px-4 py-3 rounded-xl border-[1.5px] border-[#e8e7e4] text-[15px] outline-none focus:border-[#1a1a1a] transition-colors placeholder:text-[#b0afa9] mb-3"
+                className="w-full px-4 py-3 rounded-xl border-[1.5px] border-border text-[15px] outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60 mb-3"
               />
-              {error && <p className="text-[12.5px] text-red-500 mb-3">{error}</p>}
+              {error && <p className="text-[12.5px] text-destructive mb-3">{error}</p>}
               <button
                 type="submit"
                 disabled={state === 'sending'}
-                className="w-full py-3 bg-[#1a1a1a] text-white text-[14px] font-semibold rounded-xl hover:bg-[#333] transition-colors disabled:opacity-60"
+                className="w-full py-3 bg-primary text-primary-foreground text-[14px] font-semibold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-60"
               >
                 {state === 'sending' ? 'Sending…' : 'Email me a sign-in link'}
               </button>
-              <p className="text-[11.5px] text-[#b0afa9] mt-4 text-center">
+              <p className="text-[11.5px] text-muted-foreground/60 mt-4 text-center">
                 New here? The same link creates your account.
               </p>
             </form>

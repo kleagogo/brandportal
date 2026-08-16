@@ -11,32 +11,32 @@ export function GuidelinesSection() {
   return (
     <div>
       <h1 className="text-[22px] font-bold tracking-tight mb-1">Guidelines</h1>
-      <p className="text-[14px] text-[var(--hub-muted)] mb-8">How to represent our brand correctly.</p>
+      <p className="text-[14px] text-muted-foreground mb-8">How to represent our brand correctly.</p>
 
       {voice && (
         <div className="mb-10">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-4">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-4">
             <Editable inline value={voice.title} placeholder="Section title" onChange={v => update(c => { c.guidelines.voice!.title = v })} />
           </p>
-          <div className="text-[14px] text-[var(--hub-muted)] mb-4 max-w-[60ch]">
+          <div className="text-[14px] text-muted-foreground mb-4 max-w-[60ch]">
             <Editable multiline value={voice.description} placeholder="Describe your brand voice" onChange={v => update(c => { c.guidelines.voice!.description = v })} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {voice.principles.map((p, i) => (
-              <div key={i} className="bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl p-4 relative group">
+              <div key={i} className="bg-card border border-border rounded-xl p-4 relative group">
                 {editing && (
                   <button
                     onClick={() => update(c => { c.guidelines.voice!.principles.splice(i, 1) })}
-                    className="absolute top-2 right-2 w-5 h-5 rounded-full text-[var(--hub-faint)] hover:text-red-500 items-center justify-center hidden group-hover:flex"
+                    className="absolute top-2 right-2 w-5 h-5 rounded-full text-muted-foreground/60 hover:text-destructive items-center justify-center hidden group-hover:flex"
                     title="Remove principle"
                   >
                     <Icon name="close" size={11} />
                   </button>
                 )}
-                <p className="text-[14px] font-semibold text-[var(--hub-text)] mb-1">
+                <p className="text-[14px] font-semibold text-foreground mb-1">
                   <Editable value={p.name} placeholder="Principle" onChange={v => update(c => { c.guidelines.voice!.principles[i].name = v })} />
                 </p>
-                <div className="text-[13px] text-[var(--hub-muted)] leading-relaxed">
+                <div className="text-[13px] text-muted-foreground leading-relaxed">
                   <Editable multiline value={p.description} placeholder="What does this mean in practice?" onChange={v => update(c => { c.guidelines.voice!.principles[i].description = v })} />
                 </div>
               </div>
@@ -44,7 +44,7 @@ export function GuidelinesSection() {
             {editing && (
               <button
                 onClick={() => update(c => { c.guidelines.voice!.principles.push({ name: 'New principle', description: '' }) })}
-                className="border-2 border-dashed border-[var(--hub-border)] rounded-xl p-4 text-[var(--hub-faint)] hover:border-[var(--hub-text)] hover:text-[var(--hub-text)] transition-colors flex items-center justify-center gap-2 min-h-[88px]"
+                className="border-2 border-dashed border-border rounded-xl p-4 text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2 min-h-[88px]"
               >
                 <Icon name="plus" size={13} /> <span className="text-[13px] font-medium">Add principle</span>
               </button>
@@ -89,24 +89,24 @@ function RuleList({
 
   return (
     <div>
-      <p className={`text-[11px] font-semibold uppercase tracking-widest mb-4 ${isDo ? 'text-emerald-600' : 'text-red-500'}`}>
+      <p className={`text-[11px] font-semibold uppercase tracking-widest mb-4 ${isDo ? 'text-emerald-600' : 'text-destructive'}`}>
         {isDo ? 'Do' : "Don't"}
       </p>
       <div className="space-y-2">
         {items.map((item, i) => (
-          <div key={i} className={`flex items-start gap-3 rounded-xl p-3 group ${isDo ? 'bg-emerald-50 border border-emerald-100' : 'bg-red-50 border border-red-100'}`}>
-            <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isDo ? 'bg-emerald-500' : 'bg-red-500'}`}>
+          <div key={i} className={`flex items-start gap-3 rounded-xl p-3 group ${isDo ? 'bg-emerald-50 border border-emerald-100' : 'bg-destructive/10 border border-destructive/20'}`}>
+            <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isDo ? 'bg-emerald-500' : 'bg-destructive'}`}>
               {isDo ? (
                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               ) : (
                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M2 2l4 4M6 2L2 6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
               )}
             </span>
-            <div className="text-[13px] text-[var(--hub-text)] leading-relaxed flex-1 min-w-0">
+            <div className="text-[13px] text-foreground leading-relaxed flex-1 min-w-0">
               <Editable multiline value={item} placeholder="Write the rule…" onChange={v => onChange(i, v)} />
             </div>
             {editing && (
-              <button onClick={() => onRemove(i)} className="text-[var(--hub-faint)] hover:text-red-500 shrink-0 hidden group-hover:block" title="Remove">
+              <button onClick={() => onRemove(i)} className="text-muted-foreground/60 hover:text-destructive shrink-0 hidden group-hover:block" title="Remove">
                 <Icon name="close" size={11} />
               </button>
             )}
@@ -115,7 +115,7 @@ function RuleList({
         {editing && (
           <button
             onClick={onAdd}
-            className="w-full border-2 border-dashed border-[var(--hub-border)] rounded-xl p-2.5 text-[var(--hub-faint)] hover:border-[var(--hub-text)] hover:text-[var(--hub-text)] transition-colors flex items-center justify-center gap-1.5 text-[13px] font-medium"
+            className="w-full border-2 border-dashed border-border rounded-xl p-2.5 text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5 text-[13px] font-medium"
           >
             <Icon name="plus" size={12} /> Add rule
           </button>

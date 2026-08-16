@@ -41,7 +41,7 @@ export function ChangeEmail() {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="text-[13px] font-medium text-[#1a1a1a] underline underline-offset-2 hover:text-[#555]">
+      <button onClick={() => setOpen(true)} className="text-[13px] font-medium text-foreground underline underline-offset-2 hover:text-muted-foreground">
         Change email
       </button>
     )
@@ -49,12 +49,12 @@ export function ChangeEmail() {
 
   if (state === 'sent') {
     return (
-      <div className="bg-[#f5f5f3] rounded-xl p-3">
-        <p className="text-[12.5px] text-[#6b6b66]">
+      <div className="bg-muted rounded-xl p-3">
+        <p className="text-[12.5px] text-muted-foreground">
           Confirmation sent to <b>{email}</b> — click the link there to switch.
         </p>
         {devLink && (
-          <a href={devLink} className="text-[12.5px] font-semibold text-[#1a1a1a] underline underline-offset-2">
+          <a href={devLink} className="text-[12.5px] font-semibold text-foreground underline underline-offset-2">
             Open confirmation link →
           </a>
         )}
@@ -71,16 +71,16 @@ export function ChangeEmail() {
         placeholder="new@email.com"
         required
         autoFocus
-        className="flex-1 min-w-[200px] text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-[#e8e7e4] outline-none focus:border-[#1a1a1a] transition-colors placeholder:text-[#b0afa9]"
+        className="flex-1 min-w-[200px] text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
       />
       <button
         type="submit"
         disabled={state === 'sending'}
-        className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-4 py-2 rounded-xl hover:bg-[#333] transition-colors disabled:opacity-60"
+        className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-60"
       >
         {state === 'sending' ? 'Sending…' : 'Send confirmation'}
       </button>
-      {error && <p className="text-[12px] text-red-500 w-full">{error}</p>}
+      {error && <p className="text-[12px] text-destructive w-full">{error}</p>}
     </form>
   )
 }
@@ -97,7 +97,7 @@ export function LeaveHubButton({ slug, name }: { slug: string; name: string }) {
   }
 
   return (
-    <button onClick={leave} disabled={busy} className="text-[12px] text-[#b0afa9] hover:text-red-500 transition-colors disabled:opacity-50">
+    <button onClick={leave} disabled={busy} className="text-[12px] text-muted-foreground/60 hover:text-destructive transition-colors disabled:opacity-50">
       Leave
     </button>
   )
@@ -119,7 +119,7 @@ export function DeleteAccount({ email }: { email: string }) {
     <button
       onClick={destroy}
       disabled={busy}
-      className="text-[13px] font-semibold text-red-600 border-[1.5px] border-red-200 px-3.5 py-2 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50"
+      className="text-[13px] font-semibold text-destructive border-[1.5px] border-destructive/30 px-3.5 py-2 rounded-xl hover:bg-destructive/10 transition-colors disabled:opacity-50"
     >
       {busy ? 'Deleting…' : 'Delete my account'}
     </button>

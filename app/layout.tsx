@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import { SITE_URL } from "@/lib/seo";
+import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+// The system face — app chrome only. Hub content renders in whatever typefaces
+// that client's brand declares, loaded per hub from its own config.
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const TITLE = "Pitho — brand hub & brand asset management for agencies";
 const DESCRIPTION =
@@ -34,7 +37,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={cn("font-sans", geist.variable)}>
       <body className="font-sans antialiased">
         <script
           type="application/ld+json"

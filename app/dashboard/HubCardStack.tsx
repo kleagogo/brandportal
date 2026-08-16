@@ -51,7 +51,7 @@ export function HubCardStack({
   }
 
   return (
-    <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] text-white flex items-center justify-center font-bold text-[15px]">
+    <div className="w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-[15px]">
       {fallback}
     </div>
   )

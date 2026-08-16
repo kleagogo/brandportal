@@ -30,14 +30,14 @@ export function ColorsSection() {
   return (
     <div>
       <h1 className="text-[22px] font-bold tracking-tight mb-1">Colors</h1>
-      <p className="text-[14px] text-[var(--hub-muted)] mb-8">
+      <p className="text-[14px] text-muted-foreground mb-8">
         {editing ? 'Click a swatch to edit it, or add colors and groups.' : 'Our color palette — click any swatch to copy the hex value.'}
       </p>
 
       {config.colors.map((group, gi) => (
         <div key={gi} className="mb-10">
           <div className="flex items-center gap-2 mb-4 group/head">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--hub-faint)]">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               <Editable
                 inline
                 value={group.group}
@@ -51,7 +51,7 @@ export function ColorsSection() {
                   if (group.swatches.length > 0 && !window.confirm(`Delete the "${group.group}" group and its ${group.swatches.length} colors?`)) return
                   update(c => { c.colors.splice(gi, 1) })
                 }}
-                className="opacity-0 group-hover/head:opacity-100 text-[var(--hub-faint)] hover:text-red-500 transition-all"
+                className="opacity-0 group-hover/head:opacity-100 text-muted-foreground/60 hover:text-destructive transition-all"
                 title="Delete group"
               >
                 <Icon name="trash" size={13} />
@@ -66,63 +66,63 @@ export function ColorsSection() {
                 <div key={key} className="relative w-[168px]">
                   <button
                     onClick={() => (editing ? setOpen(open === key ? null : key) : copyHex(swatch.hex))}
-                    className="group flex flex-col w-full text-left bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-2xl p-2.5 hover:border-[var(--hub-muted)] transition-colors"
+                    className="group flex flex-col w-full text-left bg-card border border-border rounded-2xl p-2.5 hover:border-muted-foreground transition-colors"
                   >
                     <div
-                      className="w-full h-24 rounded-xl border border-black/10"
+                      className="w-full h-24 rounded-xl border border-foreground/10"
                       style={{ background: isValidHex(swatch.hex) ? swatch.hex : '#e5e5e0' }}
                     />
                     <div className="w-full px-1 pt-2.5 pb-1">
-                      <p className="text-[13px] font-semibold text-[var(--hub-text)] truncate mb-0.5">{swatch.name}</p>
-                      <p className="text-[12px] font-mono text-[var(--hub-muted)] group-hover:text-[var(--hub-text)] transition-colors flex items-center gap-1.5">
+                      <p className="text-[13px] font-semibold text-foreground truncate mb-0.5">{swatch.name}</p>
+                      <p className="text-[12px] font-mono text-muted-foreground group-hover:text-foreground transition-colors flex items-center gap-1.5">
                         {copied === swatch.hex ? 'Copied ✓' : swatch.hex.toUpperCase()}
                         {!editing && copied !== swatch.hex && <span className="opacity-0 group-hover:opacity-60"><Icon name="copy" size={11} /></span>}
                       </p>
-                      {swatch.usage && <p className="text-[11px] text-[var(--hub-faint)] mt-1 leading-tight">{swatch.usage}</p>}
+                      {swatch.usage && <p className="text-[11px] text-muted-foreground/60 mt-1 leading-tight">{swatch.usage}</p>}
                     </div>
                   </button>
 
                   {editing && open === key && (
                     <>
                       <div className="fixed inset-0 z-20" onClick={() => setOpen(null)} />
-                      <div className="absolute left-0 top-[92px] z-30 w-[240px] bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl shadow-xl p-3">
-                        <label className="block text-[10px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-1">Name</label>
+                      <div className="absolute left-0 top-[92px] z-30 w-[240px] bg-card border border-border rounded-xl shadow-xl p-3">
+                        <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">Name</label>
                         <input
                           value={swatch.name}
                           onChange={e => update(c => { c.colors[gi].swatches[si].name = e.target.value })}
-                          className="w-full text-[13px] px-2 py-1.5 border border-[var(--hub-border)] rounded-lg outline-none focus:border-[var(--hub-text)] mb-2.5"
+                          className="w-full text-[13px] px-2 py-1.5 border border-border rounded-lg outline-none focus:border-foreground mb-2.5"
                         />
-                        <label className="block text-[10px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-1">Hex</label>
+                        <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">Hex</label>
                         <div className="flex gap-1.5 mb-2.5">
                           <input
                             type="color"
                             value={isValidHex(swatch.hex) && swatch.hex.length === 7 ? swatch.hex : '#888888'}
                             onChange={e => update(c => { c.colors[gi].swatches[si].hex = e.target.value })}
-                            className="w-9 h-8 rounded-lg border border-[var(--hub-border)] cursor-pointer p-0.5"
+                            className="w-9 h-8 rounded-lg border border-border cursor-pointer p-0.5"
                           />
                           <input
                             value={swatch.hex}
                             onChange={e => update(c => { c.colors[gi].swatches[si].hex = normalizeHex(e.target.value) })}
-                            className={`flex-1 text-[13px] font-mono px-2 py-1.5 border rounded-lg outline-none focus:border-[var(--hub-text)] ${isValidHex(swatch.hex) ? 'border-[var(--hub-border)]' : 'border-red-400'}`}
+                            className={`flex-1 text-[13px] font-mono px-2 py-1.5 border rounded-lg outline-none focus:border-foreground ${isValidHex(swatch.hex) ? 'border-border' : 'border-destructive/50'}`}
                           />
                         </div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-widest text-[var(--hub-faint)] mb-1">Usage note</label>
+                        <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">Usage note</label>
                         <input
                           value={swatch.usage || ''}
                           onChange={e => update(c => { c.colors[gi].swatches[si].usage = e.target.value })}
                           placeholder="Where is this color used?"
-                          className="w-full text-[12px] px-2 py-1.5 border border-[var(--hub-border)] rounded-lg outline-none focus:border-[var(--hub-text)] mb-3 placeholder:text-[var(--hub-faint)]"
+                          className="w-full text-[12px] px-2 py-1.5 border border-border rounded-lg outline-none focus:border-foreground mb-3 placeholder:text-muted-foreground/60"
                         />
                         <div className="flex justify-between items-center">
                           <button
                             onClick={() => { setOpen(null); update(c => { c.colors[gi].swatches.splice(si, 1) }) }}
-                            className="text-[12px] text-[var(--hub-faint)] hover:text-red-500 flex items-center gap-1 transition-colors"
+                            className="text-[12px] text-muted-foreground/60 hover:text-destructive flex items-center gap-1 transition-colors"
                           >
                             <Icon name="trash" size={12} /> Delete
                           </button>
                           <button
                             onClick={() => setOpen(null)}
-                            className="text-[12px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-3 py-1.5 rounded-lg hover:opacity-85 transition-colors"
+                            className="text-[12px] font-semibold bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-85 transition-colors"
                           >
                             Done
                           </button>
@@ -140,7 +140,7 @@ export function ColorsSection() {
                   update(c => { c.colors[gi].swatches.push({ name: 'New color', hex: '#888888', usage: '' }) })
                   setOpen(`${gi}:${group.swatches.length}`)
                 }}
-                className="w-[168px] h-[132px] rounded-2xl border-2 border-dashed border-[var(--hub-border)] text-[var(--hub-faint)] hover:border-[var(--hub-text)] hover:text-[var(--hub-text)] transition-colors flex items-center justify-center"
+                className="w-[168px] h-[132px] rounded-2xl border-2 border-dashed border-border text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex items-center justify-center"
                 title="Add color"
               >
                 <Icon name="plus" size={16} />
@@ -153,7 +153,7 @@ export function ColorsSection() {
       {editing && (
         <button
           onClick={() => update(c => { c.colors.push({ group: 'New group', swatches: [] }) })}
-          className="text-[13px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] border border-dashed border-[var(--hub-border)] hover:border-[var(--hub-text)] rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors mb-10"
+          className="text-[13px] font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-foreground rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors mb-10"
         >
           <Icon name="plus" size={13} /> Add color group
         </button>

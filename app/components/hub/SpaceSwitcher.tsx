@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 
@@ -30,7 +31,7 @@ export function SpaceSwitcher({ currentSlug, currentName }: { currentSlug: strin
     <div className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-1.5 text-[11px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors"
+        className="w-full flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
         title="Switch client space"
       >
         <Icon name="spaces" size={11} /> Switch client
@@ -40,29 +41,29 @@ export function SpaceSwitcher({ currentSlug, currentName }: { currentSlug: strin
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 right-0 top-6 z-40 bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl shadow-xl overflow-hidden max-h-[50vh] overflow-y-auto">
+          <div className="absolute left-0 right-0 top-6 z-40 bg-card border border-border rounded-xl shadow-xl overflow-hidden max-h-[50vh] overflow-y-auto">
             {spaces.map(s => (
               <a
                 key={s.slug}
                 href={`/${s.slug}`}
-                className={`flex items-center gap-2 px-3 py-2 hover:bg-[var(--hub-soft)] transition-colors ${s.slug === currentSlug ? 'bg-[var(--hub-soft)]' : ''}`}
+                className={`flex items-center gap-2 px-3 py-2 hover:bg-muted transition-colors ${s.slug === currentSlug ? 'bg-muted' : ''}`}
               >
                 {s.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={s.logoUrl} alt="" className="w-4 h-4 object-contain shrink-0" />
                 ) : (
-                  <span className="w-4 h-4 rounded bg-[var(--hub-text)] text-[var(--hub-bg)] text-[8px] font-bold flex items-center justify-center shrink-0">
+                  <span className="w-4 h-4 rounded bg-foreground text-background text-[8px] font-bold flex items-center justify-center shrink-0">
                     {(s.client || s.name).charAt(0).toUpperCase()}
                   </span>
                 )}
                 <span className="text-[12px] font-medium truncate">{s.client || s.name}</span>
-                {s.slug === currentSlug && <span className="ml-auto text-[var(--hub-muted)] shrink-0"><Icon name="check" size={11} /></span>}
+                {s.slug === currentSlug && <span className="ml-auto text-muted-foreground shrink-0"><Icon name="check" size={11} /></span>}
               </a>
             ))}
-            <a href="/dashboard" className="flex items-center gap-2 px-3 py-2 border-t border-[var(--hub-border)] hover:bg-[var(--hub-soft)] transition-colors">
-              <span className="text-[var(--hub-faint)] shrink-0"><Icon name="spaces" size={11} /></span>
-              <span className="text-[12px] font-medium text-[var(--hub-muted)]">All client spaces</span>
-            </a>
+            <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 border-t border-border hover:bg-muted transition-colors">
+              <span className="text-muted-foreground/60 shrink-0"><Icon name="spaces" size={11} /></span>
+              <span className="text-[12px] font-medium text-muted-foreground">All client spaces</span>
+            </Link>
           </div>
         </>
       )}

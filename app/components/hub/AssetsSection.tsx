@@ -41,10 +41,10 @@ function TagRow({ tags, onAdd, onRemove }: { tags: string[]; onAdd: (t: string) 
   return (
     <div className="flex flex-wrap items-center gap-1 mb-2">
       {tags.map(tag => (
-        <span key={tag} className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-[var(--hub-soft)] text-[var(--hub-muted)]">
+        <span key={tag} className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
           #{tag}
           {editing && (
-            <button onClick={() => onRemove(tag)} className="text-[var(--hub-faint)] hover:text-red-500" title="Remove tag">×</button>
+            <button onClick={() => onRemove(tag)} className="text-muted-foreground/60 hover:text-destructive" title="Remove tag">×</button>
           )}
         </span>
       ))}
@@ -56,7 +56,7 @@ function TagRow({ tags, onAdd, onRemove }: { tags: string[]; onAdd: (t: string) 
           onBlur={commit}
           placeholder="+ tag"
           size={Math.max(draft.length, 5)}
-          className="text-[10px] px-1.5 py-0.5 rounded-md border border-dashed border-[var(--hub-border)] outline-none focus:border-[var(--hub-text)] bg-transparent placeholder:text-[var(--hub-faint)]"
+          className="text-[10px] px-1.5 py-0.5 rounded-md border border-dashed border-border outline-none focus:border-foreground bg-transparent placeholder:text-muted-foreground/60"
         />
       )}
     </div>
@@ -98,17 +98,17 @@ function EmptyDropzone({
   if (progress) {
     const percent = progress.total === 1 ? progress.percent : (progress.done / progress.total) * 100
     return (
-      <div className="border-2 border-dashed border-[var(--hub-border)] rounded-2xl p-12 flex flex-col items-center gap-4">
+      <div className="border-2 border-dashed border-border rounded-2xl p-12 flex flex-col items-center gap-4">
         {/* A working surface, not a spinner: the shimmer says "this is being
             processed" while the bar says how far in it is. */}
         <OrganicShimmer width={168} height={96} radius={12} playing />
-        <p className="text-[14px] font-medium text-[var(--hub-text)]">
+        <p className="text-[14px] font-medium text-foreground">
           {progress.total === 1
             ? `${progress.name} — ${Math.round(progress.percent)}%`
             : `Uploading ${progress.done} of ${progress.total} — ${progress.name}`}
         </p>
-        <span className="w-56 h-1 rounded-full bg-[var(--hub-border)] overflow-hidden">
-          <span className="block h-full bg-[var(--hub-text)] transition-all" style={{ width: `${percent}%` }} />
+        <span className="w-56 h-1 rounded-full bg-border overflow-hidden">
+          <span className="block h-full bg-foreground transition-all" style={{ width: `${percent}%` }} />
         </span>
       </div>
     )
@@ -117,19 +117,19 @@ function EmptyDropzone({
   return (
     <div
       ref={zoneRef}
-      className={`t-drop-zone hub-dropzone border-2 border-dashed rounded-2xl px-6 py-12 text-center transition-colors ${
-        dragOver ? 'border-[var(--hub-text)] bg-[var(--hub-soft)] is-over' : 'border-[var(--hub-border)]'
+      className={`t-drop-zone app-dropzone border-2 border-dashed rounded-2xl px-6 py-12 text-center transition-colors ${
+        dragOver ? 'border-foreground bg-muted is-over' : 'border-border'
       }`}
     >
       {/* Smoke rings the drop physics squeezes out from under the landing. */}
       <svg className="t-drop-puffs" viewBox="0 0 204 204" aria-hidden="true" focusable="false">
         <g ref={puffsRef} className="t-drop-puff-group" filter="url(#t-drop-smoke)" />
       </svg>
-      <span className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-[var(--hub-soft)] text-[var(--hub-muted)] mb-4">
+      <span className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-muted text-muted-foreground mb-4">
         <Icon name="upload" size={19} />
       </span>
-      <p className="text-[16px] font-semibold text-[var(--hub-text)] mb-1.5">Drop files here</p>
-      <p className="text-[13.5px] text-[var(--hub-muted)] leading-relaxed max-w-[42ch] mx-auto mb-6">
+      <p className="text-[16px] font-semibold text-foreground mb-1.5">Drop files here</p>
+      <p className="text-[13.5px] text-muted-foreground leading-relaxed max-w-[42ch] mx-auto mb-6">
         Drag in files, a whole folder, or a .zip. Folders keep their structure as groups, and
         archives are unpacked for you.
       </p>
@@ -137,25 +137,25 @@ function EmptyDropzone({
       <div className="flex items-center justify-center gap-2 flex-wrap mb-7">
         <button
           onClick={onPickFiles}
-          className="text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-4 py-2.5 rounded-xl hover:opacity-85 transition-opacity"
+          className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:opacity-85 transition-opacity"
         >
           Choose files
         </button>
         <button
           onClick={onPickFolder}
-          className="text-[13px] font-semibold border border-[var(--hub-border)] text-[var(--hub-text)] px-4 py-2.5 rounded-xl hover:border-[var(--hub-text)] transition-colors"
+          className="text-[13px] font-semibold border border-border text-foreground px-4 py-2.5 rounded-xl hover:border-foreground transition-colors"
         >
           Choose a folder
         </button>
       </div>
 
-      <div className="border-t border-[var(--hub-border)] pt-5 max-w-[46ch] mx-auto">
-        <p className="text-[12.5px] text-[var(--hub-muted)] leading-relaxed">
-          <span className="font-semibold text-[var(--hub-text)]">Coming from Google Drive?</span>{' '}
+      <div className="border-t border-border pt-5 max-w-[46ch] mx-auto">
+        <p className="text-[12.5px] text-muted-foreground leading-relaxed">
+          <span className="font-semibold text-foreground">Coming from Google Drive?</span>{' '}
           Open the client&rsquo;s folder, hit Download — Drive hands you a .zip — and drop that
           straight in here.
         </p>
-        <p className="text-[11.5px] text-[var(--hub-faint)] mt-3">
+        <p className="text-[11.5px] text-muted-foreground/60 mt-3">
           Logos, source files, fonts, video and archives{maxLabel ? ` · up to ${maxLabel} per file` : ''}
         </p>
       </div>
@@ -270,7 +270,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
           <a
             href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(sectionId)}`}
             onClick={() => trackPortal(portalId, 'download', `${label} (.zip)`)}
-            className="flex items-center gap-1.5 text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-3.5 py-2 rounded-xl hover:opacity-85 transition-colors"
+            className="flex items-center gap-1.5 text-[13px] font-semibold bg-primary text-primary-foreground px-3.5 py-2 rounded-xl hover:opacity-85 transition-colors"
           >
             <Icon name="download" size={13} /> Download all (.zip)
           </a>
@@ -278,7 +278,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
       </div>
       {/* An empty section is described by the panel below it, not twice. */}
       {(editing || assets.length > 0) && (
-        <p className="text-[14px] text-[var(--hub-muted)] mb-8">
+        <p className="text-[14px] text-muted-foreground mb-8">
           {editing
             ? 'Drop files, folders, or a .zip anywhere below to add them, and click names, notes, or tags to edit.'
             : sectionId === 'logo'
@@ -288,8 +288,8 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
       )}
       {!editing && assets.length === 0 && <div className="mb-8" />}
 
-      {error && <p className="text-[13px] text-red-500 mb-4">{error}</p>}
-      {notice && <p className="text-[13px] text-[var(--hub-muted)] mb-4">{notice}</p>}
+      {error && <p className="text-[13px] text-destructive mb-4">{error}</p>}
+      {notice && <p className="text-[13px] text-muted-foreground mb-4">{notice}</p>}
 
       <div
         onDragOver={e => { if (canEdit) { e.preventDefault(); setDragOver(true) } }}
@@ -301,7 +301,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
           filesFromDrop(e.dataTransfer).then(addFiles)
         }}
         className={`rounded-2xl transition-colors ${
-          dragOver && assets.length > 0 ? 'bg-[var(--hub-soft)] outline-2 outline-dashed outline-[var(--hub-text)]' : ''
+          dragOver && assets.length > 0 ? 'bg-muted outline-2 outline-dashed outline-foreground' : ''
         }`}
       >
         {assets.length === 0 && canEdit ? (
@@ -312,15 +312,15 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
             progress={progress}
           />
         ) : assets.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--hub-border)] rounded-2xl p-12 text-center">
-            <p className="text-[14px] font-medium text-[var(--hub-muted)] mb-1">Nothing here yet</p>
-            <p className="text-[12px] text-[var(--hub-faint)]">This section hasn&rsquo;t been filled in.</p>
+          <div className="border-2 border-dashed border-border rounded-2xl p-12 text-center">
+            <p className="text-[14px] font-medium text-muted-foreground mb-1">Nothing here yet</p>
+            <p className="text-[12px] text-muted-foreground/60">This section hasn&rsquo;t been filled in.</p>
           </div>
         ) : (
           <div className="space-y-8">
             {groupBySubgroup(assets).map(({ subgroup, items }) => (
               <div key={subgroup || '_'}>
-                {subgroup && <p className="text-[15px] font-semibold text-[var(--hub-text)] mb-3">{subgroup}</p>}
+                {subgroup && <p className="text-[15px] font-semibold text-foreground mb-3">{subgroup}</p>}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {items.map(({ asset, i }) => (
                     <AssetCard key={`${asset.file}-${i}`} asset={asset} index={i} sectionId={sectionId} />
@@ -332,7 +332,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
             {editing && (
               <button
                 onClick={() => inputRef.current?.click()}
-                className="w-full min-h-[120px] border-2 border-dashed border-[var(--hub-border)] rounded-xl text-[var(--hub-faint)] hover:border-[var(--hub-text)] hover:text-[var(--hub-text)] transition-colors flex flex-col items-center justify-center gap-2 p-6"
+                className="w-full min-h-[120px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex flex-col items-center justify-center gap-2 p-6"
               >
                 <Icon name="upload" size={20} />
                 <span className="text-[13px] font-medium">
@@ -343,9 +343,9 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                     : 'Add files'}
                 </span>
                 {progress ? (
-                  <span className="w-40 h-1 rounded-full bg-[var(--hub-border)] overflow-hidden">
+                  <span className="w-40 h-1 rounded-full bg-border overflow-hidden">
                     <span
-                      className="block h-full bg-[var(--hub-text)] transition-all"
+                      className="block h-full bg-foreground transition-all"
                       style={{ width: `${progress.total === 1 ? progress.percent : (progress.done / progress.total) * 100}%` }}
                     />
                   </span>
@@ -358,7 +358,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
             {editing && !progress && (
               <button
                 onClick={() => folderInputRef.current?.click()}
-                className="w-full -mt-4 text-[12px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors"
+                className="w-full -mt-4 text-[12px] text-muted-foreground/60 hover:text-foreground transition-colors"
               >
                 or add a whole folder
               </button>
@@ -457,12 +457,12 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
   }
 
   return (
-    <div ref={stageRef} className="t-smoky-stage hub-tile-stage">
-    <div ref={cardRef} className="t-smoky-card hub-tile bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl overflow-hidden group relative">
+    <div ref={stageRef} className="t-smoky-stage asset-tile-stage">
+    <div ref={cardRef} className="t-smoky-card asset-tile bg-card border border-border rounded-xl overflow-hidden group relative">
       {editing && (
         <button
           onClick={() => dissolveThenRemove()}
-          className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-[var(--hub-panel)] border border-[var(--hub-border)] text-[var(--hub-muted)] hover:text-red-500 hover:border-red-300 items-center justify-center hidden group-hover:flex transition-colors"
+          className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-card border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 items-center justify-center hidden group-hover:flex transition-colors"
           title="Remove asset"
         >
           <Icon name="close" size={11} />
@@ -473,7 +473,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
           {current} · Approved
         </span>
       )}
-      <div className={`${tileClass} flex items-center justify-center bg-[var(--hub-tile)] border-b border-[var(--hub-border)] p-6 overflow-hidden`}>
+      <div className={`${tileClass} flex items-center justify-center bg-muted border-b border-border p-6 overflow-hidden`}>
         {isImage(asset.file) && asset.ratio ? (
           // Photography and screenshots are worth looking at full size, so the
           // tile zooms open rather than only offering a download.
@@ -487,16 +487,16 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
             onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         ) : (
-          <div className="w-12 h-12 bg-[var(--hub-soft)] rounded-lg flex items-center justify-center text-[var(--hub-muted)]">
+          <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
             <Icon name="file" size={20} />
           </div>
         )}
       </div>
       <div className="p-3">
-        <p className="text-[13px] font-medium text-[var(--hub-text)] mb-1">
+        <p className="text-[13px] font-medium text-foreground mb-1">
           <Editable value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
         </p>
-        <p className="text-[11px] text-[var(--hub-muted)] mb-2 leading-tight">
+        <p className="text-[11px] text-muted-foreground mb-2 leading-tight">
           <Editable value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
         </p>
         <TagRow
@@ -507,10 +507,10 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         <div className="flex items-center justify-between">
           <div className="flex gap-1 items-center flex-wrap">
             {asset.platform && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)] uppercase tracking-wide">{asset.platform}</span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase tracking-wide">{asset.platform}</span>
             )}
             {asset.format.map(f => (
-              <span key={f} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--hub-soft)] text-[var(--hub-muted)]">{f}</span>
+              <span key={f} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f}</span>
             ))}
           </div>
           {allowDownload && (
@@ -518,7 +518,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
             href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
             {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
             onClick={() => trackPortal(portalId, 'download', asset.name)}
-            className="w-7 h-7 rounded-lg border border-[var(--hub-border)] flex items-center justify-center hover:bg-[var(--hub-btn)] hover:text-[var(--hub-btn-text)] hover:border-[var(--hub-text)] transition-colors text-[var(--hub-muted)] shrink-0"
+            className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-foreground transition-colors text-muted-foreground shrink-0"
             title={asset.external ? `Open ${asset.name}` : `Download ${asset.name}`}
           >
             <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={12} />
@@ -528,12 +528,12 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
 
         {/* Versions — history for everyone, uploading for editors */}
         {(versions.length > 1 || editing) && (
-          <div className="mt-2 pt-2 border-t border-dashed border-[var(--hub-border)] relative">
+          <div className="mt-2 pt-2 border-t border-dashed border-border relative">
             <div className="flex items-center gap-3">
               {versions.length > 1 && (
                 <button
                   onClick={() => setShowHistory(h => !h)}
-                  className="text-[11px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors flex items-center gap-1"
+                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
                   <Icon name="history" size={11} /> {versions.length} versions
                 </button>
@@ -541,7 +541,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
               {editing && !asset.external && (
                 <button
                   onClick={() => versionInput.current?.click()}
-                  className="text-[11px] font-medium text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors flex items-center gap-1 ml-auto"
+                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 ml-auto"
                 >
                   <Icon name="upload" size={11} /> {uploadingVersion ? 'Uploading…' : 'New version'}
                 </button>
@@ -551,19 +551,19 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
             {showHistory && (
               <>
                 <div className="fixed inset-0 z-20" onMouseDown={() => setShowHistory(false)} />
-                <div className="absolute left-0 right-0 bottom-7 z-30 bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl shadow-xl overflow-hidden">
+                <div className="absolute left-0 right-0 bottom-7 z-30 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
                   {[...versions].reverse().map(v => (
-                    <div key={v.label} className="flex items-center gap-2 px-3 py-2 hover:bg-[var(--hub-soft)] transition-colors">
+                    <div key={v.label} className="flex items-center gap-2 px-3 py-2 hover:bg-muted transition-colors">
                       <span className="text-[11px] font-mono font-semibold w-6 shrink-0">{v.label}</span>
-                      <span className="text-[10px] text-[var(--hub-faint)] flex-1 min-w-0 truncate">
+                      <span className="text-[10px] text-muted-foreground/60 flex-1 min-w-0 truncate">
                         {v.uploadedAt && new Date(v.uploadedAt).getFullYear() > 1971 ? new Date(v.uploadedAt).toLocaleDateString() : 'original'}
                       </span>
                       {v.label === current ? (
                         <span className="text-[9px] font-bold text-emerald-600 uppercase shrink-0">Current</span>
                       ) : editing ? (
-                        <button onClick={() => approve(v.label)} className="text-[10px] font-semibold text-[var(--hub-text)] hover:underline shrink-0">Make current</button>
+                        <button onClick={() => approve(v.label)} className="text-[10px] font-semibold text-foreground hover:underline shrink-0">Make current</button>
                       ) : allowDownload ? (
-                        <a href={downloadHref(v.file)} download className="text-[var(--hub-faint)] hover:text-[var(--hub-text)] shrink-0" title={`Download ${v.label}`}>
+                        <a href={downloadHref(v.file)} download className="text-muted-foreground/60 hover:text-foreground shrink-0" title={`Download ${v.label}`}>
                           <Icon name="download" size={11} />
                         </a>
                       ) : null}

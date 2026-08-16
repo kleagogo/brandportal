@@ -51,7 +51,7 @@ export function AccountTypePicker() {
   return (
     <section>
       <h1 className="text-[24px] font-bold tracking-tight mb-1">What are you setting up?</h1>
-      <p className="text-[13.5px] text-[#8a8a85] mb-6">
+      <p className="text-[13.5px] text-muted-foreground mb-6">
         This only changes what things are called. You can keep as many hubs as your plan allows either way.
       </p>
       <div className="grid sm:grid-cols-2 gap-4">
@@ -60,17 +60,17 @@ export function AccountTypePicker() {
             key={option.id}
             onClick={() => pick(option.id)}
             disabled={Boolean(busy)}
-            className="text-left bg-white border border-[#e8e7e4] rounded-2xl p-6 hover:border-[#1a1a1a] transition-colors disabled:opacity-60"
+            className="text-left bg-card border border-border rounded-2xl p-6 hover:border-foreground transition-colors disabled:opacity-60"
           >
-            <p className="text-[16px] font-semibold text-[#1a1a1a] mb-1.5">{option.title}</p>
-            <p className="text-[13.5px] text-[#6b6b66] leading-relaxed">{option.body}</p>
-            <p className="text-[12px] font-semibold text-[#1a1a1a] mt-4">
+            <p className="text-[16px] font-semibold text-foreground mb-1.5">{option.title}</p>
+            <p className="text-[13.5px] text-muted-foreground leading-relaxed">{option.body}</p>
+            <p className="text-[12px] font-semibold text-foreground mt-4">
               {busy === option.id ? 'Setting up…' : 'Choose this →'}
             </p>
           </button>
         ))}
       </div>
-      {error && <p className="text-[12.5px] text-red-500 mt-3">{error}</p>}
+      {error && <p className="text-[12.5px] text-destructive mt-3">{error}</p>}
     </section>
   )
 }
@@ -108,26 +108,26 @@ export function StudioSetup({ labels }: { labels: HubLabels }) {
   }
 
   return (
-    <form onSubmit={create} className="bg-white border border-[#e8e7e4] rounded-2xl p-6">
-      <p className="text-[16px] font-semibold text-[#1a1a1a] mb-1">{labels.setupTitle}</p>
-      <p className="text-[13.5px] text-[#8a8a85] leading-relaxed mb-5 max-w-[58ch]">{labels.setupBody}</p>
+    <form onSubmit={create} className="bg-card border border-border rounded-2xl p-6">
+      <p className="text-[16px] font-semibold text-foreground mb-1">{labels.setupTitle}</p>
+      <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-5 max-w-[58ch]">{labels.setupBody}</p>
       <div className="flex items-center gap-2 flex-wrap">
         <input
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder={labels.setupPlaceholder}
           aria-label={labels.setupPlaceholder}
-          className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl border-[1.5px] border-[#e8e7e4] text-[14px] outline-none focus:border-[#1a1a1a] transition-colors placeholder:text-[#b0afa9]"
+          className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl border-[1.5px] border-border text-[14px] outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
         />
         <button
           type="submit"
           disabled={busy || !name.trim()}
-          className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-4 py-2.5 rounded-xl hover:bg-[#333] transition-colors disabled:opacity-40"
+          className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-40"
         >
           {busy ? 'Creating…' : labels.setupAction}
         </button>
       </div>
-      {error && <p className="text-[12.5px] text-red-500 mt-3">{error}</p>}
+      {error && <p className="text-[12.5px] text-destructive mt-3">{error}</p>}
     </form>
   )
 }
@@ -164,7 +164,7 @@ export function NewHubButton({ labels }: { labels: HubLabels }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-4 py-2.5 rounded-xl hover:bg-[#333] transition-colors"
+        className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-colors"
       >
         {labels.newButton}
       </button>
@@ -180,23 +180,23 @@ export function NewHubButton({ labels }: { labels: HubLabels }) {
         placeholder={labels.namePlaceholder}
         aria-label={labels.namePlaceholder}
         autoFocus
-        className="px-3.5 py-2.5 rounded-xl border-[1.5px] border-[#e8e7e4] text-[14px] outline-none focus:border-[#1a1a1a] transition-colors placeholder:text-[#b0afa9]"
+        className="px-3.5 py-2.5 rounded-xl border-[1.5px] border-border text-[14px] outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
       />
       <button
         type="submit"
         disabled={busy || !name.trim()}
-        className="text-[13px] font-semibold bg-[#1a1a1a] text-white px-4 py-2.5 rounded-xl hover:bg-[#333] transition-colors disabled:opacity-40"
+        className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-40"
       >
         {busy ? 'Creating…' : 'Create'}
       </button>
       <button
         type="button"
         onClick={() => { setOpen(false); setError('') }}
-        className="text-[13px] text-[#8a8a85] hover:text-[#1a1a1a] px-2 py-2.5 transition-colors"
+        className="text-[13px] text-muted-foreground hover:text-foreground px-2 py-2.5 transition-colors"
       >
         Cancel
       </button>
-      {error && <p className="text-[12px] text-red-500 w-full text-right">{error}</p>}
+      {error && <p className="text-[12px] text-destructive w-full text-right">{error}</p>}
     </form>
   )
 }
@@ -208,7 +208,7 @@ export function AccountMenu({ email }: { email: string }) {
     <div className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-8 h-8 rounded-full bg-[#1a1a1a] text-white text-[13px] font-semibold flex items-center justify-center hover:bg-[#333] transition-colors uppercase"
+        className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold flex items-center justify-center hover:bg-primary/90 transition-colors uppercase"
         title={email}
       >
         {email[0]}
@@ -216,13 +216,13 @@ export function AccountMenu({ email }: { email: string }) {
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-10 z-40 w-56 bg-white border border-[#e8e7e4] rounded-xl shadow-xl p-1.5">
-            <p className="px-2.5 py-2 text-[12px] text-[#8a8a85] truncate border-b border-[#f0efec] mb-1">{email}</p>
-            <Link href="/settings" className="block px-2.5 py-2 text-[13px] text-[#1a1a1a] hover:bg-[#f5f5f3] rounded-lg transition-colors">
+          <div className="absolute right-0 top-10 z-40 w-56 bg-card border border-border rounded-xl shadow-xl p-1.5">
+            <p className="px-2.5 py-2 text-[12px] text-muted-foreground truncate border-b border-muted mb-1">{email}</p>
+            <Link href="/settings" className="block px-2.5 py-2 text-[13px] text-foreground hover:bg-muted rounded-lg transition-colors">
               Account settings
             </Link>
             <form action="/api/auth/logout" method="POST">
-              <button type="submit" className="w-full text-left px-2.5 py-2 text-[13px] text-[#1a1a1a] hover:bg-[#f5f5f3] rounded-lg transition-colors">
+              <button type="submit" className="w-full text-left px-2.5 py-2 text-[13px] text-foreground hover:bg-muted rounded-lg transition-colors">
                 Sign out
               </button>
             </form>

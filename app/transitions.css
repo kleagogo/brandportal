@@ -1387,25 +1387,25 @@ html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
    vendored blocks above, so a recipe update stays diffable. Behaviour (the
    snapshot, the squash, the puffs) is untouched. */
 
-.t-smoky-stage.hub-tile-stage {
+.t-smoky-stage.asset-tile-stage {
   overflow: visible;
   border-radius: 0.75rem;
 }
-.t-smoky-card.hub-tile {
+.t-smoky-card.asset-tile {
   width: auto;
   height: auto;
   border-radius: 0.75rem;
   background: transparent;
   box-shadow: none;
 }
-.t-smoky-card.hub-tile img {
+.t-smoky-card.asset-tile img {
   position: static;
   inset: auto;
   width: auto;
   height: auto;
 }
 
-.t-drop-zone.hub-dropzone {
+.t-drop-zone.app-dropzone {
   position: relative;
   left: auto;
   top: auto;
