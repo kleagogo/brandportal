@@ -19,7 +19,6 @@ import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuAction,
   SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar'
 
 function SubBrandPlaceholder({ label }: { label: string }) {
@@ -114,10 +113,10 @@ function HubShell({ access }: { access: HubAccess }) {
         />
 
         <SidebarInset className="flex flex-col min-w-0 min-h-0">
-          {/* No top bar: each section carries its own actions in the rail. This
-              is the only thing left that has to sit outside the sidebar, so a
-              phone can still open it. */}
-          <SidebarTrigger className="md:hidden absolute left-3 top-3 z-20" />
+          {/* No top bar, so the component's own trigger sits at the top of the
+              content instead — outside the rail, which is what lets it expand a
+              collapsed one. */}
+          <SidebarTrigger className="absolute left-3 top-3 z-20" />
           <main className="flex-1 min-h-0 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
               {renderContent()}
@@ -186,7 +185,6 @@ function HubSidebar({
   access: HubAccess
 }) {
   const { config, active, setActive, editingSection, update } = useHub()
-  const { toggleSidebar, state: sidebarState } = useSidebar()
   const SECTION_KINDS: Record<string, { label: string; icon: SectionConfig['icon'] }> = {
     assets: { label: 'New files', icon: 'screenshots' },
     colors: { label: 'New colors', icon: 'colors' },
@@ -272,15 +270,6 @@ function HubSidebar({
               </div>
             </SidebarMenuItem>
           )}
-          <SidebarMenuItem>
-            {/* The collapse control lived in the top bar. It has to be inside the
-                rail now, and in the footer specifically, so it's still reachable
-                once the rail is collapsed to icons. */}
-            <SidebarMenuButton onClick={toggleSidebar} tooltip={sidebarState === 'collapsed' ? 'Expand' : 'Collapse'}>
-              <Icon name="menu" size={14} />
-              <span>{sidebarState === 'collapsed' ? 'Expand' : 'Collapse'}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={onToggleTheme} tooltip={dark ? 'Light mode' : 'Dark mode'}>
               <IconSwap on={dark} a={<Icon name="moon" size={14} />} b={<Icon name="sun" size={14} />} />
