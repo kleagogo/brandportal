@@ -67,7 +67,7 @@ export function ColorsSection() {
               return (
                 <HubCard
                   key={key}
-                  className="group relative w-[168px] hover:ring-muted-foreground transition-[box-shadow]"
+                  className="group relative w-[168px]"
                   media={
                     <button
                       onClick={() => (editing ? setOpen(open === key ? null : key) : copyHex(swatch.hex))}

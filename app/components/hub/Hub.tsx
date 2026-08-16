@@ -19,6 +19,7 @@ import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuAction,
   SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar'
 
 function SubBrandPlaceholder({ label }: { label: string }) {
@@ -185,6 +186,7 @@ function HubSidebar({
   access: HubAccess
 }) {
   const { config, active, setActive, editingSection, update } = useHub()
+  const { toggleSidebar, state: sidebarState } = useSidebar()
   const SECTION_KINDS: Record<string, { label: string; icon: SectionConfig['icon'] }> = {
     assets: { label: 'New files', icon: 'screenshots' },
     colors: { label: 'New colors', icon: 'colors' },
@@ -270,6 +272,15 @@ function HubSidebar({
               </div>
             </SidebarMenuItem>
           )}
+          <SidebarMenuItem>
+            {/* The collapse control lived in the top bar. It has to be inside the
+                rail now, and in the footer specifically, so it's still reachable
+                once the rail is collapsed to icons. */}
+            <SidebarMenuButton onClick={toggleSidebar} tooltip={sidebarState === 'collapsed' ? 'Expand' : 'Collapse'}>
+              <Icon name="menu" size={14} />
+              <span>{sidebarState === 'collapsed' ? 'Expand' : 'Collapse'}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={onToggleTheme} tooltip={dark ? 'Light mode' : 'Dark mode'}>
               <IconSwap on={dark} a={<Icon name="moon" size={14} />} b={<Icon name="sun" size={14} />} />

@@ -48,7 +48,13 @@ export function HubCard({
   ref?: Ref<HTMLDivElement>
 } & Omit<React.ComponentProps<'div'>, 'ref' | 'children'>) {
   return (
-    <Card ref={ref} size="sm" className={cn('gap-0 py-0', className)} {...rest}>
+    <Card
+      ref={ref}
+      size="sm"
+      // The ring darkens on hover so a card reads as a thing you can act on.
+      className={cn('gap-0 py-0 transition-[box-shadow] hover:ring-muted-foreground', className)}
+      {...rest}
+    >
       {header && (
         <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted px-3 py-2.5">
           {header}
