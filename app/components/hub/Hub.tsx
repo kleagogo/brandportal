@@ -359,7 +359,7 @@ function HubSidebarItem({
         <>
           <SidebarMenuAction
             showOnHover
-            className="right-13"
+            className="right-13 text-muted-foreground peer-hover/menu-button:text-muted-foreground hover:text-foreground md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all"
             title={isEditing ? 'Done editing' : `Edit ${section.label}`}
             onClick={() => {
               onSelect(section.id)
@@ -370,7 +370,7 @@ function HubSidebarItem({
           </SidebarMenuAction>
           <SidebarMenuAction
             showOnHover
-            className="right-7"
+            className="right-7 text-muted-foreground peer-hover/menu-button:text-muted-foreground hover:text-foreground md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all"
             title={`Share ${section.label}`}
             onClick={() => onShare(section.id)}
           >
@@ -378,6 +378,7 @@ function HubSidebarItem({
           </SidebarMenuAction>
           <SidebarMenuAction
             showOnHover
+            className="text-muted-foreground peer-hover/menu-button:text-muted-foreground hover:text-destructive md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all"
             title={`Delete ${section.label}`}
             onClick={() => {
               if (!window.confirm(`Delete the "${section.label}" section?`)) return
