@@ -3,7 +3,7 @@
 import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
-import { Card } from '@/components/ui/card'
+import { HubCard } from './HubCard'
 
 const ALL_WEIGHTS = ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 
@@ -30,10 +30,12 @@ export function TypographySection() {
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-4">Font Family</p>
 
           {group.fonts.map((font, fi) => (
-            <Card key={fi} className="px-6 mb-6 group/font">
-              <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+            <HubCard
+              key={fi}
+              className="mb-6 group/font"
+              header={
                 <div className="min-w-0">
-                  <p className="text-[18px] font-semibold mb-1" style={{ fontFamily: `'${font.name}', sans-serif` }}>
+                  <p className="text-[15px] font-semibold" style={{ fontFamily: `'${font.name}', sans-serif` }}>
                     <Editable
                       inline
                       value={font.name}
@@ -45,11 +47,13 @@ export function TypographySection() {
                       })}
                     />
                   </p>
-                  <p className="text-[13px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground">
                     <Editable inline value={font.primaryLabel || font.role} placeholder="Role" onChange={v => update(c => { c.typography[gi].fonts[fi].primaryLabel = v })} />
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
+              }
+            >
+              <div className="flex items-center justify-end gap-1.5 flex-wrap">
                   {(editing ? ALL_WEIGHTS : font.weights).map(w => {
                     const active = font.weights.includes(w)
                     if (!editing) {
@@ -86,7 +90,6 @@ export function TypographySection() {
                       <Icon name="trash" size={14} />
                     </button>
                   )}
-                </div>
               </div>
 
               {font.cssSnippet && (
@@ -182,7 +185,7 @@ export function TypographySection() {
                   </button>
                 )}
               </div>
-            </Card>
+            </HubCard>
           ))}
 
           {editing && (

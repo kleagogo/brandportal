@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
  * asset with tags and formats are the same card with different slots filled.
  */
 export function HubCard({
+  header,
   media,
   mediaClassName,
   children,
@@ -28,6 +29,12 @@ export function HubCard({
   ref,
   ...rest
 }: {
+  /**
+   * A text band across the top, in the same grey as `media`. For cards whose
+   * subject is words rather than a picture — a typeface, a principle — so they
+   * still read as the same card as one with an image.
+   */
+  header?: ReactNode
   /** Fills the top edge-to-edge — an image, a colour, a gradient. */
   media?: ReactNode
   mediaClassName?: string
@@ -42,6 +49,11 @@ export function HubCard({
 } & Omit<React.ComponentProps<'div'>, 'ref' | 'children'>) {
   return (
     <Card ref={ref} size="sm" className={cn('gap-0 py-0', className)} {...rest}>
+      {header && (
+        <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted px-3 py-2.5">
+          {header}
+        </div>
+      )}
       {media && (
         <div className={cn('flex items-center justify-center overflow-hidden bg-muted', mediaClassName)}>
           {media}
