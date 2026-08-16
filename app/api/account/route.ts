@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionUser, SESSION_COOKIE } from '@/lib/auth'
-import { deleteUser, isValidEmail, getUserByEmail, normalizeEmail } from '@/lib/users'
+import { deleteUser, isValidEmail, getUserByEmail, normalizeEmail, setAccountType, type AccountType } from '@/lib/users'
 import { deleteHubsOwnedBy, listHubsForUser, removeEditorEverywhere } from '@/lib/store'
 import { createToken } from '@/lib/tokens'
 import { sendMagicLink } from '@/lib/email'
@@ -15,8 +15,28 @@ export async function GET() {
     email: user.email,
     plan: user.plan || 'free',
     createdAt: user.createdAt,
+    accountType: user.accountType || null,
     hubs: hubs.map(({ hub, role }) => ({ slug: hub.slug, name: hub.name, role })),
   })
+}
+
+/** Record what the account is for — asked once, on the first visit. */
+export async function PATCH(req: NextRequest) {
+  const user = await getSessionUser()
+  if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+
+  let accountType: unknown
+  try {
+    ({ accountType } = await req.json())
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  if (accountType !== 'agency' && accountType !== 'brand') {
+    return NextResponse.json({ error: 'Pick either an agency or a single brand' }, { status: 400 })
+  }
+
+  await setAccountType(user.id, accountType as AccountType)
+  return NextResponse.json({ ok: true, accountType })
 }
 
 /** Request an email change — a confirmation link goes to the NEW address. */

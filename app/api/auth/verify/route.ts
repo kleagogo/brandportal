@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { consumeToken } from '@/lib/tokens'
 import { ensureUser, getUserById, updateUserEmail } from '@/lib/users'
 import { SESSION_COOKIE, createSessionValue } from '@/lib/auth'
-import { countOwnedHubs, createHub, deletePreview, getMeta, getPreview, renameEditorEmail, saveMeta, transferOwnership } from '@/lib/store'
-import { limitsFor } from '@/lib/limits'
+import { getMeta, renameEditorEmail, saveMeta, transferOwnership } from '@/lib/store'
 
 /** The destination of every magic link: sign in, then act on the token's purpose. */
 export async function GET(req: NextRequest) {
@@ -32,19 +31,6 @@ export async function GET(req: NextRequest) {
 
   const user = await ensureUser(record.email)
   let destination = record.redirect || '/dashboard'
-
-  if (record.purpose === 'claim' && record.previewId) {
-    const config = await getPreview(record.previewId)
-    if (!config) {
-      destination = '/?expired=1'
-    } else if ((await countOwnedHubs(user.id)) >= limitsFor(user).hubs) {
-      destination = '/dashboard?limit=1'
-    } else {
-      const hub = await createHub(config, user.id)
-      await deletePreview(record.previewId)
-      destination = `/${hub.slug}?claimed=1`
-    }
-  }
 
   if (record.purpose === 'invite' && record.slug) {
     const meta = await getMeta(record.slug)

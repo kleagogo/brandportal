@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 300" width="500" height="300">
+<rect width="500" height="300" fill="#1C3A4A"/>
+<g transform="translate(40,40) scale(0.5)"><path d="M48 4 L57 42 L78 48 L57 54 L48 92 L39 54 L18 48 L39 42 Z" fill="#EEF0EF"/></g>
+<text x="40" y="196" font-family="Georgia,serif" font-size="24" fill="#EEF0EF">Studio North</text>
+<text x="40" y="224" font-family="Inter,system-ui,sans-serif" font-size="12" letter-spacing="3" fill="#B8C6C9">BRAND &amp; IDENTITY</text>
+<rect x="40" y="248" width="64" height="4" fill="#C2683C"/></svg>

@@ -22,25 +22,22 @@ export interface SendResult {
   error?: string
 }
 
-type Kind = 'login' | 'claim' | 'invite' | 'transfer'
+type Kind = 'login' | 'invite' | 'transfer'
 
 const SUBJECTS: Record<Kind, (hub?: string) => string> = {
   login: () => 'Your Pitho sign-in link',
-  claim: hub => `Claim your brand hub${hub ? ` — ${hub}` : ''}`,
   invite: hub => `You've been invited to edit ${hub || 'a brand hub'}`,
   transfer: hub => `You've been offered ownership of ${hub || 'a brand hub'}`,
 }
 
 const ACTIONS: Record<Kind, string> = {
   login: 'Sign in',
-  claim: 'Claim your hub',
   invite: 'Accept invite',
   transfer: 'Accept ownership',
 }
 
 const LEADS: Record<Kind, (hub?: string) => string> = {
   login: () => 'Click below to sign in. No password needed.',
-  claim: hub => `Your brand hub${hub ? ` for ${hub}` : ''} is ready. Claim it to keep and edit it.`,
   invite: hub => `You can now edit ${hub || 'a brand hub'} — colors, type, logos, and files.`,
   transfer: hub => `Accept to become the owner of ${hub || 'this brand hub'}. The current owner stays on as an editor.`,
 }

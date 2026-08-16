@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BrandConfig, SectionConfig } from '@/app/types/brand'
 import { HubProvider, useHub } from './HubContext'
@@ -16,6 +17,7 @@ import { SearchBox } from './SearchBox'
 import { HomeSection } from './HomeSection'
 import { SpaceSwitcher } from './SpaceSwitcher'
 import { uploadAsset } from './upload-client'
+import { GooeyPlusMenu, StatusBadge } from '../transitions'
 
 function SubBrandPlaceholder({ label }: { label: string }) {
   return (
@@ -40,15 +42,15 @@ export interface HubAccess {
   signedIn?: boolean
 }
 
-export default function Hub({ initial, previewId, ...access }: { initial: BrandConfig; previewId?: string } & HubAccess) {
+export default function Hub({ initial, ...access }: { initial: BrandConfig } & HubAccess) {
   return (
-    <HubProvider initial={initial}>
-      <HubShell previewId={previewId} access={access} />
+    <HubProvider initial={initial} canEdit={Boolean(access.canEdit)}>
+      <HubShell access={access} />
     </HubProvider>
   )
 }
 
-function HubShell({ previewId, access }: { previewId?: string; access: HubAccess }) {
+function HubShell({ access }: { access: HubAccess }) {
   const { config, editing, setEditing, saveState } = useHub()
   const [active, setActive] = useState(config.sections[0]?.id || 'logo')
   const [shareOpen, setShareOpen] = useState(false)
@@ -97,7 +99,6 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
     <div className={`${dark ? 'hub-dark' : 'hub-light'} min-h-screen bg-[var(--hub-bg)] text-[var(--hub-text)] flex flex-col`}>
       {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
 
-      {previewId && <ClaimBanner previewId={previewId} />}
       <WelcomeToast />
 
       <div className="flex-1 flex">
@@ -122,7 +123,6 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
             setEditing={setEditing}
             saveState={saveState}
             sectionLabel={activeSection?.label || ''}
-            preview={Boolean(previewId)}
             access={access}
           />
           <main className="flex-1 overflow-y-auto">
@@ -147,16 +147,15 @@ function HubShell({ previewId, access }: { previewId?: string; access: HubAccess
   )
 }
 
-// ─── One-time toasts after claiming or receiving a hub ────────────────────────
+// ─── One-time toast after receiving a hub ─────────────────────────────────────
 
 function WelcomeToast() {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.has('claimed')) setMessage('This hub is yours now. Hit Edit to make it perfect, then Share when you’re ready.')
-    if (params.has('transferred')) setMessage('You now own this hub. The previous owner stays on as an editor.')
-    if (params.has('claimed') || params.has('transferred')) {
+    if (params.has('transferred')) {
+      setMessage('You now own this hub. The previous owner stays on as an editor.')
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
@@ -173,118 +172,10 @@ function WelcomeToast() {
   )
 }
 
-// ─── Claim banner (scan previews only) ────────────────────────────────────────
-
-function ClaimBanner({ previewId }: { previewId: string }) {
-  const { config } = useHub()
-  const [state, setState] = useState<'idle' | 'claiming' | 'email' | 'sending' | 'sent'>('idle')
-  const [email, setEmail] = useState('')
-  const [devLink, setDevLink] = useState('')
-  const [error, setError] = useState('')
-
-  async function claim() {
-    setState('claiming')
-    setError('')
-    try {
-      const res = await fetch('/api/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ previewId }),
-      })
-      const data = await res.json()
-      if (res.status === 401 && data.needAuth) {
-        setState('email') // not signed in — ask for their email
-        return
-      }
-      if (!res.ok) throw new Error(data.error || 'Something went wrong')
-      window.location.href = `/${data.slug}`
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong')
-      setState('idle')
-    }
-  }
-
-  async function sendLink(e: React.FormEvent) {
-    e.preventDefault()
-    if (!email.trim()) return
-    setState('sending')
-    setError('')
-    try {
-      const res = await fetch('/api/auth/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), previewId }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Something went wrong')
-      setDevLink(data.devLink || '')
-      setState('sent')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-      setState('email')
-    }
-  }
-
-  return (
-    <div className="bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap sticky top-0 z-50">
-      {state === 'sent' ? (
-        <p className="text-[13px] leading-snug flex-1 min-w-[200px]">
-          <span className="font-semibold">Check your email</span>
-          <span className="text-white/70"> — your claim link is on its way to {email}.</span>
-          {devLink && (
-            <>
-              {' '}
-              <a href={devLink} className="underline underline-offset-2 font-semibold">
-                Or open your claim link directly →
-              </a>
-            </>
-          )}
-        </p>
-      ) : state === 'email' || state === 'sending' ? (
-        <form onSubmit={sendLink} className="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
-          <p className="text-[13px] text-white/70">Where should this hub live?</p>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="you@company.com"
-            required
-            autoFocus
-            className="flex-1 min-w-[180px] text-[13px] px-3 py-2 rounded-lg bg-[var(--hub-panel)]/10 border border-white/20 outline-none focus:border-white placeholder:text-white/40"
-          />
-          <button
-            type="submit"
-            disabled={state === 'sending'}
-            className="text-[13px] font-semibold bg-[var(--hub-panel)] text-[var(--hub-text)] px-4 py-2 rounded-lg hover:bg-[var(--hub-panel)]/90 transition-colors disabled:opacity-60 whitespace-nowrap"
-          >
-            {state === 'sending' ? 'Sending…' : 'Claim it'}
-          </button>
-          {error && <span className="text-[12px] text-red-300 w-full">{error}</span>}
-        </form>
-      ) : (
-        <>
-          <p className="text-[13px] leading-snug flex-1 min-w-[200px]">
-            <span className="font-semibold">This is {config.name}&rsquo;s brand hub</span>
-            <span className="text-white/70"> — built from your website. Claim it to keep and edit it. Unclaimed previews expire in 24 hours.</span>
-            {error && <span className="text-red-300"> {error}</span>}
-          </p>
-          <button
-            onClick={claim}
-            disabled={state === 'claiming'}
-            className="text-[13px] font-semibold bg-[var(--hub-panel)] text-[var(--hub-text)] px-4 py-2 rounded-lg hover:bg-[var(--hub-panel)]/90 transition-colors disabled:opacity-60 whitespace-nowrap"
-          >
-            {state === 'claiming' ? 'Claiming…' : 'Claim this hub — free'}
-          </button>
-        </>
-      )}
-    </div>
-  )
-}
-
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
 function TopBar({
-  onMenu, onShare, onSettings, onNavigate, editing, setEditing, saveState, sectionLabel, preview, access,
+  onMenu, onShare, onSettings, onNavigate, editing, setEditing, saveState, sectionLabel, access,
 }: {
   onMenu: () => void
   onShare: () => void
@@ -294,7 +185,6 @@ function TopBar({
   setEditing: (v: boolean) => void
   saveState: 'idle' | 'saving' | 'saved' | 'error'
   sectionLabel: string
-  preview: boolean
   access: HubAccess
 }) {
   return (
@@ -305,23 +195,24 @@ function TopBar({
       <p className="text-[13px] font-medium text-[var(--hub-muted)] truncate">{sectionLabel}</p>
       <SearchBox onNavigate={onNavigate} />
 
-      {preview ? (
-        <div className="ml-auto">
-          <span className="text-[12px] font-medium text-[var(--hub-faint)]">Preview — claim to edit and share</span>
-        </div>
-      ) : (
       <div className="ml-auto flex items-center gap-2.5">
         {editing && (
           <span className={`text-[12px] font-medium hidden sm:flex items-center gap-1.5 ${
             saveState === 'error' ? 'text-red-500' : 'text-[var(--hub-muted)]'
           }`}>
-            {saveState === 'saving' && (
-              <><span className="w-1.5 h-1.5 rounded-full bg-[#b0afa9] animate-pulse" /> Saving…</>
+            {saveState === 'error' ? (
+              'Couldn’t save — retrying on next edit'
+            ) : (
+              <>
+                {/* The spinner resolving into a check IS the save state, so the
+                    badge is driven straight off it rather than animated apart. */}
+                <StatusBadge
+                  state={saveState === 'saving' ? 'loading' : 'done'}
+                  label={saveState === 'saving' ? 'Saving' : 'Saved'}
+                />
+                {saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved' : 'All changes saved'}
+              </>
             )}
-            {(saveState === 'saved' || saveState === 'idle') && (
-              <><Icon name="check" size={11} /> {saveState === 'saved' ? 'Saved' : 'All changes saved'}</>
-            )}
-            {saveState === 'error' && 'Couldn’t save — retrying on next edit'}
           </span>
         )}
 
@@ -360,25 +251,19 @@ function TopBar({
             {editing ? <><Icon name="check" size={13} /> Done</> : <><Icon name="edit" size={13} /> Edit</>}
           </button>
         ) : !access.signedIn ? (
-          <a
+          <Link
             href="/login"
             className="text-[13px] font-medium text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors"
           >
             Sign in
-          </a>
+          </Link>
         ) : null}
       </div>
-      )}
     </header>
   )
 }
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
-
-const SECTION_ICONS: Record<string, SectionConfig['icon']> = {
-  assets: 'screenshots',
-  guidelines: 'guidelines',
-}
 
 function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: string; onSelect: (id: string) => void; open: boolean; dark: boolean; onToggleTheme: () => void }) {
   const { config, editing, update } = useHub()
@@ -397,13 +282,20 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
     }
   }
 
-  function addSection() {
+  const SECTION_KINDS: Record<string, { label: string; icon: SectionConfig['icon'] }> = {
+    assets: { label: 'New files', icon: 'screenshots' },
+    colors: { label: 'New colors', icon: 'colors' },
+    guidelines: { label: 'New guidelines', icon: 'guidelines' },
+  }
+
+  function addSection(type: SectionConfig['type'] = 'assets') {
+    const kind = SECTION_KINDS[type] || SECTION_KINDS.assets
     update(c => {
       let n = c.sections.length + 1
       let id = `section-${n}`
       while (c.sections.some(s => s.id === id)) id = `section-${++n}`
-      c.sections.push({ id, label: 'New section', type: 'assets', icon: SECTION_ICONS.assets })
-      c.assets[id] = []
+      c.sections.push({ id, label: kind.label, type, icon: kind.icon })
+      if (type === 'assets') c.assets[id] = []
     })
   }
 
@@ -471,24 +363,33 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
         })}
         <div className="hidden">
         </div>
-        {editing && (
-          <button
-            onClick={addSection}
-            className="w-full flex items-center gap-2.5 px-2 py-1.5 mt-1 rounded-lg text-[13px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] border border-dashed border-transparent hover:border-[var(--hub-border)] transition-colors"
-          >
-            <Icon name="plus" size={13} /> Add section
-          </button>
-        )}
+
       </nav>
 
       {/* Footer */}
       <div className="p-4 border-t border-[var(--hub-border)]">
+        {editing && (
+          <div className="mb-3 flex justify-center">
+            {/* The plus splits into the section kinds — it used to always make an
+                assets section, so choosing one was a rename away. It lives down
+                here rather than under the section list because the fan opens
+                upward and the nav above scrolls, which clipped the satellites. */}
+            <GooeyPlusMenu
+              items={[
+                { id: 'assets', label: 'Files', fx: '-54px', fy: '-34px', icon: <Icon name="screenshots" size={15} /> },
+                { id: 'colors', label: 'Colors', fx: '0px', fy: '-64px', icon: <Icon name="colors" size={15} /> },
+                { id: 'guidelines', label: 'Guidelines', fx: '54px', fy: '-34px', icon: <Icon name="guidelines" size={15} /> },
+              ]}
+              onSelect={item => addSection(item.id as SectionConfig['type'])}
+            />
+          </div>
+        )}
         <div className="mb-3">
           <SpaceSwitcher currentSlug={config.slug} currentName={config.name} />
         </div>
-        <a href="/" className="text-[11px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors">
+        <Link href="/" className="text-[11px] text-[var(--hub-faint)] hover:text-[var(--hub-text)] transition-colors">
           Made with Pitho
-        </a>
+        </Link>
         <button
           onClick={onToggleTheme}
           className="mt-2 w-full flex items-center gap-2 text-[12px] text-[var(--hub-muted)] hover:text-[var(--hub-text)] transition-colors"

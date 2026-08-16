@@ -12,6 +12,8 @@ interface HubContextValue {
   saveState: SaveState
   /** Apply a mutation to a draft of the config; the result is set and autosaved. */
   update: (mutate: (draft: BrandConfig) => void) => void
+  /** May this viewer change the hub? True before Edit mode is switched on. */
+  canEdit: boolean
   /** Show download controls. Share portals can turn downloads off. */
   allowDownload: boolean
   /** Set when the hub is being viewed through a share portal (/s/<id>). */
@@ -28,7 +30,7 @@ export function useHub() {
 
 const SAVE_DEBOUNCE_MS = 800
 
-export function HubProvider({ initial, children, allowDownload = true, portalId }: { initial: BrandConfig; children: React.ReactNode; allowDownload?: boolean; portalId?: string }) {
+export function HubProvider({ initial, children, canEdit = false, allowDownload = true, portalId }: { initial: BrandConfig; children: React.ReactNode; canEdit?: boolean; allowDownload?: boolean; portalId?: string }) {
   const [config, setConfig] = useState<BrandConfig>(initial)
   const [editing, setEditing] = useState(false)
   const [saveState, setSaveState] = useState<SaveState>('idle')
@@ -83,7 +85,7 @@ export function HubProvider({ initial, children, allowDownload = true, portalId 
   }, [])
 
   return (
-    <HubContext.Provider value={{ config, editing, setEditing, saveState, update, allowDownload, portalId }}>
+    <HubContext.Provider value={{ config, editing, setEditing, saveState, update, canEdit, allowDownload, portalId }}>
       {children}
     </HubContext.Provider>
   )

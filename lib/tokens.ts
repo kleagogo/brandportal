@@ -1,6 +1,6 @@
 /**
- * Single-use tokens for magic links: sign-in, claiming, invites, transfers,
- * email changes. Stored as one JSON list ('app'/'tokens') via the driver;
+ * Single-use tokens for magic links: sign-in, invites, transfers, email
+ * changes. Stored as one JSON list ('app'/'tokens') via the driver;
  * consumed (deleted) on first use. Login-ish tokens expire in 1h, invites
  * and transfers in 7 days so a link sent to a client keeps working.
  */
@@ -8,15 +8,13 @@
 import crypto from 'crypto'
 import { getStorage } from './db'
 
-export type TokenPurpose = 'login' | 'claim' | 'invite' | 'transfer' | 'email-change'
+export type TokenPurpose = 'login' | 'invite' | 'transfer' | 'email-change'
 
 export interface TokenRecord {
   token: string
   purpose: TokenPurpose
   /** Email the link was issued to. */
   email: string
-  /** For 'claim': the preview being claimed. */
-  previewId?: string
   /** For 'invite' / 'transfer': the hub involved. */
   slug?: string
   /** For 'email-change': the account being changed. */

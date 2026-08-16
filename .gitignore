@@ -14,3 +14,5 @@ node_modules/
 .dev.vars
 .open-next/
 .wrangler/
+# paid transitions.dev recipes — licensed to the account, not the repo
+/transitions/

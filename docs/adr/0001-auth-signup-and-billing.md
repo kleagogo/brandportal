@@ -1,8 +1,31 @@
 # ADR-0001: Authentication, signup, and billing
 
-**Status:** Accepted
+**Status:** Accepted — partially amended 2026-08-15 (see Amendment)
 **Date:** 2026-08-15
 **Deciders:** Klea Gogo
+
+## Amendment — 2026-08-15: the scan funnel is gone
+
+The website scanner and the scan → preview → claim path have been removed from
+the product, and their code deleted (`lib/scanner.ts`, `/api/scan`,
+`/api/claim`, `/preview/[id]`, and the `'claim'` token purpose). A new client
+space now starts blank and is filled by uploading the files the agency already
+has.
+
+**What this changes below:** the Context's "acquisition path worth protecting"
+and D3's supporting argument ("it inverts the strongest asset: scan → preview →
+claim shows someone their own brand before asking for anything") describe a
+flow that no longer exists. Both are kept as written, as the record of what was
+reasoned at the time.
+
+**What still holds:** D3's *decision* — signup before pricing, free account
+first, upgrade at the limit — does not depend on the scanner. It rests on a
+subscription needing a user record to attach to, which is unchanged. But it has
+lost the argument that made it strong, so the funnel now has to earn conversion
+on first-run experience rather than on pre-account value. Revisit D3 alongside
+the free tier's limits (action item 3), not separately.
+
+D1, D2 and D4 are untouched.
 
 ## Context
 

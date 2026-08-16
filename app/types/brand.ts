@@ -59,7 +59,7 @@ export interface TypographyGroup {
 }
 
 export type SectionType = 'assets' | 'colors' | 'typography' | 'guidelines' | 'link' | 'tokens' | 'home' | 'gradients' | 'subbrand'
-export type SectionIcon = 'home' | 'logo' | 'colors' | 'type' | 'screenshots' | 'artwork' | 'guidelines' | 'link' | 'heart' | 'mail' | 'person' | 'templates' | 'sparkles'
+export type SectionIcon = 'home' | 'logo' | 'colors' | 'type' | 'screenshots' | 'artwork' | 'guidelines' | 'link' | 'heart' | 'mail' | 'person' | 'templates' | 'sparkles' | 'file'
 export type SectionGroup = 'main' | 'assets' | 'subbrands' | 'tools' | 'resources'
 
 export interface SectionConfig {
@@ -70,6 +70,12 @@ export interface SectionConfig {
   url?: string // for type: 'link' and 'subbrand'
   /** Sidebar group. Defaults to 'assets'. */
   group?: SectionGroup
+  /**
+   * Studio-only furniture — case studies, proposal decks and the like. Lives
+   * in the agency's own hub and is left behind when a new client space copies
+   * that hub's layout. Anything without this flag travels.
+   */
+  studioOnly?: boolean
 }
 
 export interface AssetVersion {

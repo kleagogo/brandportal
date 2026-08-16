@@ -1,7 +1,28 @@
 @import "tailwindcss";
+@import "./transitions.css";
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/**
+ * Retime Tailwind's transition utilities.
+ *
+ * These two live in `@theme default` upstream, but overriding them from a
+ * project `@theme` block does not take in Tailwind 4.2 — verified against the
+ * compiled output, where the emitted value stayed 150ms while other `@theme`
+ * values (`--font-sans`) applied fine. The utilities read them as
+ * `var(--tw-duration, var(--default-transition-duration))`, so a plain `:root`
+ * after the import wins on source order and keeps working if that changes.
+ *
+ * Only elements that opted into a `transition-*` utility are affected — the
+ * earlier version of this set a duration on `*`, which (because CSS defaults
+ * `transition-property` to `all`) quietly animated every property of every
+ * element in the app.
+ */
+:root {
+  --default-transition-duration: 180ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Hub theme tokens — dark-first, toggleable */

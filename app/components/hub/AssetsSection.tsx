@@ -5,7 +5,8 @@ import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
 import { trackPortal } from '../portal/track'
-import { uploadAsset, uploadConfig } from './upload-client'
+import { humanSize, uploadAsset, uploadConfig } from './upload-client'
+import { ImageOpenTilt, OrganicShimmer, useSmokyDissolve } from '../transitions'
 import {
   expandArchives,
   filesFromDrop,
@@ -69,8 +70,101 @@ export function downloadHref(file: string): string {
   return file
 }
 
+/**
+ * What an empty section shows the person who can fill it.
+ *
+ * The old copy here — "check back soon, this section is being filled" — was
+ * written for a visitor and shown to the owner who had just made the hub, on
+ * the very first screen of the product. An editor gets the drop target
+ * instead, and it accepts a drop whether or not Edit mode is switched on.
+ */
+function EmptyDropzone({
+  onPickFiles, onPickFolder, dragOver, progress,
+}: {
+  onPickFiles: () => void
+  onPickFolder: () => void
+  dragOver: boolean
+  progress: { done: number; total: number; name: string; percent: number } | null
+}) {
+  const [maxLabel, setMaxLabel] = useState('')
+  const zoneRef = useRef<HTMLDivElement>(null)
+  const puffsRef = useRef<SVGGElement>(null)
+
+  useEffect(() => {
+    // Cached after the first section, so this costs one request per page.
+    uploadConfig().then(caps => setMaxLabel(humanSize(caps.maxBytes))).catch(() => {})
+  }, [])
+
+  if (progress) {
+    const percent = progress.total === 1 ? progress.percent : (progress.done / progress.total) * 100
+    return (
+      <div className="border-2 border-dashed border-[var(--hub-border)] rounded-2xl p-12 flex flex-col items-center gap-4">
+        {/* A working surface, not a spinner: the shimmer says "this is being
+            processed" while the bar says how far in it is. */}
+        <OrganicShimmer width={168} height={96} radius={12} playing />
+        <p className="text-[14px] font-medium text-[var(--hub-text)]">
+          {progress.total === 1
+            ? `${progress.name} — ${Math.round(progress.percent)}%`
+            : `Uploading ${progress.done} of ${progress.total} — ${progress.name}`}
+        </p>
+        <span className="w-56 h-1 rounded-full bg-[var(--hub-border)] overflow-hidden">
+          <span className="block h-full bg-[var(--hub-text)] transition-all" style={{ width: `${percent}%` }} />
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={zoneRef}
+      className={`t-drop-zone hub-dropzone border-2 border-dashed rounded-2xl px-6 py-12 text-center transition-colors ${
+        dragOver ? 'border-[var(--hub-text)] bg-[var(--hub-soft)] is-over' : 'border-[var(--hub-border)]'
+      }`}
+    >
+      {/* Smoke rings the drop physics squeezes out from under the landing. */}
+      <svg className="t-drop-puffs" viewBox="0 0 204 204" aria-hidden="true" focusable="false">
+        <g ref={puffsRef} className="t-drop-puff-group" filter="url(#t-drop-smoke)" />
+      </svg>
+      <span className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-[var(--hub-soft)] text-[var(--hub-muted)] mb-4">
+        <Icon name="upload" size={19} />
+      </span>
+      <p className="text-[16px] font-semibold text-[var(--hub-text)] mb-1.5">Drop files here</p>
+      <p className="text-[13.5px] text-[var(--hub-muted)] leading-relaxed max-w-[42ch] mx-auto mb-6">
+        Drag in files, a whole folder, or a .zip. Folders keep their structure as groups, and
+        archives are unpacked for you.
+      </p>
+
+      <div className="flex items-center justify-center gap-2 flex-wrap mb-7">
+        <button
+          onClick={onPickFiles}
+          className="text-[13px] font-semibold bg-[var(--hub-btn)] text-[var(--hub-btn-text)] px-4 py-2.5 rounded-xl hover:opacity-85 transition-opacity"
+        >
+          Choose files
+        </button>
+        <button
+          onClick={onPickFolder}
+          className="text-[13px] font-semibold border border-[var(--hub-border)] text-[var(--hub-text)] px-4 py-2.5 rounded-xl hover:border-[var(--hub-text)] transition-colors"
+        >
+          Choose a folder
+        </button>
+      </div>
+
+      <div className="border-t border-[var(--hub-border)] pt-5 max-w-[46ch] mx-auto">
+        <p className="text-[12.5px] text-[var(--hub-muted)] leading-relaxed">
+          <span className="font-semibold text-[var(--hub-text)]">Coming from Google Drive?</span>{' '}
+          Open the client&rsquo;s folder, hit Download — Drive hands you a .zip — and drop that
+          straight in here.
+        </p>
+        <p className="text-[11.5px] text-[var(--hub-faint)] mt-3">
+          Logos, source files, fonts, video and archives{maxLabel ? ` · up to ${maxLabel} per file` : ''}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export function AssetsSection({ sectionId }: { sectionId: string }) {
-  const { config, editing, update, allowDownload, portalId } = useHub()
+  const { config, editing, update, canEdit, allowDownload, portalId } = useHub()
   const [progress, setProgress] = useState<{ done: number; total: number; name: string; percent: number } | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState('')
@@ -162,6 +256,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
     if (added) parts.push(`${added} file${added > 1 ? 's' : ''} added`)
     if (failed.length) parts.push(`${failed.length} failed`)
     if (skipped) parts.push(`${skipped} skipped as unsupported`)
+    if (added && !editing) parts.push('hit Edit to rename or tag them')
     if (parts.length > 1 || skipped) setNotice(parts.join(' · '))
   }
 
@@ -181,32 +276,45 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
           </a>
         )}
       </div>
-      <p className="text-[14px] text-[var(--hub-muted)] mb-8">
-        {editing
-          ? 'Drop files, folders, or a .zip anywhere below to add them, and click names, notes, or tags to edit.'
-          : sectionId === 'logo'
-            ? 'Our logo system. Download approved assets and follow usage guidelines.'
-            : `${label} — download for presentations, product, and marketing.`}
-      </p>
+      {/* An empty section is described by the panel below it, not twice. */}
+      {(editing || assets.length > 0) && (
+        <p className="text-[14px] text-[var(--hub-muted)] mb-8">
+          {editing
+            ? 'Drop files, folders, or a .zip anywhere below to add them, and click names, notes, or tags to edit.'
+            : sectionId === 'logo'
+              ? 'Our logo system. Download approved assets and follow usage guidelines.'
+              : `${label} — download for presentations, product, and marketing.`}
+        </p>
+      )}
+      {!editing && assets.length === 0 && <div className="mb-8" />}
 
       {error && <p className="text-[13px] text-red-500 mb-4">{error}</p>}
       {notice && <p className="text-[13px] text-[var(--hub-muted)] mb-4">{notice}</p>}
 
       <div
-        onDragOver={e => { if (editing) { e.preventDefault(); setDragOver(true) } }}
+        onDragOver={e => { if (canEdit) { e.preventDefault(); setDragOver(true) } }}
         onDragLeave={() => setDragOver(false)}
         onDrop={e => {
-          if (!editing) return
+          if (!canEdit) return
           e.preventDefault()
           setDragOver(false)
           filesFromDrop(e.dataTransfer).then(addFiles)
         }}
-        className={`rounded-2xl transition-colors ${dragOver ? 'bg-[var(--hub-soft)] outline-2 outline-dashed outline-[#1a1a1a]' : ''}`}
+        className={`rounded-2xl transition-colors ${
+          dragOver && assets.length > 0 ? 'bg-[var(--hub-soft)] outline-2 outline-dashed outline-[var(--hub-text)]' : ''
+        }`}
       >
-        {assets.length === 0 && !editing ? (
+        {assets.length === 0 && canEdit ? (
+          <EmptyDropzone
+            onPickFiles={() => inputRef.current?.click()}
+            onPickFolder={() => folderInputRef.current?.click()}
+            dragOver={dragOver}
+            progress={progress}
+          />
+        ) : assets.length === 0 ? (
           <div className="border-2 border-dashed border-[var(--hub-border)] rounded-2xl p-12 text-center">
-            <p className="text-[14px] font-medium text-[var(--hub-muted)] mb-1">No assets here yet</p>
-            <p className="text-[12px] text-[var(--hub-faint)]">Check back soon — this section is being filled.</p>
+            <p className="text-[14px] font-medium text-[var(--hub-muted)] mb-1">Nothing here yet</p>
+            <p className="text-[12px] text-[var(--hub-faint)]">This section hasn&rsquo;t been filled in.</p>
           </div>
         ) : (
           <div className="space-y-8">
@@ -299,6 +407,19 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
   const [uploadingVersion, setUploadingVersion] = useState(false)
   const versionInput = useRef<HTMLInputElement>(null)
 
+  // Removing an asset plays the shred, then drops the data when it lands — so
+  // the tile is still on screen for the fall. Reduced motion skips the animation
+  // and calls onDone immediately, so the delete never depends on it running.
+  const stageRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const smokeRef = useRef<HTMLCanvasElement>(null)
+  const dissolve = useSmokyDissolve(stageRef, cardRef, smokeRef, {
+    onDone: () => update(c => { c.assets[sectionId].splice(i, 1) }),
+  })
+  function dissolveThenRemove() {
+    dissolve()
+  }
+
   /** Upload a file as the next version and make it the approved one. */
   async function uploadVersion(file: File) {
     setUploadingVersion(true)
@@ -336,10 +457,11 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
   }
 
   return (
-    <div className="bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl overflow-hidden group relative">
+    <div ref={stageRef} className="t-smoky-stage hub-tile-stage">
+    <div ref={cardRef} className="t-smoky-card hub-tile bg-[var(--hub-panel)] border border-[var(--hub-border)] rounded-xl overflow-hidden group relative">
       {editing && (
         <button
-          onClick={() => update(c => { c.assets[sectionId].splice(i, 1) })}
+          onClick={() => dissolveThenRemove()}
           className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-[var(--hub-panel)] border border-[var(--hub-border)] text-[var(--hub-muted)] hover:text-red-500 hover:border-red-300 items-center justify-center hidden group-hover:flex transition-colors"
           title="Remove asset"
         >
@@ -352,7 +474,11 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         </span>
       )}
       <div className={`${tileClass} flex items-center justify-center bg-[var(--hub-tile)] border-b border-[var(--hub-border)] p-6 overflow-hidden`}>
-        {isImage(asset.file) ? (
+        {isImage(asset.file) && asset.ratio ? (
+          // Photography and screenshots are worth looking at full size, so the
+          // tile zooms open rather than only offering a download.
+          <ImageOpenTilt src={asset.file} alt={asset.name} />
+        ) : isImage(asset.file) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={asset.file}
@@ -456,6 +582,9 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
           </div>
         )}
       </div>
+    </div>
+    {/* The shred is drawn here, over the stage, once the card is snapshotted. */}
+    <canvas ref={smokeRef} className="t-smoky-canvas" aria-hidden="true" />
     </div>
   )
 }

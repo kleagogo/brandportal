@@ -1,0 +1,1416 @@
+/**
+ * transitions.dev Pro recipes — vendored.
+ *
+ * Licensed to the account that downloaded them, not to this repo: `/transitions/`
+ * (the source recipes) is gitignored, and this file is the applied subset. Class
+ * names and custom properties are the recipes' own, unmodified, so a recipe
+ * update can be diffed against them.
+ *
+ * Motion tokens for the app's OWN transitions live at the top; before this file
+ * existed, all 143 of them ran on Tailwind's invisible 150ms default.
+ */
+
+/* ── App motion tokens ──────────────────────────────────────────────────────── */
+:root {
+  /* Durations: short for state echo, base for most UI, slow for entrances. */
+  --motion-short: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;
+  /* Easings: standard for in-place changes, exit faster than enter. */
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --motion-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Tailwind's own `transition-*` utilities are retimed through its theme
+   variables in globals.css — NOT with a `*` rule here. A universal
+   transition-duration would apply to `transition-property: all` (the CSS
+   default), quietly animating every property of every element, including any
+   component library added later. */
+
+/* ── Reduced motion ─────────────────────────────────────────────────────────
+   The app had no guard at all. Each recipe carries its own (the CSS variants
+   do; several React variants don't — those are handled in the components), and
+   this is the floor under everything else. */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* ── card-stack-hover ──────────────────────────────────────────────────────── */
+
+:root {
+  --stack-open-dur: 410ms;
+  --stack-open-ease: cubic-bezier(0.31, 2.34, 0.64, 1);
+  --stack-close-dur: 360ms;
+  --stack-close-ease: cubic-bezier(0.34, 1.9, 0.64, 1);
+  --stack-scale-dur: 610ms;
+  --stack-scale-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --stack-scale: 1.04;
+  --stack-spread: 1.42;
+  --stack-rotation: 1;
+}
+.t-stack {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+/* Each card is absolutely positioned; the stacked pose comes from its
+   inline --cx/--cy/--rot, the fanned pose adds the inline deltas scaled
+   by the shared multipliers. Base timing = close (collapse back). */
+.t-stack-card {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 78px;
+  height: 78px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.05),
+    0 4px 42px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  translate: var(--cx) var(--cy);
+  rotate: var(--rot);
+  scale: 1;
+  transition:
+    translate var(--stack-close-dur) var(--stack-close-ease),
+    rotate var(--stack-close-dur) var(--stack-close-ease),
+    scale var(--stack-scale-dur) var(--stack-scale-ease);
+  will-change: translate, rotate, scale;
+}
+
+/* Hover affordances only on devices that actually support hover
+   (on touch, :hover can stick after a tap). */
+@media (hover: hover) {
+  .t-stack:hover .t-stack-card {
+    translate:
+      calc(var(--cx) + var(--dx))
+      calc(var(--cy) + var(--dy) * var(--stack-spread));
+    rotate: calc(var(--rot) + var(--drot) * var(--stack-rotation));
+    transition:
+      translate var(--stack-open-dur) var(--stack-open-ease),
+      rotate var(--stack-open-dur) var(--stack-open-ease),
+      scale var(--stack-scale-dur) var(--stack-scale-ease);
+  }
+
+  .t-stack-card:hover {
+    scale: var(--stack-scale);
+    z-index: 30;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-stack-card { transition: none; }
+}
+
+/* ── confetti-burst ────────────────────────────────────────────────────────── */
+
+:root {
+  --confetti-count: 120;
+  --confetti-gravity: 1300;
+  --confetti-size: 8px;
+  --confetti-sway: 16;
+  --confetti-bounce: 0.3;
+  --confetti-hold: 1600ms;
+  --confetti-fade: 600ms;
+}
+.t-confetti-stage {
+  position: relative;
+  overflow: hidden;
+  /* Size/radius to taste — the canvas fills whatever this is. */
+}
+
+/* The trigger sits below the canvas layer so flakes visibly land ON it. */
+.t-confetti-stage .your-button,
+.t-confetti-stage button {
+  position: relative;
+  z-index: 1;
+}
+
+.t-confetti-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ── drag-drop-physics ─────────────────────────────────────────────────────── */
+
+:root {
+  --drop-zone-border: 2px;
+  --drop-card-shadow:
+    0 1px 2px 0 rgba(0, 0, 0, 0.15),
+    0 2px 6px 0 rgba(0, 0, 0, 0.10),
+    0 4px 20px 0 rgba(0, 0, 0, 0.15);
+  --drop-card-shadow-p3:
+    0 1px 2px 0 color(display-p3 0 0 0 / 0.15),
+    0 2px 6px 0 color(display-p3 0 0 0 / 0.10),
+    0 4px 20px 0 color(display-p3 0 0 0 / 0.15);
+  --drop-card-shadow-off:
+    0 1px 2px 0 rgba(0, 0, 0, 0),
+    0 2px 6px 0 rgba(0, 0, 0, 0),
+    0 4px 20px 0 rgba(0, 0, 0, 0);
+  --drop-lift-scale: 1.05;
+  --drop-lift-dur: 200ms;
+  --drop-tilt-max: 10;
+  --drop-dur: 450ms;
+  --drop-ease: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --drop-return-dur: 500ms;
+  --drop-return-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --drop-morph-squash: 0.97;
+  --drop-down-dur: 250ms;
+  --drop-down-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --drop-up-dur: 450ms;
+  --drop-up-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --drop-fade-in: 400ms;
+  --drop-fade-ease: ease-in-out;
+  --drop-puff-dur: 1500ms;
+  --drop-puff-dist: 30;
+  --drop-wave-count: 1;
+  --drop-wave-width: 50;
+  --drop-wave-falloff: 20;
+  --drop-wave-opacity: 0.42;
+  --drop-wave-delay: 0ms;
+  --drop-wave-stagger: 150ms;
+  --drop-wave-grow: 0.28;
+  --drop-wave-gravity: 10px;
+  --drop-smoke-freq-x: 0.046;
+  --drop-smoke-freq-y: 0.046;
+  --drop-smoke-warp: 30;
+  --drop-smoke-blur: 5;
+  --drop-hold: 1800ms;
+  --drop-out-dur: 400ms;
+  --drop-respawn-dur: 250ms;
+}
+/* Demo geometry: the chip is NOT stacked above the zone, it sits
+   up-and-to-the-RIGHT of it. Pair bounding box 213×192; chip 72px at
+   (141, 0), zone 104px at (0, 88). Any layout works — the drag maths
+   is purely relative. */
+.t-drop-wrap {
+  position: relative;
+  width: 213px;
+  height: 192px;
+}
+
+/* Source chip — the draggable image. `translate` carries the drag
+   offset while `rotate`/`scale` ride separate custom properties, so
+   the lift and the velocity tilt compose with the drag translate
+   without any of them fighting over a single `transform`. */
+.t-drop-chip {
+  position: absolute;
+  left: 141px;
+  top: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--drop-card-shadow);
+  box-shadow: var(--drop-card-shadow-p3);
+  cursor: grab;
+  /* Required: without it the browser scrolls/pans instead of
+     delivering pointermove to the chip on touch. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 5;
+  translate: var(--dx, 0px) var(--dy, 0px);
+  rotate: var(--tilt, 0deg);
+  scale: var(--lift, 1);
+  /* NOTE: no transition on `translate` here — while dragging the chip
+     must track the pointer 1:1. The tween is added by .is-returning
+     only for the spring home. */
+  transition: scale var(--drop-lift-dur) cubic-bezier(0.22, 1, 0.36, 1),
+              rotate 150ms ease-out;
+  will-change: translate, rotate, scale;
+}
+.t-drop-chip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+.t-drop-chip.is-dragging {
+  cursor: grabbing;
+  z-index: 30;
+}
+/* Springing home: JS zeroes --dx/--dy and flips this class on, so the
+   translate (and the levelling tilt/lift) tween back with overshoot. */
+.t-drop-chip.is-returning {
+  transition: translate var(--drop-return-dur) var(--drop-return-ease),
+              rotate var(--drop-return-dur) var(--drop-return-ease),
+              scale var(--drop-return-dur) var(--drop-return-ease);
+}
+/* Released over the zone: the chip doesn't fly and doesn't resize — it
+   simply dissolves where it was let go while the ZONE morphs into the
+   image. Two elements, one perceived object. */
+.t-drop-chip.is-fading {
+  opacity: 0;
+  filter: blur(2px);
+  transition: opacity var(--drop-dur) var(--drop-ease),
+              filter var(--drop-dur) var(--drop-ease);
+  pointer-events: none;
+}
+@keyframes t-drop-respawn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.t-drop-chip.is-respawning {
+  animation-name: t-drop-respawn;
+  animation-duration: var(--drop-respawn-dur);
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Drop zone — 104px square, 2px dashed, r12, faint fill. */
+.t-drop-zone {
+  position: absolute;
+  left: 0;
+  top: 88px;
+  width: 104px;
+  height: 104px;
+  border-radius: 12px;
+  border: var(--drop-zone-border) dashed rgba(0, 0, 0, 0.1);
+  background: rgba(234, 234, 234, 0.2);
+  transition: border-color 150ms ease, background-color 150ms ease,
+              box-shadow var(--drop-fade-in) var(--drop-fade-ease);
+}
+/* Hover feedback while a chip is over the zone. */
+.t-drop-zone.is-over {
+  border-color: rgba(0, 0, 0, 0.28);
+  background: rgba(234, 234, 234, 0.55);
+}
+.t-drop-zone-label {
+  position: absolute;
+  left: 50%;
+  top: 38px;   /* 40px from the zone's outer edge, minus the 2px border */
+  transform: translateX(-50%);
+  width: 76px;
+  font-size: 11px;
+  line-height: 15px;
+  text-align: center;
+  color: #767676;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+}
+.t-drop-zone.is-over .t-drop-zone-label { opacity: 0.5; }
+.t-drop-zone.is-filled {
+  border-color: transparent;
+  box-shadow: var(--drop-card-shadow);
+  box-shadow: var(--drop-card-shadow-p3);
+}
+.t-drop-zone.is-filled .t-drop-zone-label { opacity: 0; }
+
+/* The landed image. Inset by the zone's border width (NEGATIVE inset,
+   plus twice the border added to the size) so it covers the whole
+   border box — otherwise the dashed border's track shows as a white
+   hairline ringing the image. */
+.t-drop-dropped {
+  position: absolute;
+  inset: calc(var(--drop-zone-border) * -1);
+  width: calc(100% + var(--drop-zone-border) * 2);
+  height: calc(100% + var(--drop-zone-border) * 2);
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--drop-fade-in) var(--drop-fade-ease);
+}
+.t-drop-zone.is-filled .t-drop-dropped { opacity: 1; }
+
+/* Anticipation landing: the zone squashes under the impact, then
+   springs back. Two SEPARATE keyframe phases rather than one 0/50/100
+   animation, so the squash and the spring get their own duration AND
+   their own easing; the second is delayed by the first's duration and
+   both are `forwards` so the chain holds its end state. */
+@keyframes t-drop-zone-down {
+  from { transform: scale(1); }
+  to   { transform: scale(var(--drop-morph-squash, 0.97)); }
+}
+@keyframes t-drop-zone-up {
+  from { transform: scale(var(--drop-morph-squash, 0.97)); }
+  to   { transform: scale(1); }
+}
+.t-drop-zone.is-landing {
+  /* Longhands, not the `animation` shorthand: WebKit mis-parses
+     var() substitutions inside the shorthand. */
+  animation-name: t-drop-zone-down, t-drop-zone-up;
+  animation-duration: var(--drop-down-dur), var(--drop-up-dur);
+  animation-timing-function: var(--drop-down-ease), var(--drop-up-ease);
+  animation-delay: 0ms, var(--drop-down-dur);
+  animation-fill-mode: forwards, forwards;
+  will-change: transform;
+}
+
+/* Revert: the image blurs away and the zone returns to its dashed
+   empty state. */
+.t-drop-zone.is-emptying .t-drop-dropped {
+  opacity: 0;
+  filter: blur(4px);
+  transition: opacity var(--drop-out-dur) cubic-bezier(0.22, 1, 0.36, 1),
+              filter var(--drop-out-dur) cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Placed AFTER .is-filled (equal specificity — source order wins) so
+   the shadow fades out in step with the image instead of snapping off
+   once .is-filled is finally removed. */
+.t-drop-zone.is-emptying {
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: var(--drop-card-shadow-off);
+  transition: box-shadow var(--drop-out-dur) cubic-bezier(0.22, 1, 0.36, 1),
+              border-color var(--drop-out-dur) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Impact smoke. The svg overhangs the zone by 50px on every side so
+   the expanding wave never clips. Its 204-unit viewBox therefore maps
+   the image box to [52, 152]. */
+.t-drop-puffs {
+  position: absolute;
+  inset: -50px;
+  width: calc(100% + 100px);
+  height: calc(100% + 100px);
+  overflow: visible;
+  pointer-events: none;
+}
+/* Wavefront — a rounded ring hugging the image outline that expands
+   outward while fading. The whole <g> is filtered as ONE surface, so
+   the shells fuse into a single undulating smoke front with wispy,
+   torn edges rather than countable blurred circles. */
+.t-drop-wave {
+  fill: none;
+  stroke: rgba(122, 122, 122, var(--drop-wave-opacity));
+  opacity: 0;
+  transform: translate(0, 0) scale(0.96);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* Subtle gravity: the wave billows out AND settles downward, the way
+   impact dust does, instead of expanding perfectly radially. */
+@keyframes t-drop-wave {
+  0%   { opacity: 0;   transform: translate(0, 0) scale(0.96); }
+  16%  { opacity: 0.9; }
+  100% { opacity: 0;   transform: translate(0, var(--drop-wave-gravity, 10px)) scale(var(--wscale, 1.5)); }
+}
+/* --wdur / --wdelay / --wscale are per-shell, written by the driver
+   onto each <rect> so the shells ride staggered clocks. */
+.t-drop-zone.is-bursting .t-drop-wave {
+  animation-name: t-drop-wave;
+  animation-duration: var(--wdur, var(--drop-puff-dur));
+  animation-timing-function: ease-out;
+  animation-delay: var(--wdelay, 0ms);
+  animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-drop-chip { transition: none !important; }
+  .t-drop-chip.is-respawning { animation: none !important; }
+  .t-drop-zone.is-bursting .t-drop-wave,
+  .t-drop-zone.is-landing { animation: none !important; }
+  .t-drop-chip.is-fading,
+  .t-drop-dropped { transition: none !important; }
+}
+
+/* ── gooey-plus-menu ───────────────────────────────────────────────────────── */
+
+:root {
+  --goo-open-dur: 350ms;
+  --goo-open-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --goo-close-dur: 250ms;
+  --goo-close-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --goo-stagger: 40ms;
+  --goo-spread: 1;
+  --goo-blur: 6;
+  --goo-contrast: 18;
+  --goo-icon-dur: 250ms;
+  --goo-icon-rotate: 45deg;
+  --goo-icon-ease: ease-in-out;
+  --goo-anticip: 5px;
+  --goo-anticip-dur: 700ms;
+  --goo-anticip-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --goo-surface: #ffffff;
+  --goo-icon-color: #17181c;
+}
+/* Anchor reserves the OPEN fan's footprint so nothing reflows when
+   the menu opens. */
+.t-goo-anchor {
+  position: relative;
+  width: 200px;
+  height: 140px;
+}
+
+/* Blob layer — carries the goo AND the shadow. Plain filled circles
+   mirroring the button geometry 1:1; the filter runs goo FIRST, then
+   shadows the merged silhouette, so one consistent shadow hugs the
+   liquid through every state. */
+.t-goo-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  /* Promote the filtered layer: WebKit otherwise repaints the goo a
+     frame or two behind the plain-DOM buttons, which reads as the
+     icons running ahead of their surface. */
+  will-change: filter, transform;
+}
+
+/* transform, NOT the individual `translate:` property — WebKit's
+   support for individual transform properties on SVG elements (and
+   inside keyframes) is what breaks the fan sync, the anticipation and
+   the easings in Safari. Classic transform is solid everywhere. */
+.t-goo-blob {
+  fill: var(--goo-surface, #ffffff);
+  transform: translate(0, 0);
+  transform-box: fill-box;
+  transition: transform var(--goo-close-dur) var(--goo-close-ease);
+  will-change: transform;
+}
+.t-goo-anchor[data-open="true"] .t-goo-blob {
+  transform: translate(calc(var(--fx, 0px) * var(--goo-spread)),
+                       calc(var(--fy, 0px) * var(--goo-spread)));
+  transition: transform var(--goo-open-dur) var(--goo-open-ease);
+  transition-delay: calc(var(--i, 0) * var(--goo-stagger));
+}
+
+/* UI layer — transparent hit targets + crisp icons only; the goo
+   liquid below is the visible surface (and its filter derives the
+   shadow from the merged silhouette). */
+.t-goo-item,
+.t-goo-main {
+  position: absolute;
+  left: 80px;
+  top: 80px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--goo-icon-color, #17181c);
+  -webkit-tap-highlight-color: transparent;
+  transform: translate(0, 0);
+  transition: transform var(--goo-close-dur) var(--goo-close-ease),
+              background-color 120ms ease;
+  will-change: transform;
+}
+/* Satellites are inert while closed — they're stacked under the main
+   button and must not swallow its clicks. */
+.t-goo-item { pointer-events: none; }
+.t-goo-anchor[data-open="true"] .t-goo-item {
+  pointer-events: auto;
+  transform: translate(calc(var(--fx, 0px) * var(--goo-spread)),
+                       calc(var(--fy, 0px) * var(--goo-spread)));
+  transition: transform var(--goo-open-dur) var(--goo-open-ease),
+              background-color 120ms ease;
+  transition-delay: calc(var(--i, 0) * var(--goo-stagger)), 0ms;
+}
+.t-goo-anchor[data-open="true"] .t-goo-item:hover { background: rgba(0, 0, 0, 0.04); }
+.t-goo-main:focus-visible,
+.t-goo-item:focus-visible {
+  outline: 2px solid #17181c;
+  outline-offset: 2px;
+}
+
+/* Satellite icons hold back while the blob is still merged with the
+   main button, then cross-blur in as it pulls clear — icons floating
+   free of any surface breaks the liquid illusion. On close they clear
+   out inside the first stretch of the retraction, mirroring how they
+   arrive a third of the way into the open; lingering icons read as
+   detached the moment the goo layer repaints even a frame late. */
+.t-goo-item svg {
+  display: block;
+  opacity: 0;
+  filter: blur(2px);
+  transition: opacity 120ms ease, filter 120ms ease;
+}
+/* Icons materialise with a 2px cross-blur early in the flight (a short
+   fixed head start per satellite), so they ride the button into place
+   instead of popping after it lands. */
+.t-goo-anchor[data-open="true"] .t-goo-item svg {
+  opacity: 1;
+  filter: blur(0);
+  transition: opacity 180ms ease, filter 180ms ease;
+  transition-delay: calc(var(--i, 0) * var(--goo-stagger) + 120ms),
+                    calc(var(--i, 0) * var(--goo-stagger) + 120ms);
+}
+
+/* Close anticipation — the button (and its blob, so the goo follows)
+   nudges down into the returning satellites' momentum and settles
+   back. The driver adds .is-anticipating for the keyframes' duration
+   on close. */
+@keyframes t-goo-anticipate {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(var(--goo-anticip)); }
+  100% { transform: translateY(0); }
+}
+/* The nudge rides the WHOLE goo layer, not just the main blob: with
+   every blob stacked at the centre when closed, moving one circle
+   inside the union merely stretches the silhouette vertically — the
+   layer moving as one is what reads as the button physically dipping.
+   Satellites still mid-flight keep their own return transitions
+   relative to the moving layer. */
+.t-goo-anchor.is-anticipating .t-goo-layer,
+.t-goo-anchor.is-anticipating .t-goo-main {
+  /* Longhands, not the `animation` shorthand: WebKit mis-parses var()
+     inside the shorthand and falls back to 0s / defaults. */
+  animation-name: t-goo-anticipate;
+  animation-duration: var(--goo-anticip-dur);
+  animation-timing-function: var(--goo-anticip-ease);
+  animation-fill-mode: both;
+}
+
+/* Plus → X: pure rotation — the plus glyph spun 45° IS the X, so one
+   icon covers both states with a single tween. */
+.t-goo-swap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  transform: rotate(0deg);
+  transition: transform var(--goo-icon-dur) var(--goo-icon-ease);
+}
+.t-goo-anchor[data-open="true"] .t-goo-swap { transform: rotate(var(--goo-icon-rotate)); }
+.t-goo-icon {
+  grid-area: 1 / 1;
+  display: inline-flex;
+}
+.t-goo-icon svg { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .t-goo-blob,
+  .t-goo-item,
+  .t-goo-item svg,
+  .t-goo-swap,
+  .t-goo-icon { transition: none !important; }
+  .t-goo-anchor.is-anticipating .t-goo-layer,
+  .t-goo-anchor.is-anticipating .t-goo-main { animation: none !important; }
+}
+
+/* ── image-open-tilt ───────────────────────────────────────────────────────── */
+
+:root {
+  --opentilt-open-dur: 620ms;
+  --opentilt-close-dur: 420ms;
+  --opentilt-open-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --opentilt-close-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --opentilt-closed-scale: 0.3;
+  --opentilt-tilt-x: 22deg;
+  --opentilt-tilt-y: -14deg;
+  --opentilt-lift: 70px;
+  --opentilt-perspective: 900px;
+  --opentilt-open-w: 320px;
+  --opentilt-open-h: 240px;
+  --opentilt-bend: 28;
+  --opentilt-bend-dur: 300ms;
+  --opentilt-bend-ease: ease-out;
+}
+/* The stage supplies the 3D perspective so the tilt reads as depth. */
+.t-opentilt-stage {
+  perspective: var(--opentilt-perspective);
+}
+
+.t-opentilt-card {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  position: relative;
+  width: var(--opentilt-open-w);
+  height: var(--opentilt-open-h);
+  border-radius: 32px;
+  /* overflow stays VISIBLE (the rounded clip lives on the img via
+     border-radius: inherit) so the bend canvas can bow past the box —
+     and, critically, so overflow never toggles mid-flight: in Safari
+     that would kick the card off its compositor layer and jank the
+     scale/tilt spring. */
+  overflow: visible;
+  cursor: pointer;
+  background: #eeeeef;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.05),
+    0 4px 42px rgba(0, 0, 0, 0.06);
+  -webkit-tap-highlight-color: transparent;
+  transform-origin: center;
+  /* The zoom lives on the separate `scale` property so it runs as ONE
+     continuous spring, while the tilt rides on `transform` keyframes
+     that peak mid-flight — the two compose. */
+  scale: var(--opentilt-closed-scale);
+  transform: rotateX(0deg) rotateY(0deg) translateZ(0);
+  will-change: scale, transform;
+  transition:
+    scale var(--opentilt-close-dur) var(--opentilt-close-ease),
+    border-radius var(--opentilt-close-dur) var(--opentilt-close-ease);
+}
+
+/* Bend render layer: hidden at rest; JS sizes it (with an inline
+   negative inset so the bow can travel outside the card box) and
+   draws the warped photo during the flight. */
+.t-opentilt-canvas {
+  position: absolute;
+  display: none;
+  pointer-events: none;
+}
+/* While bending, the canvas IS the card's visual: hide the flat
+   photo + background so no straight-edged fill peeks out behind the
+   bowed edges (the rounded clip is baked into the warp). The
+   box-shadow stays — soft enough that not bending it is
+   imperceptible, and it never flickers on/off this way. */
+.t-opentilt-card.is-bending {
+  background: transparent;
+}
+.t-opentilt-card.is-bending .t-opentilt-img { visibility: hidden; }
+.t-opentilt-card.is-bending .t-opentilt-canvas { display: block; }
+
+.t-opentilt-card.is-open {
+  border-radius: 16px;
+  scale: 1;
+  transition:
+    scale var(--opentilt-open-dur) var(--opentilt-open-ease),
+    border-radius var(--opentilt-open-dur) var(--opentilt-open-ease);
+  /* Tilt overlay: pitched back and lifting toward the viewer, strongest
+     ~40% into the flight, settling flat by landing. */
+  animation: t-opentilt-open var(--opentilt-open-dur) both;
+}
+
+/* Close dive: a smaller opposite tilt as it drops back into the preview
+   (the base scale transition carries the shrink). */
+.t-opentilt-card.is-closing {
+  animation: t-opentilt-close var(--opentilt-close-dur) both;
+}
+
+@keyframes t-opentilt-open {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg) translateZ(0);
+    animation-timing-function: cubic-bezier(0.3, 0.7, 0.4, 1);
+  }
+  40% {
+    transform:
+      rotateX(var(--opentilt-tilt-x))
+      rotateY(var(--opentilt-tilt-y))
+      translateZ(var(--opentilt-lift));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.3, 1);
+  }
+  100% {
+    transform: rotateX(0deg) rotateY(0deg) translateZ(0);
+  }
+}
+
+@keyframes t-opentilt-close {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg) translateZ(0);
+    animation-timing-function: cubic-bezier(0.4, 0.4, 0.5, 1);
+  }
+  45% {
+    transform:
+      rotateX(calc(var(--opentilt-tilt-x) * -0.45))
+      rotateY(calc(var(--opentilt-tilt-y) * -0.45))
+      translateZ(calc(var(--opentilt-lift) * 0.4));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.3, 1);
+  }
+  100% {
+    transform: rotateX(0deg) rotateY(0deg) translateZ(0);
+  }
+}
+
+.t-opentilt-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  pointer-events: none;
+  /* The rounded clip (tracks the card's animating radius). */
+  border-radius: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-opentilt-card,
+  .t-opentilt-card.is-open { animation: none; transition: none; }
+}
+
+/* ── organic-shimmer ───────────────────────────────────────────────────────── */
+
+:root {
+  --shimmer-dur: 3000ms;
+  --shimmer-ease: ease-out;
+  --shimmer-band-span: 26%;
+  --shimmer-opacity: 1;
+  --shimmer-glow-blur: 20px;
+  --shimmer-glow-strength: 0.7;
+  --shimmer-ring-strength: 1;
+  --shimmer-scale: 1;
+}
+.t-shimmer-tile {
+  position: relative;
+  width: 142px;
+  height: 142px;
+  border-radius: 12px;
+  background: #eeeeee;
+  overflow: hidden;
+  isolation: isolate;
+  flex-shrink: 0;
+}
+html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
+/* Play/Stop toggle: both layers share the t-shimmer-sweep clock,
+   so pausing/resuming the container's data attribute freezes or
+   resumes them in lockstep. */
+.t-shimmer-tile[data-playing="false"] .t-shimmer-band,
+.t-shimmer-tile[data-playing="false"] .t-shimmer-edge {
+  animation-play-state: paused;
+}
+/* Shimmer split into wrapper + inner band: the inner band carries
+   the colourful blobs (sized in % of the layer, so they scale with
+   the tile) + traveling mask; the wrapper warps + blurs
+   the already-masked result so the band boundary undulates (filter
+   applies before mask on a single element, hence the split). */
+.t-shimmer {
+  position: absolute;
+  inset: calc(-20px * var(--shimmer-scale));
+  filter: url(#t-shimmer-warp) blur(calc(5px * var(--shimmer-scale)));
+  opacity: var(--shimmer-opacity);
+  pointer-events: none;
+}
+.t-shimmer-band {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 49.45% 38.46% at 20% 15%, rgba(40, 140, 255, 0.14), transparent),
+    radial-gradient(ellipse 43.96% 32.97% at 65% 25%, rgba(255, 50, 100, 0.13), transparent),
+    radial-gradient(ellipse 38.46% 43.96% at 30% 55%, rgba(50, 200, 80, 0.12), transparent),
+    radial-gradient(ellipse 49.45% 38.46% at 75% 65%, rgba(180, 40, 240, 0.13), transparent),
+    radial-gradient(ellipse 38.46% 32.97% at 45% 85%, rgba(255, 120, 40, 0.12), transparent),
+    radial-gradient(ellipse 32.97% 32.97% at 10% 85%, rgba(30, 185, 170, 0.11), transparent),
+    linear-gradient(rgba(90, 90, 100, 0.05), rgba(90, 90, 100, 0.05));
+  -webkit-mask-image: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent calc(50% - var(--shimmer-band-span) * 0.8),
+    rgba(255, 255, 255, 0.25) calc(50% - var(--shimmer-band-span) * 0.45),
+    rgba(255, 255, 255, 0.7) calc(50% - var(--shimmer-band-span) * 0.18),
+    white 50%,
+    rgba(255, 255, 255, 0.7) calc(50% + var(--shimmer-band-span) * 0.18),
+    rgba(255, 255, 255, 0.25) calc(50% + var(--shimmer-band-span) * 0.45),
+    transparent calc(50% + var(--shimmer-band-span) * 0.8),
+    transparent 100%
+  );
+  -webkit-mask-size: 280% 280%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: 100% 100%;
+  mask-image: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent calc(50% - var(--shimmer-band-span) * 0.8),
+    rgba(255, 255, 255, 0.25) calc(50% - var(--shimmer-band-span) * 0.45),
+    rgba(255, 255, 255, 0.7) calc(50% - var(--shimmer-band-span) * 0.18),
+    white 50%,
+    rgba(255, 255, 255, 0.7) calc(50% + var(--shimmer-band-span) * 0.18),
+    rgba(255, 255, 255, 0.25) calc(50% + var(--shimmer-band-span) * 0.45),
+    transparent calc(50% + var(--shimmer-band-span) * 0.8),
+    transparent 100%
+  );
+  mask-size: 280% 280%;
+  mask-repeat: no-repeat;
+  mask-position: 100% 100%;
+  animation: t-shimmer-sweep var(--shimmer-dur) var(--shimmer-ease) infinite;
+  pointer-events: none;
+}
+/* Edge beam: a uniform ink ring + glow + bloom underneath, shaped
+   only by a comet-profiled 135° mask window phase-locked to the
+   shimmer's clock — the lit segment brightens and fades smoothly as
+   it glides along the border. */
+.t-shimmer-edge {
+  position: absolute;
+  inset: calc(-20px * var(--shimmer-scale));
+  z-index: 1;
+  opacity: var(--shimmer-glow-strength);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent calc(50% - var(--shimmer-band-span) * 1.4),
+    rgba(255, 255, 255, 0.06) calc(50% - var(--shimmer-band-span) * 1),
+    rgba(255, 255, 255, 0.18) calc(50% - var(--shimmer-band-span) * 0.6),
+    rgba(255, 255, 255, 0.45) calc(50% - var(--shimmer-band-span) * 0.25),
+    white 50%,
+    rgba(255, 255, 255, 0.5) calc(50% + var(--shimmer-band-span) * 0.18),
+    transparent calc(50% + var(--shimmer-band-span) * 0.35),
+    transparent 100%
+  );
+  -webkit-mask-size: 280% 280%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: 100% 100%;
+  mask-image: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent calc(50% - var(--shimmer-band-span) * 1.4),
+    rgba(255, 255, 255, 0.06) calc(50% - var(--shimmer-band-span) * 1),
+    rgba(255, 255, 255, 0.18) calc(50% - var(--shimmer-band-span) * 0.6),
+    rgba(255, 255, 255, 0.45) calc(50% - var(--shimmer-band-span) * 0.25),
+    white 50%,
+    rgba(255, 255, 255, 0.5) calc(50% + var(--shimmer-band-span) * 0.18),
+    transparent calc(50% + var(--shimmer-band-span) * 0.35),
+    transparent 100%
+  );
+  mask-size: 280% 280%;
+  mask-repeat: no-repeat;
+  mask-position: 100% 100%;
+  animation: t-shimmer-sweep var(--shimmer-dur) var(--shimmer-ease) infinite;
+}
+@keyframes t-shimmer-sweep {
+  0%   { -webkit-mask-position: 100% 100%; mask-position: 100% 100%; }
+  100% { -webkit-mask-position: 0% 0%;     mask-position: 0% 0%; }
+}
+.t-shimmer-edge-ring,
+.t-shimmer-edge-glow,
+.t-shimmer-edge-bloom {
+  position: absolute;
+  inset: calc(20px * var(--shimmer-scale));
+  border-radius: 12px;
+  pointer-events: none;
+}
+/* Ring stroke: the border-beam library's 9 border-palette blobs
+   (colorPalettes.colorful, positions/sizes ×0.6) painted into a
+   1px ring over a faint neutral base that keeps the stroke from
+   vanishing between blobs as the comet window travels. */
+.t-shimmer-edge-ring {
+  padding: calc(1px * var(--shimmer-scale));
+  opacity: var(--shimmer-ring-strength);
+  background:
+    radial-gradient(ellipse 29.58% 16.90% at 33% -7.4%, rgba(255, 50, 100, 0.62), transparent),
+    radial-gradient(ellipse 25.35% 14.79% at 12% -5%, rgba(40, 140, 255, 0.48), transparent),
+    radial-gradient(ellipse 16.90% 29.58% at 2.1% 68.3%, rgba(50, 200, 80, 0.55), transparent),
+    radial-gradient(ellipse 8.45% 14.79% at 2.1% 68.3%, rgba(30, 185, 170, 0.44), transparent),
+    radial-gradient(ellipse 76.06% 13.38% at 74.4% 100%, rgba(100, 70, 255, 0.58), transparent),
+    radial-gradient(ellipse 35.92% 11.27% at 55% 100%, rgba(40, 140, 255, 0.51), transparent),
+    radial-gradient(ellipse 30.99% 13.38% at 93.9% 0%, rgba(255, 120, 40, 0.65), transparent),
+    radial-gradient(ellipse 11.27% 17.61% at 100% 27.1%, rgba(240, 50, 180, 0.5), transparent),
+    radial-gradient(ellipse 21.83% 20.42% at 100% 27.1%, rgba(180, 40, 240, 0.56), transparent),
+    linear-gradient(rgba(90, 90, 100, 0.22), rgba(90, 90, 100, 0.22));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+/* Inner glow: the library's PULSE_INNER blob set (×0.6) in real
+   colors + four neutral corner accents, belt-masked with a 44px
+   fade and softened 2px so the coloured lumps melt together. */
+.t-shimmer-edge-glow {
+  background:
+    radial-gradient(ellipse 27.46% 14.79% at 33% -7.4%, rgba(255, 50, 100, 0.34), transparent),
+    radial-gradient(ellipse 23.24% 12.68% at 12% -5%, rgba(40, 140, 255, 0.28), transparent),
+    radial-gradient(ellipse 14.79% 27.46% at 2.1% 68.3%, rgba(50, 200, 80, 0.3), transparent),
+    radial-gradient(ellipse 6.34% 12.68% at 2.1% 68.3%, rgba(30, 185, 170, 0.25), transparent),
+    radial-gradient(ellipse 73.24% 11.97% at 74.4% 100%, rgba(100, 70, 255, 0.32), transparent),
+    radial-gradient(ellipse 33.80% 9.15% at 55% 100%, rgba(40, 140, 255, 0.28), transparent),
+    radial-gradient(ellipse 28.87% 11.97% at 93.9% 0%, rgba(255, 120, 40, 0.35), transparent),
+    radial-gradient(ellipse 9.15% 16.20% at 100% 27.1%, rgba(240, 50, 180, 0.28), transparent),
+    radial-gradient(ellipse 19.72% 18.31% at 100% 27.1%, rgba(180, 40, 240, 0.3), transparent),
+    radial-gradient(ellipse 25.35% 25.35% at 0% 0%, rgba(90, 90, 100, 0.14), transparent 70%),
+    radial-gradient(ellipse 25.35% 25.35% at 100% 0%, rgba(90, 90, 100, 0.14), transparent 70%),
+    radial-gradient(ellipse 25.35% 25.35% at 0% 100%, rgba(90, 90, 100, 0.14), transparent 70%),
+    radial-gradient(ellipse 25.35% 25.35% at 100% 100%, rgba(90, 90, 100, 0.14), transparent 70%);
+  box-shadow: inset 0 0 calc(14px * var(--shimmer-scale)) calc(1px * var(--shimmer-scale)) rgba(90, 90, 100, 0.12);
+  filter: blur(calc(2px * var(--shimmer-scale)));
+  -webkit-mask-image:
+    linear-gradient(white, transparent calc(44px * var(--shimmer-scale)), transparent calc(100% - 44px * var(--shimmer-scale)), white),
+    linear-gradient(to right, white, transparent calc(44px * var(--shimmer-scale)), transparent calc(100% - 44px * var(--shimmer-scale)), white);
+  -webkit-mask-composite: source-over;
+  mask-image:
+    linear-gradient(white, transparent calc(44px * var(--shimmer-scale)), transparent calc(100% - 44px * var(--shimmer-scale)), white),
+    linear-gradient(to right, white, transparent calc(44px * var(--shimmer-scale)), transparent calc(100% - 44px * var(--shimmer-scale)), white);
+  mask-composite: add;
+}
+/* Bloom: the library's PULSE_INNER_BLOOM table — 7 expanded blobs
+   (×0.65) in real colors, heavily blurred over a faint neutral
+   wash, in a soft edge belt (not ring-clipped, so the blur can
+   radiate). The big organic coloured glow pouring off the stroke. */
+.t-shimmer-edge-bloom {
+  background:
+    radial-gradient(ellipse 38.73% 21.83% at 33% -7.4%, rgba(255, 50, 100, 0.4), transparent),
+    radial-gradient(ellipse 33.10% 19.01% at 12% -5%, rgba(40, 140, 255, 0.34), transparent),
+    radial-gradient(ellipse 21.83% 38.73% at 2.1% 68.3%, rgba(50, 200, 80, 0.38), transparent),
+    radial-gradient(ellipse 98.59% 17.61% at 74.4% 100%, rgba(100, 70, 255, 0.4), transparent),
+    radial-gradient(ellipse 46.48% 14.08% at 55% 100%, rgba(40, 140, 255, 0.35), transparent),
+    radial-gradient(ellipse 40.85% 17.61% at 93.9% 0%, rgba(255, 120, 40, 0.44), transparent),
+    radial-gradient(ellipse 28.17% 26.76% at 100% 27.1%, rgba(180, 40, 240, 0.38), transparent);
+  box-shadow:
+    inset 0 0 calc(var(--shimmer-glow-blur) * 3 * var(--shimmer-scale)) calc(var(--shimmer-glow-blur) / 2 * var(--shimmer-scale))
+      rgba(90, 90, 100, 0.1);
+  filter: blur(calc(var(--shimmer-glow-blur) * var(--shimmer-scale)));
+  -webkit-mask-image:
+    linear-gradient(white, transparent calc(26px * var(--shimmer-scale)), transparent calc(100% - 26px * var(--shimmer-scale)), white),
+    linear-gradient(to right, white, transparent calc(26px * var(--shimmer-scale)), transparent calc(100% - 26px * var(--shimmer-scale)), white);
+  -webkit-mask-composite: source-over;
+  mask-image:
+    linear-gradient(white, transparent calc(26px * var(--shimmer-scale)), transparent calc(100% - 26px * var(--shimmer-scale)), white),
+    linear-gradient(to right, white, transparent calc(26px * var(--shimmer-scale)), transparent calc(100% - 26px * var(--shimmer-scale)), white);
+  mask-composite: add;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-shimmer-band,
+  .t-shimmer-edge { animation: none; }
+}
+@media (prefers-color-scheme: dark) {
+  .t-shimmer-tile { background: #222226; }
+}
+/* 280px media card → 280 / 142 ≈ 2 */
+.upload-target { width: 280px; height: 280px; --shimmer-scale: 2; }
+
+/* ── pro-gradient-text ─────────────────────────────────────────────────────── */
+
+:root {
+  --gradient-text-hue-dur: 4000ms;
+  --gradient-text-drift-dur: 5000ms;
+}
+.t-gradient-text {
+  background-image:
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.88'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(0.34726 -1.3118e-7 8.6482e-7 0.89585 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.5'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-1.3 0.25 -1.2633 -2.7471 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.4'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.05 -0.8 0.46018 3.6184 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='0.71709'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.51067 -3.3275e-16 -4.3352e-14 -1.1396 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.45 -0.75 1.9052 -0.7091 33.5 21)'><stop stop-color='rgba(255,173,85,1)' offset='0'/><stop stop-color='rgba(255,173,85,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.25 -0.35 -0.4013 3.5959 33.5 21)'><stop stop-color='rgba(0,204,68,1)' offset='0'/><stop stop-color='rgba(0,196,102,0.75)' offset='0.25'/><stop stop-color='rgba(0,187,136,0.5)' offset='0.5'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.87391 0.73043 -4.1482 -1.9503 33.5 21)'><stop stop-color='rgba(0,170,204,1)' offset='0'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),
+    linear-gradient(rgb(108, 108, 108) 0%, rgb(216, 216, 216) 100%);
+  /* Each colour layer is blown up to 180% and swings around the
+     glyph box (the grey base ramp stays put at 100%), so the
+     enlarged blobs sweep corner-to-corner through the letters.
+     The repaint area is one ~55×47px word — negligible. */
+  background-size: 180% 180%, 180% 180%, 180% 180%, 180% 180%,
+                   180% 180%, 180% 180%, 180% 180%, 100% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    t-gradient-hue var(--gradient-text-hue-dur) linear infinite,
+    t-gradient-drift var(--gradient-text-drift-dur) ease-in-out infinite;
+}
+/* Full hue cycle — ends where it starts, so the loop is seamless
+   and the colour travel is unmistakable. Compositor-only. The
+   saturate boost keeps the washes punchy at 180% blow-up. */
+@keyframes t-gradient-hue {
+  from { filter: hue-rotate(0deg) saturate(1.3); }
+  to   { filter: hue-rotate(-360deg) saturate(1.3); }
+}
+/* Blob travel — perimeter orbit. Each blob is re-centred inside
+   its own SVG tile (translation 33.5 21 above) and pinned to the
+   ring of edge stops TL,T,TR,R,BR,B,BL,L. Every blob starts on
+   the stop nearest its Figma quadrant and advances two ring
+   stops per keyframe — a full lap around the text outline per
+   cycle, so colour hugs and travels the edges while the middle
+   keeps the grey ramp. Last layer (grey ramp) never moves. */
+@keyframes t-gradient-drift {
+  0%, 100% {
+    background-position:
+      100% 0%, 0% 50%, 100% 50%, 0% 100%,
+      0% 0%, 50% 0%, 50% 100%, 0 0;
+  }
+  25% {
+    background-position:
+      100% 100%, 50% 0%, 50% 100%, 0% 0%,
+      100% 0%, 100% 50%, 0% 50%, 0 0;
+  }
+  50% {
+    background-position:
+      0% 100%, 100% 50%, 0% 50%, 100% 0%,
+      100% 100%, 50% 100%, 50% 0%, 0 0;
+  }
+  75% {
+    background-position:
+      0% 0%, 50% 100%, 50% 0%, 100% 100%,
+      0% 100%, 0% 50%, 100% 50%, 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-gradient-text { animation: none; }
+}
+
+/* ── smoky-dissolve ────────────────────────────────────────────────────────── */
+
+:root {
+  --smoky-size: 120px;
+  --smoky-dur: 550ms;
+  --smoky-gravity: 150;
+  --smoky-warp: 30;
+  --smoky-warp-dur: 2000ms;
+  --smoky-warp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --smoky-blur: 12px;
+  --smoky-blur-ease: ease-in;
+  --smoky-gravity-ease: ease-in;
+  --smoky-dissolve-ease: ease-out;
+  --smoky-sway: 0px;
+  --smoky-spin: 3deg;
+  --smoky-churn: 30;
+  --smoky-spread: 0;
+  --smoky-respawn: 800ms;
+}
+/* PRO6 — Delete image with smoky dissolve                       */
+/* ============================================================ */
+/* Clip the stage so the falling, shredding card dissolves inside
+   its own cell instead of dropping over the next prototype. */
+.t-smoky-stage {
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.t-smoky-card {
+  position: relative;
+  width: var(--smoky-size);
+  height: var(--smoky-size);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #e9e9ec;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  /* No SVG/CSS filter here: WebKit renders SVG filters on the
+     CPU (and doesn't reliably repaint animated filter
+     primitives), so the dissolve is drawn on the .t-smoky-canvas
+     overlay instead. The resting card stays a cheap composited
+     layer. */
+  will-change: transform, opacity;
+}
+/* Dissolve render target — JS sizes and positions it over the
+   card (+ padding for the shreds' spill) at dissolve start, and
+   drives the fall/sway/spin/fade with CSS transform/opacity on
+   the element so the motion runs on the compositor (GPU) even
+   while a texture frame is still being drawn. Transparent and
+   inert outside a run. */
+.t-smoky-canvas {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.t-smoky-card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+/* Quick soft re-entry after the dissolve, so the demo replays. */
+.t-smoky-card.is-respawning {
+  animation: t-smoky-respawn 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes t-smoky-respawn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Delete chip pinned to the image's top-left corner. Lives inside
+   the card, so it shreds and falls along with it. */
+.t-smoky-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #17181c;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 120ms ease;
+}
+.t-smoky-delete:hover { background: #ffffff; }
+.t-smoky-delete:focus-visible {
+  outline: 2px solid #17181c;
+  outline-offset: 2px;
+}
+.t-smoky-delete svg { display: block; }
+
+/* ── spinner-check-morph ───────────────────────────────────────────────────── */
+
+:root {
+  --check-spin-dur:    900ms;
+  --check-pop-dur:     350ms;
+  --check-pop-ease:    cubic-bezier(0.34, 1.96, 0.94, 1);
+  --check-fill-dur:    350ms;  /* green disc fade-in */
+  --check-fill-ease:   cubic-bezier(0.34, 1.35, 0.64, 1);
+  --check-draw-dur:    600ms;
+  --check-draw-delay:  80ms;
+  --check-draw-ease:   cubic-bezier(0.22, 1, 0.36, 1);
+  --check-hold:        2000ms; /* time on the check before reverting */
+  --check-revert-dur:  250ms;
+  --check-revert-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-hop:         3px;    /* how far the badge rises on the morph */
+  --check-up-dur:      250ms;  /* hop UP: the rise */
+  --check-up-ease:     cubic-bezier(0.34, 1.35, 0.64, 1);
+  --check-down-dur:    300ms;  /* hop DOWN: the fall back */
+  --check-down-ease:   cubic-bezier(0.14, 2.56, 0.94, 1);
+  --check-pop-scale:   1.09;   /* done size (22 -> 24px disc) */
+  --check-blur:        0.5px;  /* cross-blur while morphing */
+  --check-ring-w:      2.5px;  /* spinner track + arc stroke weight */
+  --check-mark-w:      2;      /* check draw stroke weight */
+  --check-green:       #35ba00;
+}
+/* Cross-blur wrapper: blurs the badge as ONE surface, so every layer
+   softens together through the morph and resolves crisp — a genuine
+   cross-blur, not a one-way blur on a single layer. It must be a
+   SEPARATE element: CSS `filter` is applied BEFORE `mask`/clipping, so
+   blurring a masked layer does nothing, and filtering the badge itself
+   would also blur its own scale/translate compositing. */
+.t-check-blur-wrap {
+  display: inline-flex;
+  filter: blur(0);
+  transition: filter var(--check-revert-dur) var(--check-revert-ease);
+  will-change: filter;
+}
+.t-check-blur-wrap.is-crossing {
+  filter: blur(var(--check-blur));
+  transition: filter calc(var(--check-fill-dur) * 0.45) var(--check-fill-ease);
+}
+
+/* The badge scales 22 → 24 (the done size) with the pop ease and hops
+   vertically. Both live here so the ring, fill and check compose
+   underneath as one object. */
+.t-check-badge {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  scale: 1;
+  transition: scale var(--check-revert-dur) var(--check-revert-ease);
+  will-change: scale, transform;
+}
+.t-check-badge[data-state="done"] {
+  scale: var(--check-pop-scale);   /* 22 → 24, the done size */
+  transition: scale var(--check-pop-dur) var(--check-pop-ease);
+  /* TWO-PHASE HOP, independently controllable: up, then down, as two
+     animations where the second is DELAYED by the first's duration.
+     fill-mode is `forwards` (NOT `both`) — with `both` the delayed
+     down-animation would apply its `from` state immediately and yank
+     the badge up before the rise had a chance to play.
+     Longhands, not the `animation` shorthand: WebKit mis-parses
+     `var()` inside the shorthand and falls back to 0s. */
+  animation-name: t-check-pop-up, t-check-pop-down;
+  animation-duration: var(--check-up-dur), var(--check-down-dur);
+  animation-timing-function: var(--check-up-ease), var(--check-down-ease);
+  animation-delay: 0ms, var(--check-up-dur);
+  animation-fill-mode: forwards, forwards;
+}
+/* Classic `transform` keyframes, NOT the individual `translate:`
+   property — WebKit's support for individual transform properties
+   inside @keyframes is recent and inconsistent, and the hop felt wrong
+   in Safari. The `scale` property composes with `transform`, so the
+   badge's scale transition above is unaffected. */
+@keyframes t-check-pop-up {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc(var(--check-hop, 3px) * -1)); }
+}
+@keyframes t-check-pop-down {
+  from { transform: translateY(calc(var(--check-hop, 3px) * -1)); }
+  to   { transform: translateY(0); }
+}
+
+/* Track ring — the light circle. It never morphs; the green disc
+   simply fades in over it while it fades out. */
+.t-check-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: var(--check-ring-w) solid rgba(0, 0, 0, 0.1);
+  transition: opacity var(--check-revert-dur) ease,
+              filter var(--check-revert-dur) ease;
+}
+.t-check-badge[data-state="done"] .t-check-ring {
+  opacity: 0;
+  transition: opacity calc(var(--check-fill-dur) * 0.7) ease;
+}
+
+/* Green disc — it fades IN (opacity) rather than growing a stroke or
+   flooding through a mask. Same read, far less machinery, and the fade
+   is trivially tunable. */
+.t-check-fill {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: var(--check-green);
+  /* Two declarations on purpose: p3-capable browsers take the second,
+     everyone else keeps the sRGB rgba() fallback above it. */
+  box-shadow:
+    0 0 0 0.504px rgba(0, 0, 0, 0.05) inset,
+    0 0.504px 0.504px 0 rgba(0, 0, 0, 0.10),
+    0 0.504px 2.016px 0 rgba(0, 0, 0, 0.08),
+    0 -0.504px 0.504px 0 rgba(0, 0, 0, 0.09) inset;
+  box-shadow:
+    0 0 0 0.504px color(display-p3 0 0 0 / 0.05) inset,
+    0 0.504px 0.504px 0 color(display-p3 0 0 0 / 0.10),
+    0 0.504px 2.016px 0 color(display-p3 0 0 0 / 0.08),
+    0 -0.504px 0.504px 0 color(display-p3 0 0 0 / 0.09) inset;
+  opacity: 0;
+  transition: opacity var(--check-revert-dur) var(--check-revert-ease);
+  will-change: opacity;
+}
+.t-check-badge[data-state="done"] .t-check-fill {
+  opacity: 1;
+  transition: opacity var(--check-fill-dur) var(--check-fill-ease);
+}
+
+/* Lead arc — the dark highlight, on its own layer so the morph never
+   TRANSFORMS it: when the fill starts, the spin simply pauses in place
+   and the arc fades out. (Transforming it — scaling or rotating it into
+   the check — fought the morph and read as two things happening.) */
+.t-check-arc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: var(--check-ring-w) solid transparent;
+  border-top-color: #7a7a7a;
+  animation-name: t-check-spin;
+  animation-duration: var(--check-spin-dur);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  transition: opacity var(--check-revert-dur) var(--check-revert-ease);
+  will-change: transform;
+}
+@keyframes t-check-spin {
+  to { transform: rotate(360deg); }
+}
+.t-check-badge[data-state="done"] .t-check-arc {
+  opacity: 0;
+  animation-play-state: paused;
+  transition: opacity calc(var(--check-fill-dur) * 0.5) ease;
+}
+
+/* Check overlay — the svg fills the badge box (22 × 1.09 = the 24px
+   done disc), so the 24-viewBox check renders at exactly design size. */
+.t-check-disc {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.t-check-disc svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Check path — a stroke-dashoffset draw. The dash length is calibrated
+   from the real path length in JS (getTotalLength), so the draw never
+   over- or under-shoots; the 20 fallback only covers the first frame. */
+.t-check-mark {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: var(--check-mark-w);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: var(--check-mark-len, 20);
+  stroke-dashoffset: var(--check-mark-len, 20);
+  transition: stroke-dashoffset var(--check-revert-dur) var(--check-revert-ease);
+}
+.t-check-badge[data-state="done"] .t-check-mark {
+  stroke-dashoffset: 0;
+  /* Sequenced, not queued: the draw takes over while the green is still
+     arriving — 200ms BEFORE the fill completes, plus the draw delay. It
+     reads as one connected gesture instead of two steps. */
+  transition: stroke-dashoffset var(--check-draw-dur) var(--check-draw-ease)
+    calc(var(--check-fill-dur) + var(--check-draw-delay) - 200ms);
+}
+
+/* Row chrome — optional, matches the demo layout. */
+.t-check-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.t-check-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.t-check-title {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 13px;
+}
+.t-check-sub {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 13px;
+  opacity: 0.5;
+}
+
+/* Reduced motion: no spin, no hop, no blur — the badge jumps straight
+   to the drawn check. */
+@media (prefers-reduced-motion: reduce) {
+  .t-check-arc { animation: none !important; }
+  .t-check-blur-wrap,
+  .t-check-blur-wrap.is-crossing {
+    filter: none !important;
+    transition: none !important;
+  }
+  .t-check-ring, .t-check-arc, .t-check-fill { transition: none !important; }
+  .t-check-badge, .t-check-mark {
+    transition: none !important;
+    animation: none !important;
+  }
+  .t-check-badge[data-state="done"] .t-check-mark { stroke-dashoffset: 0; }
+}
+
+/* ── App overrides ───────────────────────────────────────────────────────────
+   The recipes are demo-tuned: `.t-smoky-card` is a fixed 120px box with its own
+   background and an absolutely-positioned image, and `.t-drop-zone` is a 104px
+   box positioned absolutely at top:88px. Both would fight real layout, so the
+   geometry is neutralised here — as an override rather than an edit to the
+   vendored blocks above, so a recipe update stays diffable. Behaviour (the
+   snapshot, the squash, the puffs) is untouched. */
+
+.t-smoky-stage.hub-tile-stage {
+  overflow: visible;
+  border-radius: 0.75rem;
+}
+.t-smoky-card.hub-tile {
+  width: auto;
+  height: auto;
+  border-radius: 0.75rem;
+  background: transparent;
+  box-shadow: none;
+}
+.t-smoky-card.hub-tile img {
+  position: static;
+  inset: auto;
+  width: auto;
+  height: auto;
+}
+
+.t-drop-zone.hub-dropzone {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: auto;
+  height: auto;
+  border: 0;
+  background: transparent;
+}

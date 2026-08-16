@@ -1,8 +1,8 @@
 /**
- * Hub store — hubs, ownership meta, and scan previews.
+ * Hub store — hubs, ownership meta, and share portals.
  *
  * All persistence goes through the storage driver (lib/db.ts): JSON files in
- * dev, Postgres in production. Namespaces: 'hubs', 'meta', 'previews'.
+ * dev, Postgres in production. Namespaces: 'hubs', 'meta', 'portals'.
  */
 
 import crypto from 'crypto'
@@ -14,8 +14,6 @@ import { getStorage, storageConfigured } from './db'
 import { assetKey } from './uploads'
 import { pinCookieName, pinCookieValue } from './auth'
 import { deletePortalStats } from './analytics'
-
-export const PREVIEW_TTL_MS = 24 * 60 * 60 * 1000
 
 /** Slugs that can never be hub addresses — they collide with app routes. */
 const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'signup', 'settings', 'dashboard', 'pricing', 'brand', 's', '_next'])
@@ -37,7 +35,11 @@ export async function saveHub(config: BrandConfig): Promise<BrandConfig> {
 }
 
 /** Create a new hub, deriving a unique slug from the desired one. */
-export async function createHub(config: BrandConfig, ownerId: string | null = null): Promise<BrandConfig> {
+export async function createHub(
+  config: BrandConfig,
+  ownerId: string | null = null,
+  extra: Partial<Pick<HubMeta, 'studio' | 'client'>> = {},
+): Promise<BrandConfig> {
   const base = slugify(config.slug || config.name) || 'brand'
   let slug = base
   let n = 2
@@ -45,7 +47,7 @@ export async function createHub(config: BrandConfig, ownerId: string | null = nu
     slug = `${base}-${n++}`
   }
   const hub = await saveHub({ ...config, slug })
-  await saveMeta({ slug, ownerId, editors: [], pin: null, createdAt: new Date().toISOString() })
+  await saveMeta({ slug, ownerId, editors: [], pin: null, createdAt: new Date().toISOString(), ...extra })
   return hub
 }
 
@@ -73,6 +75,12 @@ export interface HubMeta {
   expiresAt?: string | null
   /** Client space this hub belongs to — the agency's label for the client. */
   client?: string
+  /**
+   * The owner's own brand — their studio, not a client's. One per account.
+   * It doesn't count against the plan's client-space limit, and it supplies
+   * the default branding for portals shared from the client hubs beside it.
+   */
+  studio?: boolean
   demo?: boolean
   createdAt: string
 }
@@ -187,22 +195,48 @@ function basename(key: string): string {
 }
 
 /** How many hubs a user owns (for plan limits). Demo hubs don't count. */
+/**
+ * Client spaces the user owns — what plan limits are counted in.
+ *
+ * Their own studio hub is deliberately excluded: it holds the agency's brand,
+ * not a client's, and charging someone a slot for it would mean the free tier
+ * couldn't hold one client.
+ */
 export async function countOwnedHubs(userId: string): Promise<number> {
   const slugs = await getStorage().listKeys('hubs')
   let count = 0
   for (const slug of slugs) {
     const meta = await getMeta(slug)
-    if (!meta.demo && meta.ownerId === userId) count++
+    if (!meta.demo && !meta.studio && meta.ownerId === userId) count++
   }
   return count
 }
 
-/** Hand a hub to a new owner; the old owner stays on as an editor. */
+/** The user's own studio hub, if they've set one up. */
+export async function getStudioHub(userId: string): Promise<{ hub: BrandConfig; meta: HubMeta } | null> {
+  const slugs = await getStorage().listKeys('hubs')
+  for (const slug of slugs) {
+    const meta = await getMeta(slug)
+    if (!meta.studio || meta.ownerId !== userId) continue
+    const hub = await getHub(slug)
+    if (hub) return { hub, meta }
+  }
+  return null
+}
+
+/**
+ * Hand a hub to a new owner; the old owner stays on as an editor.
+ *
+ * The studio flag does not travel with it. It means "this is my own brand",
+ * which stops being true the moment the hub belongs to somebody else — and if
+ * it did travel, a recipient who already has a studio hub would end up with
+ * two, leaving `getStudioHub` to pick between them arbitrarily.
+ */
 export async function transferOwnership(slug: string, newOwnerId: string, newOwnerEmail: string, oldOwnerEmail?: string): Promise<void> {
   const meta = await getMeta(slug)
   const editors = meta.editors.filter(e => e !== newOwnerEmail)
   if (oldOwnerEmail && !editors.includes(oldOwnerEmail)) editors.push(oldOwnerEmail)
-  await saveMeta({ ...meta, ownerId: newOwnerId, editors })
+  await saveMeta({ ...meta, ownerId: newOwnerId, editors, studio: false })
 }
 
 /** Keep editor lists in sync when an account's email changes. */
@@ -288,42 +322,4 @@ export async function listPortals(slug: string): Promise<SharePortal[]> {
 
 export function isPortalExpired(portal: SharePortal): boolean {
   return Boolean(portal.expiresAt && Date.now() > new Date(portal.expiresAt).getTime())
-}
-
-// ─── Previews ─────────────────────────────────────────────────────────────────
-
-interface PreviewRecord {
-  config: BrandConfig
-  createdAt: number
-}
-
-export async function savePreview(config: BrandConfig): Promise<string> {
-  const id = crypto.randomBytes(6).toString('base64url')
-  await getStorage().putJSON('previews', id, { config, createdAt: Date.now() } satisfies PreviewRecord)
-  void cleanupPreviews()
-  return id
-}
-
-export async function getPreview(id: string): Promise<BrandConfig | null> {
-  const record = await getStorage().getJSON<PreviewRecord>('previews', id)
-  if (!record) return null
-  if (Date.now() - record.createdAt > PREVIEW_TTL_MS) return null
-  return record.config
-}
-
-export async function deletePreview(id: string): Promise<void> {
-  await getStorage().deleteJSON('previews', id)
-}
-
-/** Best-effort removal of expired previews; never blocks a request. */
-async function cleanupPreviews(): Promise<void> {
-  try {
-    const ids = await getStorage().listKeys('previews')
-    for (const id of ids) {
-      const record = await getStorage().getJSON<PreviewRecord>('previews', id)
-      if (record && Date.now() - record.createdAt > PREVIEW_TTL_MS) {
-        await getStorage().deleteJSON('previews', id)
-      }
-    }
-  } catch { /* cleanup is opportunistic */ }
 }

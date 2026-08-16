@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { GradientText } from './components/transitions'
 
 // ─── Pitho — brand asset management for agencies ──────────────────────────────
 // The marketing site, styled in the product hub's design system (warm-neutral,
@@ -95,7 +96,7 @@ export default function PithoLanding() {
         <div>
           <p className="text-[11px] font-semibold tracking-widest uppercase text-[#b0afa9] mb-5">Brand asset management for agencies</p>
           <h1 className="text-[clamp(34px,5vw,52px)] font-bold tracking-tight leading-[1.05] text-balance mb-5">
-            Stop hunting for the latest logo.
+            Stop <GradientText>hunting</GradientText> for the latest logo.
           </h1>
           <p className="text-[16px] leading-relaxed text-[#6b6b66] max-w-[48ch] mb-8">
             Pitho gives every client one clean brand hub — every asset, every version, findable in seconds. Live in ten minutes. No consultants, no enterprise bloat.

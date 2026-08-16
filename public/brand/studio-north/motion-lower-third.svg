@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+<rect width="640" height="360" fill="#14201F"/>
+<g transform="translate(320,168)"><circle r="44" fill="none" stroke="#EEF0EF" stroke-width="2" opacity=".55"/>
+<path d="M-13 -19 L24 0 L-13 19 Z" fill="#EEF0EF"/></g>
+<rect x="48" y="292" width="544" height="3" fill="#EEF0EF" opacity=".22"/>
+<rect x="48" y="292" width="212" height="3" fill="#C2683C"/>
+<text x="48" y="326" font-family="Inter,system-ui,sans-serif" font-size="13" letter-spacing="2.6" fill="#EEF0EF" opacity=".7">LOWER THIRD · 2s</text></svg>

@@ -6,12 +6,20 @@
 import crypto from 'crypto'
 import { getStorage } from './db'
 
+/**
+ * What the account is for. An agency keeps a hub per client; a single brand
+ * keeps one hub that is the product. It changes what the dashboard calls
+ * things, not what anyone is allowed to do. Absent means never asked.
+ */
+export type AccountType = 'agency' | 'brand'
+
 export interface User {
   id: string
   email: string
   createdAt: string
   /** Billing plan; absent means 'free'. Pro isn't purchasable yet. */
   plan?: 'free' | 'pro'
+  accountType?: AccountType
 }
 
 async function readUsers(): Promise<Record<string, User>> {
@@ -46,6 +54,15 @@ export async function updateUserEmail(id: string, newEmail: string): Promise<Use
   const user = users[id]
   if (!user) return null
   user.email = normalizeEmail(newEmail)
+  await writeUsers(users)
+  return user
+}
+
+export async function setAccountType(id: string, accountType: AccountType): Promise<User | null> {
+  const users = await readUsers()
+  const user = users[id]
+  if (!user) return null
+  user.accountType = accountType
   await writeUsers(users)
   return user
 }

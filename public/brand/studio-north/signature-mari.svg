@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" width="520" height="160">
+<rect width="520" height="160" fill="#FFFFFF"/>
+<g transform="translate(32,44) scale(0.44)"><path d="M48 4 L57 42 L78 48 L57 54 L48 92 L39 54 L18 48 L39 42 Z" fill="#1C3A4A"/></g>
+<rect x="88" y="40" width="2" height="76" fill="#B8C6C9"/>
+<text x="108" y="62" font-family="Inter,system-ui,sans-serif" font-size="16" font-weight="600" fill="#14201F">Mari Lindqvist</text>
+<text x="108" y="84" font-family="Inter,system-ui,sans-serif" font-size="13" fill="#2E5F72">Creative Director · Studio North</text>
+<text x="108" y="108" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#14201F" opacity=".6">studionorth.co</text></svg>

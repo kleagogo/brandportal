@@ -1,13 +1,20 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useHub } from './HubContext'
 import { Icon } from './Icon'
 import { PortalManager } from './PortalManager'
+import { useConfettiBurst } from '../transitions'
 
 export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () => void; isOwner: boolean; canEdit: boolean; demo: boolean }) {
   const { config } = useHub()
   const [copied, setCopied] = useState(false)
+  // The handoff is the moment the product exists for the client, so the copy
+  // that carries it is the one thing here worth celebrating.
+  const stageRef = useRef<HTMLDivElement>(null)
+  const confettiCanvas = useRef<HTMLCanvasElement>(null)
+  const copyBtn = useRef<HTMLButtonElement>(null)
+  const burst = useConfettiBurst(stageRef, confettiCanvas, copyBtn)
   const [url, setUrl] = useState('')
 
   // Owner-only settings state
@@ -46,6 +53,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
 
   function copy(text: string) {
     navigator.clipboard.writeText(text)
+    burst()
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
@@ -126,11 +134,13 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
         <h2 className="text-[17px] font-bold tracking-tight mb-1">Share this hub</h2>
         <p className="text-[13px] text-[var(--hub-muted)] mb-5">Anyone with the link can view — no account needed.</p>
 
-        <div className="flex gap-2 mb-5">
+        <div ref={stageRef} className="t-confetti-stage flex gap-2 mb-5">
+          <canvas ref={confettiCanvas} className="t-confetti-canvas" aria-hidden="true" />
           <div className="flex-1 px-3 py-2.5 bg-[var(--hub-soft)] rounded-xl text-[13px] font-mono text-[var(--hub-text)] truncate">
             {url || `/${config.slug}`}
           </div>
           <button
+            ref={copyBtn}
             onClick={() => copy(url)}
             className="px-4 py-2.5 bg-[var(--hub-btn)] text-[var(--hub-btn-text)] text-[13px] font-semibold rounded-xl hover:opacity-85 transition-colors whitespace-nowrap"
           >
