@@ -1636,3 +1636,11 @@ html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
   height: 1rem;
   flex-shrink: 0;
 }
+
+/* The row's highlight comes from the button's own :hover, and the actions are
+   siblings of it — so moving onto an icon dropped the highlight just as you
+   reached for it. Hovering anywhere in the row holds it. */
+[data-slot="sidebar-menu-item"]:hover [data-slot="sidebar-menu-button"]:not([data-active="true"]) {
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+}
