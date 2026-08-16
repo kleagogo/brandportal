@@ -3,6 +3,7 @@
 import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
+import { Card } from '@/components/ui/card'
 
 export function GuidelinesSection() {
   const { config, editing, update } = useHub()
@@ -23,7 +24,7 @@ export function GuidelinesSection() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {voice.principles.map((p, i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-4 relative group">
+              <Card key={i} size="sm" className="px-4 relative group">
                 {editing && (
                   <button
                     onClick={() => update(c => { c.guidelines.voice!.principles.splice(i, 1) })}
@@ -39,7 +40,7 @@ export function GuidelinesSection() {
                 <div className="text-[13px] text-muted-foreground leading-relaxed">
                   <Editable multiline value={p.description} placeholder="What does this mean in practice?" onChange={v => update(c => { c.guidelines.voice!.principles[i].description = v })} />
                 </div>
-              </div>
+              </Card>
             ))}
             {editing && (
               <button

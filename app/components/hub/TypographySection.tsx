@@ -3,6 +3,7 @@
 import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
+import { Card } from '@/components/ui/card'
 
 const ALL_WEIGHTS = ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 
@@ -29,7 +30,7 @@ export function TypographySection() {
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-4">Font Family</p>
 
           {group.fonts.map((font, fi) => (
-            <div key={fi} className="bg-card border border-border rounded-2xl p-6 mb-6 group/font">
+            <Card key={fi} className="px-6 mb-6 group/font">
               <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
                 <div className="min-w-0">
                   <p className="text-[18px] font-semibold mb-1" style={{ fontFamily: `'${font.name}', sans-serif` }}>
@@ -181,7 +182,7 @@ export function TypographySection() {
                   </button>
                 )}
               </div>
-            </div>
+            </Card>
           ))}
 
           {editing && (

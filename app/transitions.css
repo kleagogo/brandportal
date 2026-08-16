@@ -1392,11 +1392,17 @@ html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
   border-radius: 0.75rem;
 }
 .t-smoky-card.asset-tile {
+  /* The recipe paints a demo card — fixed size, its own grey, a drop shadow and
+     a 16px radius. All of it has to be replaced with Card's own values here,
+     because transitions.css loads after Tailwind and so wins on source order.
+     The box-shadow is Card's `ring-1 ring-foreground/10` written out: Tailwind
+     implements rings as shadows, so leaving the recipe's shadow in place would
+     show it, and zeroing the shadow would erase the ring. */
   width: auto;
   height: auto;
-  border-radius: 0.75rem;
-  background: transparent;
-  box-shadow: none;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
 }
 .t-smoky-card.asset-tile img {
   position: static;

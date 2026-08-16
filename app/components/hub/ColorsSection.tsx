@@ -5,6 +5,7 @@ import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
 import { GradientsBlock } from './GradientsBlock'
+import { Card } from '@/components/ui/card'
 
 function normalizeHex(v: string): string {
   let h = v.trim()
@@ -63,10 +64,10 @@ export function ColorsSection() {
             {group.swatches.map((swatch, si) => {
               const key = `${gi}:${si}`
               return (
-                <div key={key} className="relative w-[168px]">
+                <Card key={key} size="sm" className="relative w-[168px] gap-0 py-0 hover:ring-muted-foreground transition-[box-shadow]">
                   <button
                     onClick={() => (editing ? setOpen(open === key ? null : key) : copyHex(swatch.hex))}
-                    className="group flex flex-col w-full text-left bg-card border border-border rounded-2xl p-2.5 hover:border-muted-foreground transition-colors"
+                    className="group flex flex-col w-full text-left rounded-lg p-2.5 transition-colors"
                   >
                     <div
                       className="w-full h-24 rounded-xl border border-foreground/10"
@@ -130,7 +131,7 @@ export function ColorsSection() {
                       </div>
                     </>
                   )}
-                </div>
+                </Card>
               )
             })}
 

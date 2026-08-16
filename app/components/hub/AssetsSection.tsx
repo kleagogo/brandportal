@@ -16,6 +16,7 @@ import {
   type PickedFile,
 } from './pick-files'
 import type { AssetFile } from '@/app/types/brand'
+import { Card } from '@/components/ui/card'
 
 /** How many files to upload at once. Enough to keep the pipe busy, not so
  *  many that a folder of 300 logos opens 300 sockets. */
@@ -458,7 +459,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
 
   return (
     <div ref={stageRef} className="t-smoky-stage asset-tile-stage">
-    <div ref={cardRef} className="t-smoky-card asset-tile bg-card border border-border rounded-xl overflow-hidden group relative">
+    <Card ref={cardRef} size="sm" className="t-smoky-card asset-tile gap-0 py-0 group relative">
       {editing && (
         <button
           onClick={() => dissolveThenRemove()}
@@ -582,7 +583,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
           </div>
         )}
       </div>
-    </div>
+    </Card>
     {/* The shred is drawn here, over the stage, once the card is snapshotted. */}
     <canvas ref={smokeRef} className="t-smoky-canvas" aria-hidden="true" />
     </div>
