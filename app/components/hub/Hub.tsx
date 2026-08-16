@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BrandConfig, SectionConfig } from '@/app/types/brand'
 import { HubProvider, useHub } from './HubContext'
 import { Icon } from './Icon'
-import { Editable } from './Editable'
 import { ColorsSection } from './ColorsSection'
 import { TypographySection } from './TypographySection'
 import { AssetsSection } from './AssetsSection'
@@ -16,7 +15,6 @@ import { SettingsModal } from './SettingsModal'
 import { SearchBox } from './SearchBox'
 import { HomeSection } from './HomeSection'
 import { SpaceSwitcher } from './SpaceSwitcher'
-import { uploadAsset } from './upload-client'
 import { GooeyPlusMenu, StatusBadge } from '../transitions'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -272,21 +270,6 @@ function TopBar({
  */
 function HubSidebar({ active, onSelect, dark, onToggleTheme }: { active: string; onSelect: (id: string) => void; dark: boolean; onToggleTheme: () => void }) {
   const { config, editing, update } = useHub()
-  const logoInputRef = useRef<HTMLInputElement>(null)
-  const [logoUploading, setLogoUploading] = useState(false)
-
-  async function uploadLogo(file: File) {
-    setLogoUploading(true)
-    try {
-      const data = await uploadAsset(file, config.slug)
-      update(c => { c.logoUrl = data.url })
-    } catch {
-      // Leave the current logo in place on failure.
-    } finally {
-      setLogoUploading(false)
-    }
-  }
-
   const SECTION_KINDS: Record<string, { label: string; icon: SectionConfig['icon'] }> = {
     assets: { label: 'New files', icon: 'screenshots' },
     colors: { label: 'New colors', icon: 'colors' },
@@ -314,40 +297,8 @@ function HubSidebar({ active, onSelect, dark, onToggleTheme }: { active: string;
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2.5 px-1 py-1">
-          <button
-            onClick={() => editing && logoInputRef.current?.click()}
-            className={`w-9 h-9 shrink-0 rounded-lg overflow-hidden flex items-center justify-center ${
-              editing ? 'cursor-pointer ring-1 ring-dashed ring-border hover:ring-foreground' : ''
-            } ${logoUploading ? 'animate-pulse' : ''}`}
-            title={editing ? 'Change logo' : undefined}
-            disabled={!editing}
-          >
-            {config.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={config.logoUrl} alt={config.name} className="w-full h-full object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-            ) : (
-              <div className="w-full h-full bg-primary rounded-lg" />
-            )}
-          </button>
-          {/* Hidden when the rail collapses to icons. */}
-          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-            <p className="text-[13px] font-semibold leading-tight truncate">
-              <Editable value={config.name} placeholder="Brand name" onChange={v => update(c => { c.name = v })} />
-            </p>
-            <p className="text-[10px] text-muted-foreground/60 leading-tight mt-0.5">
-              <Editable value={config.tagline} placeholder="Tagline" onChange={v => update(c => { c.tagline = v })} />
-            </p>
-          </div>
-        </div>
-        <input
-          ref={logoInputRef}
-          type="file"
-          accept=".svg,.png,.jpg,.jpeg,.webp"
-          className="hidden"
-          onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f); e.target.value = '' }}
-        />
+      <SidebarHeader>
+        <SpaceSwitcher currentSlug={config.slug} />
       </SidebarHeader>
 
       <SidebarContent>
@@ -393,9 +344,6 @@ function HubSidebar({ active, onSelect, dark, onToggleTheme }: { active: string;
             />
           </div>
         )}
-        <div className="group-data-[collapsible=icon]:hidden">
-          <SpaceSwitcher currentSlug={config.slug} currentName={config.name} />
-        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={onToggleTheme} tooltip={dark ? 'Light mode' : 'Dark mode'}>
