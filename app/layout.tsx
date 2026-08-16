@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { SITE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 // The system face — app chrome only. Hub content renders in whatever typefaces
 // that client's brand declares, loaded per hub from its own config.
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
       <body className="font-sans antialiased">
+        <TooltipProvider>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -54,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         {children}
+        </TooltipProvider>
       </body>
     </html>
   );

@@ -18,6 +18,11 @@ import { HomeSection } from './HomeSection'
 import { SpaceSwitcher } from './SpaceSwitcher'
 import { uploadAsset } from './upload-client'
 import { GooeyPlusMenu, StatusBadge } from '../transitions'
+import {
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
+  SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuAction,
+  SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger,
+} from '@/components/ui/sidebar'
 
 function SubBrandPlaceholder({ label }: { label: string }) {
   return (
@@ -55,7 +60,6 @@ function HubShell({ access }: { access: HubAccess }) {
   const [active, setActive] = useState(config.sections[0]?.id || 'logo')
   const [shareOpen, setShareOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [navOpen, setNavOpen] = useState(false)
   // Light by default, remembered per browser.
   const [dark, setDark] = useState(false)
   useEffect(() => {
@@ -101,21 +105,16 @@ function HubShell({ access }: { access: HubAccess }) {
 
       <WelcomeToast />
 
-      <div className="flex-1 flex min-h-0">
-        {/* Mobile nav backdrop */}
-        {navOpen && <div className="fixed inset-0 bg-foreground/20 z-30 md:hidden" onClick={() => setNavOpen(false)} />}
-
-        <Sidebar
+      <SidebarProvider className="flex-1 min-h-0 items-stretch">
+        <HubSidebar
           active={activeSection?.id || ''}
-          onSelect={id => { setActive(id); setNavOpen(false) }}
-          open={navOpen}
+          onSelect={setActive}
           dark={dark}
           onToggleTheme={toggleTheme}
         />
 
-        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        <SidebarInset className="flex flex-col min-w-0 min-h-0">
           <TopBar
-            onMenu={() => setNavOpen(o => !o)}
             onShare={() => setShareOpen(true)}
             onSettings={() => setSettingsOpen(true)}
             onNavigate={setActive}
@@ -130,8 +129,8 @@ function HubShell({ access }: { access: HubAccess }) {
               {renderContent()}
             </div>
           </main>
-        </div>
-      </div>
+        </SidebarInset>
+      </SidebarProvider>
 
       {shareOpen && (
         <ShareModal
@@ -175,9 +174,8 @@ function WelcomeToast() {
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
 function TopBar({
-  onMenu, onShare, onSettings, onNavigate, editing, setEditing, saveState, sectionLabel, access,
+  onShare, onSettings, onNavigate, editing, setEditing, saveState, sectionLabel, access,
 }: {
-  onMenu: () => void
   onShare: () => void
   onSettings: () => void
   onNavigate: (sectionId: string) => void
@@ -189,9 +187,7 @@ function TopBar({
 }) {
   return (
     <header className="h-14 shrink-0 bg-card border-b border-border flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
-      <button onClick={onMenu} className="md:hidden text-muted-foreground hover:text-foreground transition-colors" title="Menu">
-        <Icon name="menu" size={18} />
-      </button>
+      <SidebarTrigger className="-ml-1" />
       <p className="text-[13px] font-medium text-muted-foreground truncate">{sectionLabel}</p>
       <SearchBox onNavigate={onNavigate} />
 
@@ -265,7 +261,16 @@ function TopBar({
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: string; onSelect: (id: string) => void; open: boolean; dark: boolean; onToggleTheme: () => void }) {
+/**
+ * The hub's rail, on shadcn's Sidebar.
+ *
+ * Named HubSidebar because `Sidebar` is now the primitive. Mobile behaviour,
+ * collapsing, the keyboard shortcut and the open-state cookie all come from the
+ * primitive; what's kept here is the parts that are Pitho's — the editable
+ * identity, the section groups, and the reorder/rename/delete controls that only
+ * appear in edit mode.
+ */
+function HubSidebar({ active, onSelect, dark, onToggleTheme }: { active: string; onSelect: (id: string) => void; dark: boolean; onToggleTheme: () => void }) {
   const { config, editing, update } = useHub()
   const logoInputRef = useRef<HTMLInputElement>(null)
   const [logoUploading, setLogoUploading] = useState(false)
@@ -299,12 +304,18 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
     })
   }
 
+  const GROUPS = [
+    ['main', ''],
+    ['assets', 'Assets'],
+    ['subbrands', 'Sub Brands'],
+    ['tools', 'Tools'],
+    ['resources', 'Resources'],
+  ] as const
+
   return (
-    <aside className={`w-60 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col h-screen z-40 transition-transform
-      fixed inset-y-0 left-0 ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:sticky md:top-0`}>
-      {/* Identity */}
-      <div className="px-4 py-4 border-b border-border">
-        <div className="flex items-center gap-2.5">
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border">
+        <div className="flex items-center gap-2.5 px-1 py-1">
           <button
             onClick={() => editing && logoInputRef.current?.click()}
             className={`w-9 h-9 shrink-0 rounded-lg overflow-hidden flex items-center justify-center ${
@@ -320,7 +331,8 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
               <div className="w-full h-full bg-primary rounded-lg" />
             )}
           </button>
-          <div className="min-w-0 flex-1">
+          {/* Hidden when the rail collapses to icons. */}
+          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
             <p className="text-[13px] font-semibold leading-tight truncate">
               <Editable value={config.name} placeholder="Brand name" onChange={v => update(c => { c.name = v })} />
             </p>
@@ -336,44 +348,41 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
           className="hidden"
           onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f); e.target.value = '' }}
         />
-      </div>
+      </SidebarHeader>
 
-      {/* Nav — grouped like a real brand hub: Assets / Tools / Resources */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2">
-        {([['main', ''], ['assets', 'Assets'], ['subbrands', 'Sub Brands'], ['tools', 'Tools'], ['resources', 'Resources']] as const).map(([groupKey, groupLabel]) => {
+      <SidebarContent>
+        {GROUPS.map(([groupKey, groupLabel]) => {
           const items = config.sections
             .map((section, i) => ({ section, i }))
             .filter(({ section }) => (section.group || 'assets') === groupKey)
           if (items.length === 0) return null
           return (
-            <div key={groupKey} className="mb-4">
-              {groupLabel && <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-2 mb-2">{groupLabel}</p>}
-              {items.map(({ section, i }) => (
-                <SidebarItem
-                  key={section.id}
-                  section={section}
-                  index={i}
-                  count={config.sections.length}
-                  active={active === section.id}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
+            <SidebarGroup key={groupKey}>
+              {groupLabel && <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {items.map(({ section, i }) => (
+                    <HubSidebarItem
+                      key={section.id}
+                      section={section}
+                      index={i}
+                      count={config.sections.length}
+                      active={active === section.id}
+                      onSelect={onSelect}
+                    />
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
           )
         })}
-        <div className="hidden">
-        </div>
+      </SidebarContent>
 
-      </nav>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-border">
+      <SidebarFooter className="border-t border-sidebar-border">
         {editing && (
-          <div className="mb-3 flex justify-center">
+          <div className="mb-1 flex justify-center group-data-[collapsible=icon]:hidden">
             {/* The plus splits into the section kinds — it used to always make an
-                assets section, so choosing one was a rename away. It lives down
-                here rather than under the section list because the fan opens
-                upward and the nav above scrolls, which clipped the satellites. */}
+                assets section, so choosing one was a rename away. */}
             <GooeyPlusMenu
               items={[
                 { id: 'assets', label: 'Files', fx: '-54px', fy: '-34px', icon: <Icon name="screenshots" size={15} /> },
@@ -384,26 +393,27 @@ function Sidebar({ active, onSelect, open, dark, onToggleTheme }: { active: stri
             />
           </div>
         )}
-        <div className="mb-3">
+        <div className="group-data-[collapsible=icon]:hidden">
           <SpaceSwitcher currentSlug={config.slug} currentName={config.name} />
         </div>
-        <Link href="/" className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={onToggleTheme} tooltip={dark ? 'Light mode' : 'Dark mode'}>
+              <Icon name={dark ? 'sun' : 'moon'} size={14} />
+              <span>{dark ? 'Light mode' : 'Dark mode'}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <Link href="/" className="px-2 text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden">
           Made with Pitho
         </Link>
-        <button
-          onClick={onToggleTheme}
-          className="mt-2 w-full flex items-center gap-2 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Icon name={dark ? 'sun' : 'moon'} size={13} /> {dark ? 'Light mode' : 'Dark mode'}
-        </button>
-        <a className="hidden">
-        </a>
-      </div>
-    </aside>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   )
 }
 
-function SidebarItem({
+function HubSidebarItem({
   section, index, count, active, onSelect,
 }: {
   section: SectionConfig
@@ -416,79 +426,60 @@ function SidebarItem({
 
   if (section.type === 'link' && section.url && !editing) {
     return (
-      <a
-        href={section.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-      >
-        <Icon name={section.icon} size={14} />
-        {section.label}
-        <Icon name="link" size={11} />
-      </a>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          tooltip={section.label}
+          render={<a href={section.url} target="_blank" rel="noopener noreferrer" />}
+        >
+          <Icon name={section.icon} size={14} />
+          <span>{section.label}</span>
+          <Icon name="link" size={11} />
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     )
   }
 
   if (!editing) {
     return (
-      <button
-        onClick={() => onSelect(section.id)}
-        className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] transition-colors text-left ${
-          active ? 'bg-muted text-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-        }`}
-      >
-        <Icon name={section.icon} size={14} />
-        {section.label}
-      </button>
+      <SidebarMenuItem>
+        <SidebarMenuButton isActive={active} onClick={() => onSelect(section.id)} tooltip={section.label}>
+          <Icon name={section.icon} size={14} />
+          <span>{section.label}</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     )
   }
 
-  // Edit mode: label is editable, with reorder/delete controls on hover.
+  // Edit mode: the label becomes an input, with reorder and delete on hover.
   return (
-    <div className={`group flex items-center gap-1.5 px-2 py-1 rounded-lg ${active ? 'bg-muted' : 'hover:bg-muted'}`}>
-      <button onClick={() => onSelect(section.id)} className="text-muted-foreground" title="Open section">
-        <Icon name={section.icon} size={14} />
-      </button>
-      <input
-        value={section.label}
-        onChange={e => update(c => { c.sections[index].label = e.target.value })}
-        onFocus={() => onSelect(section.id)}
-        className="flex-1 min-w-0 text-[13px] bg-transparent outline-none border border-dashed border-transparent hover:border-border focus:border-ring rounded px-1 text-foreground"
-      />
-      <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
-        <button
-          onClick={() => index > 0 && update(c => {
-            const [s] = c.sections.splice(index, 1)
-            c.sections.splice(index - 1, 0, s)
-          })}
-          disabled={index === 0}
-          className="text-muted-foreground/60 hover:text-foreground disabled:opacity-30 p-0.5"
-          title="Move up"
-        >
-          <Icon name="up" size={11} />
+    <SidebarMenuItem>
+      <SidebarMenuButton isActive={active} render={<div />} className="gap-1.5">
+        <button onClick={() => onSelect(section.id)} className="text-muted-foreground shrink-0" title="Open section">
+          <Icon name={section.icon} size={14} />
         </button>
-        <button
-          onClick={() => index < count - 1 && update(c => {
-            const [s] = c.sections.splice(index, 1)
-            c.sections.splice(index + 1, 0, s)
-          })}
-          disabled={index === count - 1}
-          className="text-muted-foreground/60 hover:text-foreground disabled:opacity-30 p-0.5"
-          title="Move down"
-        >
-          <Icon name="down" size={11} />
-        </button>
-        <button
-          onClick={() => {
-            if (!window.confirm(`Delete the "${section.label}" section?`)) return
-            update(c => { c.sections.splice(index, 1) })
-          }}
-          className="text-muted-foreground/60 hover:text-destructive p-0.5"
-          title="Delete section"
-        >
-          <Icon name="trash" size={11} />
-        </button>
-      </div>
-    </div>
+        <input
+          value={section.label}
+          onChange={e => update(c => { c.sections[index].label = e.target.value })}
+          onFocus={() => onSelect(section.id)}
+          className="flex-1 min-w-0 text-[13px] bg-transparent outline-none border border-dashed border-transparent hover:border-border focus:border-ring rounded px-1 text-foreground"
+        />
+      </SidebarMenuButton>
+      <SidebarMenuAction showOnHover className="right-6" title="Move up"
+        onClick={() => index > 0 && update(c => {
+          const [s] = c.sections.splice(index, 1)
+          c.sections.splice(index - 1, 0, s)
+        })}
+      >
+        <Icon name="up" size={11} />
+      </SidebarMenuAction>
+      <SidebarMenuAction showOnHover title="Delete section"
+        onClick={() => {
+          if (!window.confirm(`Delete the "${section.label}" section?`)) return
+          update(c => { c.sections.splice(index, 1) })
+        }}
+      >
+        <Icon name="trash" size={11} />
+      </SidebarMenuAction>
+    </SidebarMenuItem>
   )
 }
