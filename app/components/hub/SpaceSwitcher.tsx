@@ -10,7 +10,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
 
 interface Space {
   slug: string
@@ -31,7 +31,6 @@ interface Space {
  */
 export function SpaceSwitcher({ currentSlug }: { currentSlug: string }) {
   const { config, editing, update } = useHub()
-  const { isMobile } = useSidebar()
   const router = useRouter()
   const [spaces, setSpaces] = useState<Space[]>([])
 
@@ -69,17 +68,21 @@ export function SpaceSwitcher({ currentSlug }: { currentSlug: string }) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
+          {/* The mark stays; the name and tagline become the editable fields
+              rather than being shown twice. */}
           <SidebarMenuButton size="lg" render={<div />}>
-            {identity}
+            <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden shrink-0">
+              {mark}
+            </div>
+            <div className="grid flex-1 gap-0.5 text-left leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
+              <span className="text-[13px] font-semibold">
+                <Editable value={config.name} placeholder="Brand name" onChange={v => update(c => { c.name = v })} />
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                <Editable value={config.tagline} placeholder="Tagline" onChange={v => update(c => { c.tagline = v })} />
+              </span>
+            </div>
           </SidebarMenuButton>
-          <div className="px-2 pt-1 group-data-[collapsible=icon]:hidden">
-            <p className="text-[13px] font-semibold leading-tight truncate">
-              <Editable value={config.name} placeholder="Brand name" onChange={v => update(c => { c.name = v })} />
-            </p>
-            <p className="text-[11px] text-muted-foreground leading-tight">
-              <Editable value={config.tagline} placeholder="Tagline" onChange={v => update(c => { c.tagline = v })} />
-            </p>
-          </div>
         </SidebarMenuItem>
       </SidebarMenu>
     )
@@ -98,10 +101,12 @@ export function SpaceSwitcher({ currentSlug }: { currentSlug: string }) {
             }
           />
           <DropdownMenuContent
+            // Down, not out to the side: the rail is narrow and a side popup
+            // covers the content you're about to switch away from.
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             align="start"
-            side={isMobile ? 'bottom' : 'right'}
-            sideOffset={4}
+            side="bottom"
+            sideOffset={6}
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-muted-foreground text-xs">

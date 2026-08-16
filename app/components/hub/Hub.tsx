@@ -340,9 +340,14 @@ function HubSidebarItem({
           <input
             value={section.label}
             autoFocus
+            // The field must stop short of the row's three actions. `size={1}`
+            // drops the input's intrinsic width so it can shrink at all, and the
+            // clearance is a margin rather than padding on the button — the
+            // component's own variants win that one, resolving pr-20 to 32px.
+            size={1}
             onChange={e => update(c => { c.sections[index].label = e.target.value })}
             onKeyDown={e => e.key === 'Enter' && setEditingSection(null)}
-            className="flex-1 min-w-0 bg-transparent outline-none border-b border-dashed border-border focus:border-ring text-foreground"
+            className="mr-11 w-0 min-w-0 flex-1 rounded-md bg-background px-1.5 py-0.5 text-foreground ring-1 ring-border outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </SidebarMenuButton>
       ) : (
