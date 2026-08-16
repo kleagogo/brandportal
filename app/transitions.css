@@ -1397,12 +1397,18 @@ html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
      because transitions.css loads after Tailwind and so wins on source order.
      The box-shadow is Card's `ring-1 ring-foreground/10` written out: Tailwind
      implements rings as shadows, so leaving the recipe's shadow in place would
-     show it, and zeroing the shadow would erase the ring. */
+     show it, and zeroing the shadow would erase the ring.
+
+     It reads `--tw-ring-color` rather than restating the colour, so the utility
+     that sets that variable still governs it. Hardcoding the colour here is
+     what stopped `hover:ring-muted-foreground` from ever showing on these
+     tiles: the hover utility only swaps the variable, and this rule wins on
+     source order. The fallback covers the case where no ring utility applies. */
   width: auto;
   height: auto;
   border-radius: var(--radius-lg);
   background: var(--card);
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
+  box-shadow: 0 0 0 1px var(--tw-ring-color, color-mix(in oklab, var(--foreground) 10%, transparent));
 }
 .t-smoky-card.asset-tile img {
   position: static;
