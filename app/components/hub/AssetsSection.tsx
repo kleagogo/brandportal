@@ -17,7 +17,8 @@ import {
 } from './pick-files'
 import type { AssetFile } from '@/app/types/brand'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { HubCard } from './HubCard'
 
 /** How many files to upload at once. Enough to keep the pipe busy, not so
  *  many that a folder of 300 logos opens 300 sockets. */
@@ -460,7 +461,55 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
 
   return (
     <div ref={stageRef} className="t-smoky-stage asset-tile-stage">
-    <Card ref={cardRef} size="sm" className="t-smoky-card asset-tile gap-0 py-0 group relative">
+    <HubCard
+      ref={cardRef}
+      className="t-smoky-card asset-tile group relative"
+      mediaClassName={`${tileClass} p-6`}
+      media={
+        isImage(asset.file) && asset.ratio ? (
+          // Photography and screenshots are worth looking at full size, so the
+          // tile zooms open rather than only offering a download.
+          <ImageOpenTilt src={asset.file} alt={asset.name} />
+        ) : isImage(asset.file) ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={asset.file}
+            alt={asset.name}
+            className={`max-h-full max-w-full ${asset.ratio ? 'w-full h-full object-cover' : 'object-contain'}`}
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        ) : (
+          <Icon name="file" size={20} />
+        )
+      }
+      chips={
+        <>
+          {asset.platform && (
+            <Badge variant="secondary" className="uppercase tracking-wide">{asset.platform}</Badge>
+          )}
+          {asset.format.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
+        </>
+      }
+      action={allowDownload ? (
+        <Button
+          nativeButton={false}
+          variant="ghost"
+          size="sm"
+          className="shrink-0 text-muted-foreground"
+          title={asset.external ? `Open ${asset.name}` : `Download ${asset.name}`}
+          render={
+            <a
+              href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
+              {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
+              onClick={() => trackPortal(portalId, 'download', asset.name)}
+            />
+          }
+        >
+          <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={14} />
+          {asset.external || asset.file.startsWith('http') ? 'Open' : 'Download'}
+        </Button>
+      ) : undefined}
+    >
       {editing && (
         <button
           onClick={() => dissolveThenRemove()}
@@ -475,67 +524,17 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
           {current} · Approved
         </span>
       )}
-      <div className={`${tileClass} flex items-center justify-center bg-muted border-b border-border p-6 overflow-hidden`}>
-        {isImage(asset.file) && asset.ratio ? (
-          // Photography and screenshots are worth looking at full size, so the
-          // tile zooms open rather than only offering a download.
-          <ImageOpenTilt src={asset.file} alt={asset.name} />
-        ) : isImage(asset.file) ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={asset.file}
-            alt={asset.name}
-            className={`max-h-full max-w-full ${asset.ratio ? 'w-full h-full object-cover' : 'object-contain'}`}
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-          />
-        ) : (
-          <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
-            <Icon name="file" size={20} />
-          </div>
-        )}
-      </div>
-      <div className="p-3">
-        <p className="text-[13px] font-medium text-foreground mb-1">
+      <p className="text-[13px] font-medium text-foreground">
           <Editable value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
-        </p>
-        <p className="text-[11px] text-muted-foreground mb-2 leading-tight">
-          <Editable value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
-        </p>
-        <TagRow
+      </p>
+      <p className="text-[11px] text-muted-foreground leading-tight">
+        <Editable value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
+      </p>
+      <TagRow
           tags={asset.tags || []}
-          onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
-          onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
-        />
-        <div className="flex items-center justify-between">
-          <div className="flex gap-1 items-center flex-wrap">
-            {asset.platform && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase tracking-wide">{asset.platform}</span>
-            )}
-            {asset.format.map(f => (
-              <span key={f} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f}</span>
-            ))}
-          </div>
-          {allowDownload && (
-          <Button
-            nativeButton={false}
-            variant="ghost"
-            size="sm"
-            className="shrink-0 text-muted-foreground"
-            title={asset.external ? `Open ${asset.name}` : `Download ${asset.name}`}
-            render={
-              <a
-                href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
-                {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
-                onClick={() => trackPortal(portalId, 'download', asset.name)}
-              />
-            }
-          >
-            <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={14} />
-            {asset.external || asset.file.startsWith('http') ? 'Open' : 'Download'}
-          </Button>
-          )}
-        </div>
-
+        onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
+        onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
+      />
         {/* Versions — history for everyone, uploading for editors */}
         {(versions.length > 1 || editing) && (
           <div className="mt-2 pt-2 border-t border-dashed border-border relative">
@@ -591,8 +590,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
             />
           </div>
         )}
-      </div>
-    </Card>
+    </HubCard>
     {/* The shred is drawn here, over the stage, once the card is snapshotted. */}
     <canvas ref={smokeRef} className="t-smoky-canvas" aria-hidden="true" />
     </div>

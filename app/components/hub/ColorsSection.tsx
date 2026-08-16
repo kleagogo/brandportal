@@ -5,7 +5,8 @@ import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
 import { GradientsBlock } from './GradientsBlock'
-import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { HubCard } from './HubCard'
 
 function normalizeHex(v: string): string {
   let h = v.trim()
@@ -64,24 +65,34 @@ export function ColorsSection() {
             {group.swatches.map((swatch, si) => {
               const key = `${gi}:${si}`
               return (
-                <Card key={key} size="sm" className="relative w-[168px] gap-0 py-0 hover:ring-muted-foreground transition-[box-shadow]">
-                  <button
-                    onClick={() => (editing ? setOpen(open === key ? null : key) : copyHex(swatch.hex))}
-                    className="group flex flex-col w-full text-left rounded-lg p-2.5 transition-colors"
-                  >
-                    <div
-                      className="w-full h-24 rounded-xl border border-foreground/10"
+                <HubCard
+                  key={key}
+                  className="group relative w-[168px] hover:ring-muted-foreground transition-[box-shadow]"
+                  media={
+                    <button
+                      onClick={() => (editing ? setOpen(open === key ? null : key) : copyHex(swatch.hex))}
+                      className="w-full h-24"
                       style={{ background: isValidHex(swatch.hex) ? swatch.hex : '#e5e5e0' }}
+                      title={editing ? `Edit ${swatch.name}` : `Copy ${swatch.hex}`}
                     />
-                    <div className="w-full px-1 pt-2.5 pb-1">
-                      <p className="text-[13px] font-semibold text-foreground truncate mb-0.5">{swatch.name}</p>
-                      <p className="text-[12px] font-mono text-muted-foreground group-hover:text-foreground transition-colors flex items-center gap-1.5">
-                        {copied === swatch.hex ? 'Copied ✓' : swatch.hex.toUpperCase()}
-                        {!editing && copied !== swatch.hex && <span className="opacity-0 group-hover:opacity-60"><Icon name="copy" size={11} /></span>}
-                      </p>
-                      {swatch.usage && <p className="text-[11px] text-muted-foreground/60 mt-1 leading-tight">{swatch.usage}</p>}
-                    </div>
-                  </button>
+                  }
+                  action={
+                    !editing && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyHex(swatch.hex)}
+                        className="shrink-0 text-muted-foreground"
+                        title={`Copy ${swatch.hex}`}
+                      >
+                        <Icon name="copy" size={14} /> {copied === swatch.hex ? 'Copied' : 'Copy'}
+                      </Button>
+                    )
+                  }
+                >
+                  <p className="text-[13px] font-semibold text-foreground truncate">{swatch.name}</p>
+                  <p className="text-[12px] font-mono text-muted-foreground">{swatch.hex.toUpperCase()}</p>
+                  {swatch.usage && <p className="text-[11px] text-muted-foreground/60 leading-tight">{swatch.usage}</p>}
 
                   {editing && open === key && (
                     <>
@@ -131,7 +142,7 @@ export function ColorsSection() {
                       </div>
                     </>
                   )}
-                </Card>
+                </HubCard>
               )
             })}
 

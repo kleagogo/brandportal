@@ -6,7 +6,7 @@ import { Editable } from './Editable'
 import { Icon } from './Icon'
 import type { GradientDef } from '@/app/types/brand'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { HubCard } from './HubCard'
 
 /** Gradient presets and downloadable gradient backgrounds. */
 export function GradientsBlock() {
@@ -101,17 +101,10 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
   }
 
   return (
-    <Card size="sm" className="gap-0 py-0 group relative">
-      {editing && (
-        <button onClick={onDelete} className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-card/80 text-foreground/90 hover:text-destructive items-center justify-center hidden group-hover:flex" title="Remove gradient">
-          <Icon name="close" size={11} />
-        </button>
-      )}
-      <div className="h-32" style={{ background: grad.css }} />
-      <div className="p-3 flex items-center justify-between gap-2">
-        <p className="text-[13px] font-medium text-foreground min-w-0 truncate">
-          <Editable value={grad.name} placeholder="Gradient name" onChange={onName} />
-        </p>
+    <HubCard
+      className="group relative"
+      media={<div className="w-full h-32" style={{ background: grad.css }} />}
+      action={
         <Button
           variant="ghost"
           size="sm"
@@ -123,7 +116,16 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
             ? <><Icon name="download" size={14} /> Download</>
             : <><Icon name="copy" size={14} /> {copied ? 'Copied' : 'Copy CSS'}</>}
         </Button>
-      </div>
+      }
+    >
+      {editing && (
+        <button onClick={onDelete} className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-card/80 text-foreground/90 hover:text-destructive items-center justify-center hidden group-hover:flex" title="Remove gradient">
+          <Icon name="close" size={11} />
+        </button>
+      )}
+      <p className="text-[13px] font-medium text-foreground min-w-0 truncate">
+        <Editable value={grad.name} placeholder="Gradient name" onChange={onName} />
+      </p>
       {editing && (
         <div className="px-3 pb-3">
           <input
@@ -134,6 +136,6 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
           />
         </div>
       )}
-    </Card>
+    </HubCard>
   )
 }
