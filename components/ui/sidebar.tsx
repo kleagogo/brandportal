@@ -263,7 +263,11 @@ function SidebarTrigger({
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
-      size="icon-sm"
+      // Sized up from the registry's `icon-sm`. base-mira is a compact style, so
+      // its `icon-sm` renders the glyph at 12px — which reads as undersized
+      // against this very sidebar's own 16px row icons. `icon` plus an explicit
+      // `size-4` gives the 28px/16px pairing the upstream sidebar blocks use.
+      size="icon"
       className={cn(className)}
       onClick={(event) => {
         onClick?.(event)
@@ -271,7 +275,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <RiSideBarLine />
+      <RiSideBarLine className="size-4" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )
