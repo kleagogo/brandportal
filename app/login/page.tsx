@@ -64,7 +64,7 @@ export default function LoginPage() {
                   <p className="text-[12px] text-muted-foreground/60 mb-2">
                     Email sending isn’t configured yet (no RESEND_API_KEY) — use your link directly:
                   </p>
-                  <Button render={<a href={devLink} />} className="w-full">
+                  <Button nativeButton={false} render={<a href={devLink} />} className="w-full">
                     Open my sign-in link →
                   </Button>
                 </div>

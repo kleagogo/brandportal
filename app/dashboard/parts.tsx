@@ -3,6 +3,13 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { HubLabels } from '@/lib/labels'
 
 /**
@@ -56,18 +63,19 @@ export function AccountTypePicker() {
       </p>
       <div className="grid sm:grid-cols-2 gap-4">
         {options.map(option => (
-          <button
+          <Button
             key={option.id}
+            variant="outline"
             onClick={() => pick(option.id)}
             disabled={Boolean(busy)}
-            className="text-left bg-card border border-border rounded-2xl p-6 hover:border-ring transition-colors disabled:opacity-60"
+            className="h-auto flex-col items-start gap-0 text-left whitespace-normal p-6"
           >
             <p className="text-[16px] font-semibold text-foreground mb-1.5">{option.title}</p>
             <p className="text-[13.5px] text-muted-foreground leading-relaxed">{option.body}</p>
             <p className="text-[12px] font-semibold text-foreground mt-4">
               {busy === option.id ? 'Setting up…' : 'Choose this →'}
             </p>
-          </button>
+          </Button>
         ))}
       </div>
       {error && <p className="text-[12.5px] text-destructive mt-3">{error}</p>}
@@ -108,27 +116,25 @@ export function StudioSetup({ labels }: { labels: HubLabels }) {
   }
 
   return (
-    <form onSubmit={create} className="bg-card border border-border rounded-2xl p-6">
+    <Card className="gap-0 p-6">
+      <form onSubmit={create}>
       <p className="text-[16px] font-semibold text-foreground mb-1">{labels.setupTitle}</p>
       <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-5 max-w-[58ch]">{labels.setupBody}</p>
       <div className="flex items-center gap-2 flex-wrap">
-        <input
+        <Input
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder={labels.setupPlaceholder}
           aria-label={labels.setupPlaceholder}
-          className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl border-[1.5px] border-border text-[14px] outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
+          className="flex-1 min-w-[200px]"
         />
-        <button
-          type="submit"
-          disabled={busy || !name.trim()}
-          className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-40"
-        >
+        <Button type="submit" disabled={busy || !name.trim()}>
           {busy ? 'Creating…' : labels.setupAction}
-        </button>
+        </Button>
       </div>
-      {error && <p className="text-[12.5px] text-destructive mt-3">{error}</p>}
-    </form>
+        {error && <p className="text-[12.5px] text-destructive mt-3">{error}</p>}
+      </form>
+    </Card>
   )
 }
 
@@ -162,73 +168,61 @@ export function NewHubButton({ labels }: { labels: HubLabels }) {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-colors"
-      >
-        {labels.newButton}
-      </button>
+      <Button onClick={() => setOpen(true)}>{labels.newButton}</Button>
     )
   }
 
   return (
     <form onSubmit={create} className="flex items-center gap-2 flex-wrap justify-end">
-      <input
+      <Input
         value={name}
         onChange={e => setName(e.target.value)}
         onKeyDown={e => e.key === 'Escape' && setOpen(false)}
         placeholder={labels.namePlaceholder}
         aria-label={labels.namePlaceholder}
         autoFocus
-        className="px-3.5 py-2.5 rounded-xl border-[1.5px] border-border text-[14px] outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
+        className="w-auto"
       />
-      <button
-        type="submit"
-        disabled={busy || !name.trim()}
-        className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-40"
-      >
+      <Button type="submit" disabled={busy || !name.trim()}>
         {busy ? 'Creating…' : 'Create'}
-      </button>
-      <button
-        type="button"
-        onClick={() => { setOpen(false); setError('') }}
-        className="text-[13px] text-muted-foreground hover:text-foreground px-2 py-2.5 transition-colors"
-      >
+      </Button>
+      <Button type="button" variant="ghost" onClick={() => { setOpen(false); setError('') }}>
         Cancel
-      </button>
+      </Button>
       {error && <p className="text-[12px] text-destructive w-full text-right">{error}</p>}
     </form>
   )
 }
 
 export function AccountMenu({ email }: { email: string }) {
-  const [open, setOpen] = useState(false)
-
   return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold flex items-center justify-center hover:bg-primary/90 transition-colors uppercase"
-        title={email}
-      >
-        {email[0]}
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-10 z-40 w-56 bg-card border border-border rounded-xl shadow-xl p-1.5">
-            <p className="px-2.5 py-2 text-[12px] text-muted-foreground truncate border-b border-muted mb-1">{email}</p>
-            <Link href="/settings" className="block px-2.5 py-2 text-[13px] text-foreground hover:bg-muted rounded-lg transition-colors">
-              Account settings
-            </Link>
-            <form action="/api/auth/logout" method="POST">
-              <button type="submit" className="w-full text-left px-2.5 py-2 text-[13px] text-foreground hover:bg-muted rounded-lg transition-colors">
-                Sign out
-              </button>
-            </form>
-          </div>
-        </>
-      )}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="default" size="icon" className="rounded-full uppercase" title={email}>
+            {email[0]}
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="truncate font-normal text-muted-foreground">{email}</DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link href="/settings" />}>Account settings</DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            // The logout route is a POST, so it needs a form rather than a link.
+            const form = document.createElement('form')
+            form.method = 'POST'
+            form.action = '/api/auth/logout'
+            document.body.appendChild(form)
+            form.submit()
+          }}
+        >
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
