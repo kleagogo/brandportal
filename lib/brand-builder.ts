@@ -16,15 +16,23 @@ import { slugify } from './store'
 export type HubKind = 'client' | 'studio'
 
 /**
- * The brand itself — the sections every hub needs, client or studio. These are
- * the ones a new client space inherits when it copies the studio's layout.
+ * The brand itself — every hub starts here, client or studio, and a new client
+ * space inherits this shape from the studio hub's own layout.
+ *
+ * Grouped the way the demo hub is (Assets, then Resources), because everything
+ * a person needs is then reachable from one screen. Deliberately no Home
+ * section: it was a hero for the Brand Agent, which meant the first thing
+ * anyone saw in a hub was a chat box rather than the brand.
  */
 const BRAND_SECTIONS: SectionConfig[] = [
-  { id: 'logo', label: 'Logo', type: 'assets', icon: 'logo', group: 'assets' },
-  { id: 'colors', label: 'Colors', type: 'colors', icon: 'colors', group: 'assets' },
-  { id: 'typography', label: 'Typography', type: 'typography', icon: 'type', group: 'assets' },
-  { id: 'imagery', label: 'Imagery', type: 'assets', icon: 'screenshots', group: 'assets' },
-  { id: 'guidelines', label: 'Guidelines', type: 'guidelines', icon: 'guidelines', group: 'assets' },
+  { id: 'logo',        label: 'Logo',               type: 'assets',     icon: 'logo',        group: 'assets' },
+  { id: 'colors',      label: 'Colors & Gradients', type: 'colors',     icon: 'colors',      group: 'assets' },
+  { id: 'typography',  label: 'Typography',         type: 'typography', icon: 'type',        group: 'assets' },
+  { id: 'screenshots', label: 'Screenshots',        type: 'assets',     icon: 'screenshots', group: 'assets' },
+  { id: 'artwork',     label: 'Artwork',            type: 'assets',     icon: 'artwork',     group: 'assets' },
+  { id: 'guidelines',  label: 'Guidelines',         type: 'guidelines', icon: 'guidelines',  group: 'assets' },
+  { id: 'templates',   label: 'Templates',          type: 'assets',     icon: 'templates',   group: 'resources' },
+  { id: 'inspiration', label: 'Inspiration',        type: 'assets',     icon: 'sparkles',    group: 'resources' },
 ]
 
 /**

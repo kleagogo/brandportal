@@ -44,7 +44,7 @@ export function GradientsBlock() {
             {editing && (
               <button
                 onClick={() => update(c => { c.gradients![gi].gradients.push({ name: 'New gradient', css: 'linear-gradient(90deg, #6366f1 0%, #ec4899 100%)', downloadable: true }) })}
-                className="min-h-[160px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex items-center justify-center"
+                className="min-h-[160px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
               >
                 <Icon name="plus" size={16} />
               </button>
@@ -56,7 +56,7 @@ export function GradientsBlock() {
       {editing && (
         <button
           onClick={() => update(c => { if (!c.gradients) c.gradients = []; c.gradients.push({ group: 'New gradient group', gradients: [] }) })}
-          className="text-[13px] font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-foreground rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors"
+          className="text-[13px] font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-ring rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors"
         >
           <Icon name="plus" size={13} /> Add gradient group
         </button>
@@ -123,7 +123,7 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
           <input
             value={grad.css}
             onChange={e => onCss(e.target.value)}
-            className="w-full text-[11px] font-mono px-2 py-1.5 border border-border rounded-lg outline-none focus:border-foreground bg-background"
+            className="w-full text-[11px] font-mono px-2 py-1.5 border border-border rounded-lg outline-none focus:border-ring bg-background"
             placeholder="linear-gradient(…)"
           />
         </div>

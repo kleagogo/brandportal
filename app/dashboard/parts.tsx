@@ -60,7 +60,7 @@ export function AccountTypePicker() {
             key={option.id}
             onClick={() => pick(option.id)}
             disabled={Boolean(busy)}
-            className="text-left bg-card border border-border rounded-2xl p-6 hover:border-foreground transition-colors disabled:opacity-60"
+            className="text-left bg-card border border-border rounded-2xl p-6 hover:border-ring transition-colors disabled:opacity-60"
           >
             <p className="text-[16px] font-semibold text-foreground mb-1.5">{option.title}</p>
             <p className="text-[13.5px] text-muted-foreground leading-relaxed">{option.body}</p>
@@ -117,7 +117,7 @@ export function StudioSetup({ labels }: { labels: HubLabels }) {
           onChange={e => setName(e.target.value)}
           placeholder={labels.setupPlaceholder}
           aria-label={labels.setupPlaceholder}
-          className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl border-[1.5px] border-border text-[14px] outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
+          className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl border-[1.5px] border-border text-[14px] outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
         />
         <button
           type="submit"
@@ -180,7 +180,7 @@ export function NewHubButton({ labels }: { labels: HubLabels }) {
         placeholder={labels.namePlaceholder}
         aria-label={labels.namePlaceholder}
         autoFocus
-        className="px-3.5 py-2.5 rounded-xl border-[1.5px] border-border text-[14px] outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
+        className="px-3.5 py-2.5 rounded-xl border-[1.5px] border-border text-[14px] outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
       />
       <button
         type="submit"

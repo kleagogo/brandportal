@@ -162,10 +162,10 @@ function WelcomeToast() {
 
   if (!message) return null
   return (
-    <div className="bg-emerald-600 text-white px-4 sm:px-6 py-2.5 flex items-center gap-3 text-[13px]">
+    <div className="bg-primary text-primary-foreground px-4 sm:px-6 py-2.5 flex items-center gap-3 text-[13px]">
       <span className="font-semibold shrink-0">🎉 Welcome!</span>
-      <span className="text-white/90 flex-1">{message}</span>
-      <button onClick={() => setMessage('')} className="text-white/70 hover:text-white shrink-0" title="Dismiss">
+      <span className="text-primary-foreground/90 flex-1">{message}</span>
+      <button onClick={() => setMessage('')} className="text-primary-foreground/70 hover:text-primary-foreground shrink-0" title="Dismiss">
         <Icon name="close" size={12} />
       </button>
     </div>
@@ -224,7 +224,7 @@ function TopBar({
 
         <button
           onClick={onShare}
-          className="flex items-center gap-1.5 text-[13px] font-medium text-foreground border border-border hover:border-foreground rounded-lg px-3 py-1.5 transition-colors"
+          className="flex items-center gap-1.5 text-[13px] font-medium text-foreground border border-border hover:border-ring rounded-lg px-3 py-1.5 transition-colors"
         >
           <Icon name="share" size={13} /> Share
         </button>
@@ -232,7 +232,7 @@ function TopBar({
         {access.isOwner && (
           <button
             onClick={onSettings}
-            className="flex items-center text-muted-foreground hover:text-foreground border border-border hover:border-foreground rounded-lg px-2 py-1.5 transition-colors"
+            className="flex items-center text-muted-foreground hover:text-foreground border border-border hover:border-ring rounded-lg px-2 py-1.5 transition-colors"
             title="Hub settings"
           >
             <Icon name="gear" size={15} />
@@ -245,7 +245,7 @@ function TopBar({
             className={`flex items-center gap-1.5 text-[13px] font-semibold rounded-lg px-3.5 py-1.5 transition-colors ${
               editing
                 ? 'bg-primary text-primary-foreground hover:opacity-85'
-                : 'border border-border text-foreground hover:border-foreground'
+                : 'border border-border text-foreground hover:border-ring'
             }`}
           >
             {editing ? <><Icon name="check" size={13} /> Done</> : <><Icon name="edit" size={13} /> Edit</>}
@@ -453,7 +453,7 @@ function SidebarItem({
         value={section.label}
         onChange={e => update(c => { c.sections[index].label = e.target.value })}
         onFocus={() => onSelect(section.id)}
-        className="flex-1 min-w-0 text-[13px] bg-transparent outline-none border border-dashed border-transparent hover:border-border focus:border-foreground rounded px-1 text-foreground"
+        className="flex-1 min-w-0 text-[13px] bg-transparent outline-none border border-dashed border-transparent hover:border-border focus:border-ring rounded px-1 text-foreground"
       />
       <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
         <button

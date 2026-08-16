@@ -44,7 +44,7 @@ export function GuidelinesSection() {
             {editing && (
               <button
                 onClick={() => update(c => { c.guidelines.voice!.principles.push({ name: 'New principle', description: '' }) })}
-                className="border-2 border-dashed border-border rounded-xl p-4 text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2 min-h-[88px]"
+                className="border-2 border-dashed border-border rounded-xl p-4 text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center gap-2 min-h-[88px]"
               >
                 <Icon name="plus" size={13} /> <span className="text-[13px] font-medium">Add principle</span>
               </button>
@@ -89,13 +89,13 @@ function RuleList({
 
   return (
     <div>
-      <p className={`text-[11px] font-semibold uppercase tracking-widest mb-4 ${isDo ? 'text-emerald-600' : 'text-destructive'}`}>
+      <p className={`text-[11px] font-semibold uppercase tracking-widest mb-4 ${isDo ? 'text-primary' : 'text-destructive'}`}>
         {isDo ? 'Do' : "Don't"}
       </p>
       <div className="space-y-2">
         {items.map((item, i) => (
-          <div key={i} className={`flex items-start gap-3 rounded-xl p-3 group ${isDo ? 'bg-emerald-50 border border-emerald-100' : 'bg-destructive/10 border border-destructive/20'}`}>
-            <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isDo ? 'bg-emerald-500' : 'bg-destructive'}`}>
+          <div key={i} className={`flex items-start gap-3 rounded-xl p-3 group ${isDo ? 'bg-primary/10 border border-primary/20' : 'bg-destructive/10 border border-destructive/20'}`}>
+            <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isDo ? 'bg-primary' : 'bg-destructive'}`}>
               {isDo ? (
                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               ) : (
@@ -115,7 +115,7 @@ function RuleList({
         {editing && (
           <button
             onClick={onAdd}
-            className="w-full border-2 border-dashed border-border rounded-xl p-2.5 text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5 text-[13px] font-medium"
+            className="w-full border-2 border-dashed border-border rounded-xl p-2.5 text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center gap-1.5 text-[13px] font-medium"
           >
             <Icon name="plus" size={12} /> Add rule
           </button>

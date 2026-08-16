@@ -76,7 +76,7 @@ export function SearchBox({ onNavigate }: { onNavigate: (sectionId: string) => v
 
   return (
     <div className="relative hidden md:block w-56">
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted border border-transparent focus-within:border-foreground focus-within:bg-card transition-colors">
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted border border-transparent focus-within:border-ring focus-within:bg-card transition-colors">
         <span className="text-muted-foreground/60"><Icon name="search" size={13} /></span>
         <input
           ref={inputRef}

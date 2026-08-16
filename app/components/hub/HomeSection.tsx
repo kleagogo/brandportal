@@ -78,14 +78,14 @@ export function HomeSection() {
             <button
               key={p}
               onClick={() => send(p)}
-              className="text-[13px] text-foreground border border-border rounded-full px-3.5 py-1.5 hover:border-foreground transition-colors"
+              className="text-[13px] text-foreground border border-border rounded-full px-3.5 py-1.5 hover:border-ring transition-colors"
             >
               {p}
             </button>
           ))}
         </div>
 
-        <div className="w-full flex items-center gap-2 border-[1.5px] border-border rounded-2xl px-4 py-3 focus-within:border-foreground transition-colors">
+        <div className="w-full flex items-center gap-2 border-[1.5px] border-border rounded-2xl px-4 py-3 focus-within:border-ring transition-colors">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}

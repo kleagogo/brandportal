@@ -82,7 +82,7 @@ export default function LoginPage() {
                 placeholder="you@company.com"
                 required
                 autoFocus
-                className="w-full px-4 py-3 rounded-xl border-[1.5px] border-border text-[15px] outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60 mb-3"
+                className="w-full px-4 py-3 rounded-xl border-[1.5px] border-border text-[15px] outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60 mb-3"
               />
               {error && <p className="text-[12.5px] text-destructive mb-3">{error}</p>}
               <button

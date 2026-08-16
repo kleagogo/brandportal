@@ -284,7 +284,7 @@ function Editor({
         value={draft.name}
         onChange={e => set({ name: e.target.value })}
         placeholder="What is this link for?"
-        className="w-full text-[13px] font-medium px-3 py-2 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
+        className="w-full text-[13px] font-medium px-3 py-2 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-ring transition-colors"
       />
 
       {/* Template */}
@@ -317,7 +317,7 @@ function Editor({
                 key={section.id}
                 onClick={() => toggleSection(section.id)}
                 className={`text-[11.5px] px-2.5 py-1 rounded-lg border transition-colors ${
-                  on ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-foreground'
+                  on ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-ring'
                 }`}
               >
                 {section.label}
@@ -337,7 +337,7 @@ function Editor({
             value={draft.password || ''}
             onChange={e => set({ password: e.target.value || null })}
             placeholder="Optional"
-            className="w-32 text-[12px] px-2.5 py-1.5 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
+            className="w-32 text-[12px] px-2.5 py-1.5 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-ring transition-colors"
           />
         </Row>
         <Row label="Expires" hint={draft.expiresAt ? `Stops working ${new Date(draft.expiresAt).toLocaleDateString()}` : 'Never expires'}>
@@ -345,7 +345,7 @@ function Editor({
             type="date"
             value={draft.expiresAt ? new Date(draft.expiresAt).toISOString().slice(0, 10) : ''}
             onChange={e => set({ expiresAt: e.target.value ? new Date(`${e.target.value}T23:59:59`).toISOString() : null })}
-            className="text-[12px] px-2.5 py-1.5 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
+            className="text-[12px] px-2.5 py-1.5 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-ring transition-colors"
           />
         </Row>
         <Row label="White-label" hint="Your logo and colors, no Pitho credit">
@@ -365,7 +365,7 @@ function Editor({
           <div className="flex gap-2 items-center">
             <button
               onClick={() => logoInput.current?.click()}
-              className={`w-10 h-10 shrink-0 rounded-xl border-[1.5px] border-dashed border-border hover:border-foreground flex items-center justify-center overflow-hidden transition-colors ${logoBusy ? 'animate-pulse' : ''}`}
+              className={`w-10 h-10 shrink-0 rounded-xl border-[1.5px] border-dashed border-border hover:border-ring flex items-center justify-center overflow-hidden transition-colors ${logoBusy ? 'animate-pulse' : ''}`}
               title="Upload a logo"
             >
               {draft.branding?.logoUrl ? (
@@ -379,7 +379,7 @@ function Editor({
               value={draft.branding?.name || ''}
               onChange={e => setBranding({ name: e.target.value })}
               placeholder={config.name}
-              className="flex-1 min-w-0 text-[12.5px] px-3 py-2 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
+              className="flex-1 min-w-0 text-[12.5px] px-3 py-2 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-ring transition-colors"
             />
             <input
               type="color"
@@ -393,7 +393,7 @@ function Editor({
             value={draft.branding?.note || ''}
             onChange={e => setBranding({ note: e.target.value })}
             placeholder="Prepared by Studio North"
-            className="w-full text-[12.5px] px-3 py-2 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
+            className="w-full text-[12.5px] px-3 py-2 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-ring transition-colors"
           />
           <input
             ref={logoInput}
@@ -437,7 +437,7 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className={`relative w-10 h-6 rounded-full transition-colors ${on ? 'bg-emerald-500' : 'bg-border'}`}
+      className={`relative w-10 h-6 rounded-full transition-colors ${on ? 'bg-primary' : 'bg-border'}`}
     >
       <span className={`absolute top-0.5 w-5 h-5 bg-card rounded-full shadow transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
     </button>

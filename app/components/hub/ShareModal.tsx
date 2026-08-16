@@ -167,7 +167,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
                 </div>
                 <button
                   onClick={togglePin}
-                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${pin ? 'bg-emerald-500' : 'bg-muted'}`}
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${pin ? 'bg-primary' : 'bg-muted'}`}
                   title={pin ? 'Turn protection off' : 'Turn protection on'}
                 >
                   <span className={`absolute top-0.5 w-5 h-5 bg-card rounded-full shadow transition-all ${pin ? 'left-[18px]' : 'left-0.5'}`} />
@@ -181,9 +181,9 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
                     onBlur={savePassword}
                     onKeyDown={e => { if (e.key === 'Enter') savePassword() }}
                     placeholder="PIN or password"
-                    className="flex-1 text-[13px] font-mono px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
+                    className="flex-1 text-[13px] font-mono px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors"
                   />
-                  <button onClick={() => copy(pinDraft)} className="text-[12px] font-semibold px-3 rounded-xl border border-border hover:border-foreground transition-colors whitespace-nowrap">
+                  <button onClick={() => copy(pinDraft)} className="text-[12px] font-semibold px-3 rounded-xl border border-border hover:border-ring transition-colors whitespace-nowrap">
                     {copied ? 'Copied ✓' : 'Copy'}
                   </button>
                 </div>
@@ -203,7 +203,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
                   type="date"
                   value={expiresAt ? new Date(expiresAt).toISOString().slice(0, 10) : ''}
                   onChange={e => saveExpiry(e.target.value)}
-                  className="text-[12px] px-2.5 py-1.5 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors"
+                  className="text-[12px] px-2.5 py-1.5 rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors"
                 />
                 {expiresAt && (
                   <button onClick={() => saveExpiry('')} className="text-muted-foreground/60 hover:text-destructive transition-colors" title="Remove expiry">
@@ -222,7 +222,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
                   value={inviteEmail}
                   onChange={e => setInviteEmail(e.target.value)}
                   placeholder="colleague@company.com"
-                  className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
+                  className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
                 />
                 <button
                   type="submit"

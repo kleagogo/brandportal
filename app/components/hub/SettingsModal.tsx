@@ -82,9 +82,9 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               onChange={e => setClient(e.target.value)}
               onBlur={saveClient}
               placeholder="e.g. Copperline Coffee"
-              className="flex-1 px-3 py-2.5 text-[13px] rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
+              className="flex-1 px-3 py-2.5 text-[13px] rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
             />
-            <button onClick={saveClient} className="text-[13px] font-semibold px-4 rounded-xl border border-border hover:border-foreground transition-colors whitespace-nowrap">
+            <button onClick={saveClient} className="text-[13px] font-semibold px-4 rounded-xl border border-border hover:border-ring transition-colors whitespace-nowrap">
               {clientSaved ? 'Saved ✓' : 'Save'}
             </button>
           </div>
@@ -94,7 +94,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         <form onSubmit={rename} className="mb-6">
           <label className="block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Hub address</label>
           <div className="flex gap-2">
-            <div className="flex items-center flex-1 rounded-xl border-[1.5px] border-border focus-within:border-foreground transition-colors overflow-hidden">
+            <div className="flex items-center flex-1 rounded-xl border-[1.5px] border-border focus-within:border-ring transition-colors overflow-hidden">
               <span className="pl-3 text-[13px] text-muted-foreground/60 font-mono">/</span>
               <input
                 value={slug}
@@ -175,7 +175,7 @@ function TransferSection({ slug, name }: { slug: string; name: string }) {
           <p className="text-[12px] text-muted-foreground/60">Transfer ownership — they accept by email, you stay on as an editor</p>
         </div>
         {!open && !sentTo && (
-          <button onClick={() => setOpen(true)} className="text-[13px] font-semibold border-[1.5px] border-border text-foreground px-3.5 py-2 rounded-xl hover:border-foreground transition-colors whitespace-nowrap">
+          <button onClick={() => setOpen(true)} className="text-[13px] font-semibold border-[1.5px] border-border text-foreground px-3.5 py-2 rounded-xl hover:border-ring transition-colors whitespace-nowrap">
             Transfer…
           </button>
         )}
@@ -204,7 +204,7 @@ function TransferSection({ slug, name }: { slug: string; name: string }) {
             placeholder="client@theircompany.com"
             required
             autoFocus
-            className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
+            className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
           />
           <button
             type="submit"

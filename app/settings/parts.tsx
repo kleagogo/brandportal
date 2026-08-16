@@ -36,7 +36,7 @@ export function ChangeEmail() {
   }
 
   if (changed) {
-    return <p className="text-[12.5px] text-emerald-600 font-medium">Email updated ✓</p>
+    return <p className="text-[12.5px] text-primary font-medium">Email updated ✓</p>
   }
 
   if (!open) {
@@ -71,7 +71,7 @@ export function ChangeEmail() {
         placeholder="new@email.com"
         required
         autoFocus
-        className="flex-1 min-w-[200px] text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
+        className="flex-1 min-w-[200px] text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
       />
       <button
         type="submit"

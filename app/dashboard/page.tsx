@@ -72,7 +72,7 @@ export default async function DashboardPage() {
               {studio ? (
                 <Link
                   href={`/${studio.hub.slug}`}
-                  className="block bg-card border border-border rounded-2xl p-5 hover:border-foreground transition-colors"
+                  className="block bg-card border border-border rounded-2xl p-5 hover:border-ring transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 shrink-0 rounded-xl bg-background border border-border flex items-center justify-center p-2.5">
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
                     <Link
                       key={hub.slug}
                       href={`/${hub.slug}`}
-                      className="bg-card border border-border rounded-2xl overflow-hidden hover:border-foreground transition-colors group"
+                      className="bg-card border border-border rounded-2xl overflow-hidden hover:border-ring transition-colors group"
                     >
                       <div className="h-24 bg-background border-b border-border flex items-center justify-center p-5">
                         {/* Three assets from inside, fanning on hover — the card

@@ -50,7 +50,7 @@ export function BrandAgent() {
       {open && (
         <div className="fixed bottom-20 right-6 w-80 max-w-[calc(100vw-3rem)] bg-card border border-border rounded-2xl shadow-xl z-50 flex flex-col overflow-hidden" style={{ height: 420 }}>
           <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <div className="w-2 h-2 rounded-full bg-primary" />
             <p className="text-[13px] font-semibold">{config.agent.name}</p>
           </div>
 

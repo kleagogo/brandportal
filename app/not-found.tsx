@@ -15,7 +15,7 @@ export default function NotFound() {
           <Link href="/" className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-colors">
             Create your own hub
           </Link>
-          <Link href="/dashboard" className="text-[13px] font-semibold border-[1.5px] border-border text-foreground px-4 py-2.5 rounded-xl hover:border-foreground transition-colors">
+          <Link href="/dashboard" className="text-[13px] font-semibold border-[1.5px] border-border text-foreground px-4 py-2.5 rounded-xl hover:border-ring transition-colors">
             Your hubs
           </Link>
         </div>

@@ -105,7 +105,7 @@ export function TypographySection() {
                         key={di}
                         href={d.file || '#'}
                         {...(d.file ? { download: true } : { onClick: (e: React.MouseEvent) => e.preventDefault() })}
-                        className="flex items-center gap-2 text-[12px] text-foreground border border-border rounded-lg px-3 py-2 hover:border-foreground transition-colors"
+                        className="flex items-center gap-2 text-[12px] text-foreground border border-border rounded-lg px-3 py-2 hover:border-ring transition-colors"
                       >
                         <Icon name="download" size={12} /> {d.label}
                       </a>
@@ -146,7 +146,7 @@ export function TypographySection() {
                           <input
                             value={spec.size}
                             onChange={e => update(c => { c.typography[gi].fonts[fi].specimens[si].size = e.target.value })}
-                            className="w-16 text-[11px] font-mono px-1.5 py-0.5 border border-border rounded outline-none focus:border-foreground"
+                            className="w-16 text-[11px] font-mono px-1.5 py-0.5 border border-border rounded outline-none focus:border-ring"
                             title="Size (e.g. 24px)"
                           />
                           <select
@@ -196,7 +196,7 @@ export function TypographySection() {
                   specimens: [{ label: 'Sample', size: '20px', weight: '400', sample: 'The quick brown fox jumps over the lazy dog' }],
                 })
               })}
-              className="text-[13px] font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-foreground rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors"
+              className="text-[13px] font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-ring rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors"
             >
               <Icon name="plus" size={13} /> Add typeface
             </button>

@@ -119,7 +119,6 @@ const config: BrandConfig = {
   // Types: 'home' | 'assets' | 'colors' | 'typography' | 'guidelines' | 'subbrand' | 'link'
   // Groups: 'main' | 'assets' | 'subbrands' | 'tools' | 'resources'
   sections: [
-    { id: 'home',         label: 'Home',              type: 'home',       icon: 'home',        group: 'main' },
     { id: 'logo',         label: 'Logo',              type: 'assets',     icon: 'logo',        group: 'assets' },
     { id: 'colors',       label: 'Colors & Gradients', type: 'colors',    icon: 'colors',      group: 'assets' },
     { id: 'typography',   label: 'Typography',        type: 'typography', icon: 'type',        group: 'assets' },

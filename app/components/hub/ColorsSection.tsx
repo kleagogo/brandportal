@@ -90,7 +90,7 @@ export function ColorsSection() {
                         <input
                           value={swatch.name}
                           onChange={e => update(c => { c.colors[gi].swatches[si].name = e.target.value })}
-                          className="w-full text-[13px] px-2 py-1.5 border border-border rounded-lg outline-none focus:border-foreground mb-2.5"
+                          className="w-full text-[13px] px-2 py-1.5 border border-border rounded-lg outline-none focus:border-ring mb-2.5"
                         />
                         <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">Hex</label>
                         <div className="flex gap-1.5 mb-2.5">
@@ -103,7 +103,7 @@ export function ColorsSection() {
                           <input
                             value={swatch.hex}
                             onChange={e => update(c => { c.colors[gi].swatches[si].hex = normalizeHex(e.target.value) })}
-                            className={`flex-1 text-[13px] font-mono px-2 py-1.5 border rounded-lg outline-none focus:border-foreground ${isValidHex(swatch.hex) ? 'border-border' : 'border-destructive/50'}`}
+                            className={`flex-1 text-[13px] font-mono px-2 py-1.5 border rounded-lg outline-none focus:border-ring ${isValidHex(swatch.hex) ? 'border-border' : 'border-destructive/50'}`}
                           />
                         </div>
                         <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">Usage note</label>
@@ -111,7 +111,7 @@ export function ColorsSection() {
                           value={swatch.usage || ''}
                           onChange={e => update(c => { c.colors[gi].swatches[si].usage = e.target.value })}
                           placeholder="Where is this color used?"
-                          className="w-full text-[12px] px-2 py-1.5 border border-border rounded-lg outline-none focus:border-foreground mb-3 placeholder:text-muted-foreground/60"
+                          className="w-full text-[12px] px-2 py-1.5 border border-border rounded-lg outline-none focus:border-ring mb-3 placeholder:text-muted-foreground/60"
                         />
                         <div className="flex justify-between items-center">
                           <button
@@ -140,7 +140,7 @@ export function ColorsSection() {
                   update(c => { c.colors[gi].swatches.push({ name: 'New color', hex: '#888888', usage: '' }) })
                   setOpen(`${gi}:${group.swatches.length}`)
                 }}
-                className="w-[168px] h-[132px] rounded-2xl border-2 border-dashed border-border text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex items-center justify-center"
+                className="w-[168px] h-[132px] rounded-2xl border-2 border-dashed border-border text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
                 title="Add color"
               >
                 <Icon name="plus" size={16} />
@@ -153,7 +153,7 @@ export function ColorsSection() {
       {editing && (
         <button
           onClick={() => update(c => { c.colors.push({ group: 'New group', swatches: [] }) })}
-          className="text-[13px] font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-foreground rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors mb-10"
+          className="text-[13px] font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-ring rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors mb-10"
         >
           <Icon name="plus" size={13} /> Add color group
         </button>

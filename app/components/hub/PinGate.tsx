@@ -57,7 +57,7 @@ export function PinGate({ slug, name, logoUrl, expired }: { slug: string; name: 
               onChange={e => setPin(e.target.value)}
               placeholder="••••"
               autoFocus
-              className="w-full text-center text-[18px] tracking-widest px-4 py-3 rounded-xl border-[1.5px] border-border bg-card outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60 mb-3 block"
+              className="w-full text-center text-[18px] tracking-widest px-4 py-3 rounded-xl border-[1.5px] border-border bg-card outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60 mb-3 block"
             />
             {error && <p className="text-[12.5px] text-destructive mb-3">{error}</p>}
             <button

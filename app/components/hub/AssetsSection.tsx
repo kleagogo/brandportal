@@ -56,7 +56,7 @@ function TagRow({ tags, onAdd, onRemove }: { tags: string[]; onAdd: (t: string) 
           onBlur={commit}
           placeholder="+ tag"
           size={Math.max(draft.length, 5)}
-          className="text-[10px] px-1.5 py-0.5 rounded-md border border-dashed border-border outline-none focus:border-foreground bg-transparent placeholder:text-muted-foreground/60"
+          className="text-[10px] px-1.5 py-0.5 rounded-md border border-dashed border-border outline-none focus:border-ring bg-transparent placeholder:text-muted-foreground/60"
         />
       )}
     </div>
@@ -143,7 +143,7 @@ function EmptyDropzone({
         </button>
         <button
           onClick={onPickFolder}
-          className="text-[13px] font-semibold border border-border text-foreground px-4 py-2.5 rounded-xl hover:border-foreground transition-colors"
+          className="text-[13px] font-semibold border border-border text-foreground px-4 py-2.5 rounded-xl hover:border-ring transition-colors"
         >
           Choose a folder
         </button>
@@ -332,7 +332,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
             {editing && (
               <button
                 onClick={() => inputRef.current?.click()}
-                className="w-full min-h-[120px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-foreground hover:text-foreground transition-colors flex flex-col items-center justify-center gap-2 p-6"
+                className="w-full min-h-[120px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex flex-col items-center justify-center gap-2 p-6"
               >
                 <Icon name="upload" size={20} />
                 <span className="text-[13px] font-medium">
@@ -469,7 +469,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         </button>
       )}
       {current && (
-        <span className="absolute top-2 left-2 z-10 text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white uppercase tracking-wide">
+        <span className="absolute top-2 left-2 z-10 text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary text-primary-foreground uppercase tracking-wide">
           {current} · Approved
         </span>
       )}
@@ -518,7 +518,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
             href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
             {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
             onClick={() => trackPortal(portalId, 'download', asset.name)}
-            className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-foreground transition-colors text-muted-foreground shrink-0"
+            className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-ring transition-colors text-muted-foreground shrink-0"
             title={asset.external ? `Open ${asset.name}` : `Download ${asset.name}`}
           >
             <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={12} />
@@ -559,7 +559,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
                         {v.uploadedAt && new Date(v.uploadedAt).getFullYear() > 1971 ? new Date(v.uploadedAt).toLocaleDateString() : 'original'}
                       </span>
                       {v.label === current ? (
-                        <span className="text-[9px] font-bold text-emerald-600 uppercase shrink-0">Current</span>
+                        <span className="text-[9px] font-bold text-primary uppercase shrink-0">Current</span>
                       ) : editing ? (
                         <button onClick={() => approve(v.label)} className="text-[10px] font-semibold text-foreground hover:underline shrink-0">Make current</button>
                       ) : allowDownload ? (
