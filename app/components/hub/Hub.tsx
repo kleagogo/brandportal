@@ -113,10 +113,17 @@ function HubShell({ access }: { access: HubAccess }) {
         />
 
         <SidebarInset className="flex flex-col min-w-0 min-h-0">
-          {/* No top bar, so the component's own trigger sits at the top of the
-              content instead — outside the rail, which is what lets it expand a
-              collapsed one. */}
-          <SidebarTrigger className="absolute left-3 top-3 z-20" />
+          {/* The trigger lives in a header rather than floating over the
+              content, as upstream's sidebar blocks have it. It sits outside the
+              rail, which is what lets it expand a collapsed one. `shrink-0`
+              keeps it in place while `main` scrolls under it.
+
+              Upstream puts a vertical separator after the trigger to divide it
+              from the breadcrumbs; with no breadcrumbs yet there is nothing to
+              divide, so it would read as a stray mark. */}
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+          </header>
           <main className="flex-1 min-h-0 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
               {renderContent()}
