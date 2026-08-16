@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { BrandConfig, SectionConfig } from '@/app/types/brand'
 import { HubProvider, useHub } from './HubContext'
 import { Icon } from './Icon'
@@ -12,7 +12,6 @@ import { GuidelinesSection } from './GuidelinesSection'
 import { BrandAgent } from './BrandAgent'
 import { ShareModal } from './ShareModal'
 import { SettingsModal } from './SettingsModal'
-import { SearchBox } from './SearchBox'
 import { HomeSection } from './HomeSection'
 import { SpaceSwitcher } from './SpaceSwitcher'
 import { GooeyPlusMenu, StatusBadge } from '../transitions'
@@ -54,9 +53,9 @@ export default function Hub({ initial, ...access }: { initial: BrandConfig } & H
 }
 
 function HubShell({ access }: { access: HubAccess }) {
-  const { config, editing, setEditing, saveState } = useHub()
-  const [active, setActive] = useState(config.sections[0]?.id || 'logo')
-  const [shareOpen, setShareOpen] = useState(false)
+  const { config, active, saveState } = useHub()
+  // Which section a share link should be scoped to, or '' for the whole hub.
+  const [shareSection, setShareSection] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   // Light by default, remembered per browser.
   const [dark, setDark] = useState(false)
@@ -105,23 +104,19 @@ function HubShell({ access }: { access: HubAccess }) {
 
       <SidebarProvider className="flex-1 min-h-0 items-stretch">
         <HubSidebar
-          active={activeSection?.id || ''}
-          onSelect={setActive}
           dark={dark}
           onToggleTheme={toggleTheme}
+          onShareSection={setShareSection}
+          onSettings={() => setSettingsOpen(true)}
+          saveState={saveState}
+          access={access}
         />
 
         <SidebarInset className="flex flex-col min-w-0 min-h-0">
-          <TopBar
-            onShare={() => setShareOpen(true)}
-            onSettings={() => setSettingsOpen(true)}
-            onNavigate={setActive}
-            editing={editing}
-            setEditing={setEditing}
-            saveState={saveState}
-            sectionLabel={activeSection?.label || ''}
-            access={access}
-          />
+          {/* No top bar: each section carries its own actions in the rail. This
+              is the only thing left that has to sit outside the sidebar, so a
+              phone can still open it. */}
+          <SidebarTrigger className="md:hidden absolute left-3 top-3 z-20" />
           <main className="flex-1 min-h-0 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
               {renderContent()}
@@ -130,9 +125,10 @@ function HubShell({ access }: { access: HubAccess }) {
         </SidebarInset>
       </SidebarProvider>
 
-      {shareOpen && (
+      {shareSection !== null && (
         <ShareModal
-          onClose={() => setShareOpen(false)}
+          section={shareSection || undefined}
+          onClose={() => setShareSection(null)}
           isOwner={Boolean(access.isOwner)}
           canEdit={Boolean(access.canEdit)}
           demo={Boolean(access.demo)}
@@ -169,96 +165,6 @@ function WelcomeToast() {
   )
 }
 
-// ─── Top bar ──────────────────────────────────────────────────────────────────
-
-function TopBar({
-  onShare, onSettings, onNavigate, editing, setEditing, saveState, sectionLabel, access,
-}: {
-  onShare: () => void
-  onSettings: () => void
-  onNavigate: (sectionId: string) => void
-  editing: boolean
-  setEditing: (v: boolean) => void
-  saveState: 'idle' | 'saving' | 'saved' | 'error'
-  sectionLabel: string
-  access: HubAccess
-}) {
-  return (
-    <header className="h-14 shrink-0 bg-card border-b border-border flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
-      <SidebarTrigger className="-ml-1" />
-      <p className="text-[13px] font-medium text-muted-foreground truncate">{sectionLabel}</p>
-      <SearchBox onNavigate={onNavigate} />
-
-      <div className="ml-auto flex items-center gap-2.5">
-        {editing && (
-          <span className={`text-[12px] font-medium hidden sm:flex items-center gap-1.5 ${
-            saveState === 'error' ? 'text-destructive' : 'text-muted-foreground'
-          }`}>
-            {saveState === 'error' ? (
-              'Couldn’t save — retrying on next edit'
-            ) : (
-              <>
-                {/* The spinner resolving into a check IS the save state, so the
-                    badge is driven straight off it rather than animated apart. */}
-                <StatusBadge
-                  state={saveState === 'saving' ? 'loading' : 'done'}
-                  label={saveState === 'saving' ? 'Saving' : 'Saved'}
-                />
-                {saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved' : 'All changes saved'}
-              </>
-            )}
-          </span>
-        )}
-
-        {access.demo && access.canEdit && (
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-1 rounded-md hidden sm:block">
-            Demo — anyone can edit
-          </span>
-        )}
-
-        <button
-          onClick={onShare}
-          className="flex items-center gap-1.5 text-[13px] font-medium text-foreground border border-border hover:border-ring rounded-lg px-3 py-1.5 transition-colors"
-        >
-          <Icon name="share" size={13} /> Share
-        </button>
-
-        {access.isOwner && (
-          <button
-            onClick={onSettings}
-            className="flex items-center text-muted-foreground hover:text-foreground border border-border hover:border-ring rounded-lg px-2 py-1.5 transition-colors"
-            title="Hub settings"
-          >
-            <Icon name="gear" size={15} />
-          </button>
-        )}
-
-        {access.canEdit ? (
-          <button
-            onClick={() => setEditing(!editing)}
-            className={`flex items-center gap-1.5 text-[13px] font-semibold rounded-lg px-3.5 py-1.5 transition-colors ${
-              editing
-                ? 'bg-primary text-primary-foreground hover:opacity-85'
-                : 'border border-border text-foreground hover:border-ring'
-            }`}
-          >
-            {editing ? <><Icon name="check" size={13} /> Done</> : <><Icon name="edit" size={13} /> Edit</>}
-          </button>
-        ) : !access.signedIn ? (
-          <Link
-            href="/login"
-            className="text-[13px] font-medium text-muted-foreground/60 hover:text-foreground transition-colors"
-          >
-            Sign in
-          </Link>
-        ) : null}
-      </div>
-    </header>
-  )
-}
-
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
-
 /**
  * The hub's rail, on shadcn's Sidebar.
  *
@@ -268,8 +174,17 @@ function TopBar({
  * identity, the section groups, and the reorder/rename/delete controls that only
  * appear in edit mode.
  */
-function HubSidebar({ active, onSelect, dark, onToggleTheme }: { active: string; onSelect: (id: string) => void; dark: boolean; onToggleTheme: () => void }) {
-  const { config, editing, update } = useHub()
+function HubSidebar({
+  dark, onToggleTheme, onShareSection, onSettings, saveState, access,
+}: {
+  dark: boolean
+  onToggleTheme: () => void
+  onShareSection: (sectionId: string) => void
+  onSettings: () => void
+  saveState: 'idle' | 'saving' | 'saved' | 'error'
+  access: HubAccess
+}) {
+  const { config, active, setActive, editingSection, update } = useHub()
   const SECTION_KINDS: Record<string, { label: string; icon: SectionConfig['icon'] }> = {
     assets: { label: 'New files', icon: 'screenshots' },
     colors: { label: 'New colors', icon: 'colors' },
@@ -319,7 +234,9 @@ function HubSidebar({ active, onSelect, dark, onToggleTheme }: { active: string;
                       index={i}
                       count={config.sections.length}
                       active={active === section.id}
-                      onSelect={onSelect}
+                      onSelect={setActive}
+                      onShare={onShareSection}
+                      canEdit={Boolean(access.canEdit)}
                     />
                   ))}
                 </SidebarMenu>
@@ -330,7 +247,7 @@ function HubSidebar({ active, onSelect, dark, onToggleTheme }: { active: string;
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        {editing && (
+        {access.canEdit && (
           <div className="mb-1 flex justify-center group-data-[collapsible=icon]:hidden">
             {/* The plus splits into the section kinds — it used to always make an
                 assets section, so choosing one was a rename away. */}
@@ -345,12 +262,36 @@ function HubSidebar({ active, onSelect, dark, onToggleTheme }: { active: string;
           </div>
         )}
         <SidebarMenu>
+          {editingSection && (
+            <SidebarMenuItem>
+              <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+                <StatusBadge state={saveState === 'saving' ? 'loading' : 'done'} label={saveState === 'saving' ? 'Saving' : 'Saved'} />
+                {saveState === 'error' ? 'Couldn’t save' : saveState === 'saving' ? 'Saving…' : 'Saved'}
+              </div>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton onClick={onToggleTheme} tooltip={dark ? 'Light mode' : 'Dark mode'}>
               <Icon name={dark ? 'sun' : 'moon'} size={14} />
               <span>{dark ? 'Light mode' : 'Dark mode'}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {access.isOwner && (
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={onSettings} tooltip="Hub settings">
+                <Icon name="gear" size={14} />
+                <span>Hub settings</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+          {!access.canEdit && !access.signedIn && (
+            <SidebarMenuItem>
+              <SidebarMenuButton render={<Link href="/login" />} tooltip="Sign in">
+                <Icon name="person" size={14} />
+                <span>Sign in</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
         <Link href="/" className="px-2 text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden">
           Made with Pitho
@@ -362,17 +303,21 @@ function HubSidebar({ active, onSelect, dark, onToggleTheme }: { active: string;
 }
 
 function HubSidebarItem({
-  section, index, count, active, onSelect,
+  section, index, count, active, onSelect, onShare, canEdit,
 }: {
   section: SectionConfig
   index: number
   count: number
   active: boolean
   onSelect: (id: string) => void
+  onShare: (sectionId: string) => void
+  canEdit: boolean
 }) {
-  const { editing, update } = useHub()
+  const { editingSection, setEditingSection, update } = useHub()
+  const isEditing = editingSection === section.id
 
-  if (section.type === 'link' && section.url && !editing) {
+  // External links are just links; they have nothing to edit or share.
+  if (section.type === 'link' && section.url) {
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
@@ -387,47 +332,63 @@ function HubSidebarItem({
     )
   }
 
-  if (!editing) {
-    return (
-      <SidebarMenuItem>
+  return (
+    <SidebarMenuItem>
+      {isEditing ? (
+        <SidebarMenuButton isActive={active} render={<div />} className="gap-1.5">
+          <Icon name={section.icon} size={14} />
+          <input
+            value={section.label}
+            autoFocus
+            onChange={e => update(c => { c.sections[index].label = e.target.value })}
+            onKeyDown={e => e.key === 'Enter' && setEditingSection(null)}
+            className="flex-1 min-w-0 bg-transparent outline-none border-b border-dashed border-border focus:border-ring text-foreground"
+          />
+        </SidebarMenuButton>
+      ) : (
         <SidebarMenuButton isActive={active} onClick={() => onSelect(section.id)} tooltip={section.label}>
           <Icon name={section.icon} size={14} />
           <span>{section.label}</span>
         </SidebarMenuButton>
-      </SidebarMenuItem>
-    )
-  }
+      )}
 
-  // Edit mode: the label becomes an input, with reorder and delete on hover.
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton isActive={active} render={<div />} className="gap-1.5">
-        <button onClick={() => onSelect(section.id)} className="text-muted-foreground shrink-0" title="Open section">
-          <Icon name={section.icon} size={14} />
-        </button>
-        <input
-          value={section.label}
-          onChange={e => update(c => { c.sections[index].label = e.target.value })}
-          onFocus={() => onSelect(section.id)}
-          className="flex-1 min-w-0 text-[13px] bg-transparent outline-none border border-dashed border-transparent hover:border-border focus:border-ring rounded px-1 text-foreground"
-        />
-      </SidebarMenuButton>
-      <SidebarMenuAction showOnHover className="right-6" title="Move up"
-        onClick={() => index > 0 && update(c => {
-          const [s] = c.sections.splice(index, 1)
-          c.sections.splice(index - 1, 0, s)
-        })}
-      >
-        <Icon name="up" size={11} />
-      </SidebarMenuAction>
-      <SidebarMenuAction showOnHover title="Delete section"
-        onClick={() => {
-          if (!window.confirm(`Delete the "${section.label}" section?`)) return
-          update(c => { c.sections.splice(index, 1) })
-        }}
-      >
-        <Icon name="trash" size={11} />
-      </SidebarMenuAction>
+      {/* Each section carries its own actions, revealed on hover — there is no
+          top bar, and an action that belongs to one section shouldn't live in
+          chrome shared by all of them. */}
+      {canEdit && (
+        <>
+          <SidebarMenuAction
+            showOnHover
+            className="right-13"
+            title={isEditing ? 'Done editing' : `Edit ${section.label}`}
+            onClick={() => {
+              onSelect(section.id)
+              setEditingSection(isEditing ? null : section.id)
+            }}
+          >
+            <Icon name={isEditing ? 'check' : 'edit'} size={11} />
+          </SidebarMenuAction>
+          <SidebarMenuAction
+            showOnHover
+            className="right-7"
+            title={`Share ${section.label}`}
+            onClick={() => onShare(section.id)}
+          >
+            <Icon name="share" size={11} />
+          </SidebarMenuAction>
+          <SidebarMenuAction
+            showOnHover
+            title={`Delete ${section.label}`}
+            onClick={() => {
+              if (!window.confirm(`Delete the "${section.label}" section?`)) return
+              if (editingSection === section.id) setEditingSection(null)
+              update(c => { c.sections.splice(index, 1) })
+            }}
+          >
+            <Icon name="trash" size={11} />
+          </SidebarMenuAction>
+        </>
+      )}
     </SidebarMenuItem>
   )
 }

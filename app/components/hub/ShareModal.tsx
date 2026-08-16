@@ -6,8 +6,11 @@ import { Icon } from './Icon'
 import { PortalManager } from './PortalManager'
 import { useConfettiBurst } from '../transitions'
 
-export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () => void; isOwner: boolean; canEdit: boolean; demo: boolean }) {
+export function ShareModal({ onClose, isOwner, canEdit, demo, section }: { onClose: () => void; isOwner: boolean; canEdit: boolean; demo: boolean; section?: string }) {
   const { config } = useHub()
+  // Opened from a section's own share action: name what's being shared, and
+  // seed the portal builder with just that section.
+  const sectionLabel = section ? config.sections.find(s => s.id === section)?.label : undefined
   const [copied, setCopied] = useState(false)
   // The handoff is the moment the product exists for the client, so the copy
   // that carries it is the one thing here worth celebrating.
@@ -131,8 +134,14 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
           <Icon name="close" size={14} />
         </button>
 
-        <h2 className="text-[17px] font-bold tracking-tight mb-1">Share this hub</h2>
-        <p className="text-[13px] text-muted-foreground mb-5">Anyone with the link can view — no account needed.</p>
+        <h2 className="text-[17px] font-bold tracking-tight mb-1">
+          {sectionLabel ? `Share ${sectionLabel}` : 'Share this hub'}
+        </h2>
+        <p className="text-[13px] text-muted-foreground mb-5">
+          {sectionLabel
+            ? `The link below opens the whole hub. To send ${sectionLabel} on its own, create a share link below.`
+            : 'Anyone with the link can view — no account needed.'}
+        </p>
 
         <div ref={stageRef} className="t-confetti-stage flex gap-2 mb-5">
           <canvas ref={confettiCanvas} className="t-confetti-canvas" aria-hidden="true" />
@@ -151,7 +160,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo }: { onClose: () =>
         {error && <p className="text-[12.5px] text-destructive mb-4">{error}</p>}
 
         <div className="mb-5">
-          <PortalManager canEdit={canEdit} />
+          <PortalManager canEdit={canEdit} initialSection={section} />
         </div>
 
         {isOwner && loaded ? (

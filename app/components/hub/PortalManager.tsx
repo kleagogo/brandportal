@@ -34,7 +34,7 @@ function emptyDraft(name: string): Draft {
  * Each portal is an independent link (/s/<id>) so an agency can hand a client
  * the full hub, a press kit, and a downloads-only list from the same brand.
  */
-export function PortalManager({ canEdit }: { canEdit: boolean }) {
+export function PortalManager({ canEdit, initialSection }: { canEdit: boolean; initialSection?: string }) {
   const { config } = useHub()
   const [portals, setPortals] = useState<SharePortal[]>([])
   const [stats, setStats] = useState<Record<string, PortalSummary>>({})
@@ -63,7 +63,8 @@ export function PortalManager({ canEdit }: { canEdit: boolean }) {
   useEffect(() => { if (canEdit) load() }, [canEdit, load])
 
   function startNew() {
-    setDraft(emptyDraft(config.name))
+    // Opened from a section's share action: scope the new link to it.
+    setDraft({ ...emptyDraft(config.name), sections: initialSection ? [initialSection] : [] })
     setEditing('new')
     setError('')
   }

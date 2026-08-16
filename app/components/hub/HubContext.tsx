@@ -7,8 +7,22 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
 interface HubContextValue {
   config: BrandConfig
+  /** The section on screen. */
+  active: string
+  setActive: (id: string) => void
+  /**
+   * Editing is per-section: the id being edited, or null.
+   *
+   * `editing` below stays a boolean because that's what every section component
+   * asks for, and only one section renders at a time — so "is anything being
+   * edited" and "is *this* being edited" are the same question from inside a
+   * section. Scoping it here means the sidebar can offer a pencil per row
+   * without each section learning about the others.
+   */
+  editingSection: string | null
+  setEditingSection: (id: string | null) => void
+  /** True when the section currently on screen is the one being edited. */
   editing: boolean
-  setEditing: (v: boolean) => void
   saveState: SaveState
   /** Apply a mutation to a draft of the config; the result is set and autosaved. */
   update: (mutate: (draft: BrandConfig) => void) => void
@@ -32,7 +46,9 @@ const SAVE_DEBOUNCE_MS = 800
 
 export function HubProvider({ initial, children, canEdit = false, allowDownload = true, portalId }: { initial: BrandConfig; children: React.ReactNode; canEdit?: boolean; allowDownload?: boolean; portalId?: string }) {
   const [config, setConfig] = useState<BrandConfig>(initial)
-  const [editing, setEditing] = useState(false)
+  const [active, setActive] = useState(initial.sections[0]?.id || '')
+  const [editingSection, setEditingSection] = useState<string | null>(null)
+  const editing = editingSection !== null && editingSection === active
   const [saveState, setSaveState] = useState<SaveState>('idle')
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -85,7 +101,7 @@ export function HubProvider({ initial, children, canEdit = false, allowDownload 
   }, [])
 
   return (
-    <HubContext.Provider value={{ config, editing, setEditing, saveState, update, canEdit, allowDownload, portalId }}>
+    <HubContext.Provider value={{ config, active, setActive, editingSection, setEditingSection, editing, saveState, update, canEdit, allowDownload, portalId }}>
       {children}
     </HubContext.Provider>
   )
