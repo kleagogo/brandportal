@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -62,12 +64,9 @@ export default function LoginPage() {
                   <p className="text-[12px] text-muted-foreground/60 mb-2">
                     Email sending isn’t configured yet (no RESEND_API_KEY) — use your link directly:
                   </p>
-                  <a
-                    href={devLink}
-                    className="block text-center text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-colors"
-                  >
+                  <Button render={<a href={devLink} />} className="w-full">
                     Open my sign-in link →
-                  </a>
+                  </Button>
                 </div>
               )}
             </div>
@@ -75,23 +74,19 @@ export default function LoginPage() {
             <form onSubmit={submit}>
               <h1 className="text-[19px] font-bold tracking-tight mb-1">Sign in</h1>
               <p className="text-[13.5px] text-muted-foreground mb-5">No password — we email you a link.</p>
-              <input
+              <Input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@company.com"
                 required
                 autoFocus
-                className="w-full px-4 py-3 rounded-xl border-[1.5px] border-border text-[15px] outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60 mb-3"
+                className="mb-3"
               />
               {error && <p className="text-[12.5px] text-destructive mb-3">{error}</p>}
-              <button
-                type="submit"
-                disabled={state === 'sending'}
-                className="w-full py-3 bg-primary text-primary-foreground text-[14px] font-semibold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-60"
-              >
+              <Button type="submit" disabled={state === 'sending'} className="w-full">
                 {state === 'sending' ? 'Sending…' : 'Email me a sign-in link'}
-              </button>
+              </Button>
               <p className="text-[11.5px] text-muted-foreground/60 mt-4 text-center">
                 New here? The same link creates your account.
               </p>

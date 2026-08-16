@@ -14,7 +14,7 @@ import { ShareModal } from './ShareModal'
 import { SettingsModal } from './SettingsModal'
 import { HomeSection } from './HomeSection'
 import { SpaceSwitcher } from './SpaceSwitcher'
-import { GooeyPlusMenu, StatusBadge } from '../transitions'
+import { GooeyPlusMenu, IconSwap, StatusBadge, TextSwap } from '../transitions'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuAction,
@@ -155,7 +155,7 @@ function WelcomeToast() {
 
   if (!message) return null
   return (
-    <div className="bg-primary text-primary-foreground px-4 sm:px-6 py-2.5 flex items-center gap-3 text-[13px]">
+    <div className="t-toast is-open bg-primary text-primary-foreground px-4 sm:px-6 py-2.5 flex items-center gap-3 text-[13px]">
       <span className="font-semibold shrink-0">🎉 Welcome!</span>
       <span className="text-primary-foreground/90 flex-1">{message}</span>
       <button onClick={() => setMessage('')} className="text-primary-foreground/70 hover:text-primary-foreground shrink-0" title="Dismiss">
@@ -266,14 +266,14 @@ function HubSidebar({
             <SidebarMenuItem>
               <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
                 <StatusBadge state={saveState === 'saving' ? 'loading' : 'done'} label={saveState === 'saving' ? 'Saving' : 'Saved'} />
-                {saveState === 'error' ? 'Couldn’t save' : saveState === 'saving' ? 'Saving…' : 'Saved'}
+                <TextSwap>{saveState === 'error' ? 'Couldn’t save' : saveState === 'saving' ? 'Saving…' : 'Saved'}</TextSwap>
               </div>
             </SidebarMenuItem>
           )}
           <SidebarMenuItem>
             <SidebarMenuButton onClick={onToggleTheme} tooltip={dark ? 'Light mode' : 'Dark mode'}>
-              <Icon name={dark ? 'sun' : 'moon'} size={14} />
-              <span>{dark ? 'Light mode' : 'Dark mode'}</span>
+              <IconSwap on={dark} a={<Icon name="moon" size={14} />} b={<Icon name="sun" size={14} />} />
+              <TextSwap>{dark ? 'Light mode' : 'Dark mode'}</TextSwap>
             </SidebarMenuButton>
           </SidebarMenuItem>
           {access.isOwner && (
@@ -366,7 +366,7 @@ function HubSidebarItem({
               setEditingSection(isEditing ? null : section.id)
             }}
           >
-            <Icon name={isEditing ? 'check' : 'edit'} size={11} />
+            <IconSwap on={isEditing} a={<Icon name="edit" size={11} />} b={<Icon name="check" size={11} />} />
           </SidebarMenuAction>
           <SidebarMenuAction
             showOnHover

@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useHub } from './HubContext'
 import { Icon } from './Icon'
+import { useModalTransition } from '../transitions'
 
 /** Owner-only hub settings: address and deletion. */
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const { config } = useHub()
+  const [open, setOpen] = useState(true)
+  const transition = useModalTransition(open, onClose)
   const [slug, setSlug] = useState(config.slug)
   const [client, setClient] = useState('')
   const [clientSaved, setClientSaved] = useState(false)
@@ -63,11 +66,13 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
     }
   }
 
+  if (!transition.mounted) return null
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-foreground/30" onClick={onClose} />
-      <div className="relative bg-card rounded-2xl border border-border shadow-2xl w-full max-w-[440px] p-6">
-        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground/60 hover:text-foreground transition-colors" title="Close">
+      <div className={`absolute inset-0 bg-foreground/30 transition-opacity ${open ? 'opacity-100' : 'opacity-0'}`} onClick={() => setOpen(false)} />
+      <div className={`t-modal ${transition.className} relative bg-card rounded-2xl border border-border shadow-2xl w-full max-w-[440px] p-6`} role="dialog" aria-modal="true">
+        <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-muted-foreground/60 hover:text-foreground transition-colors" title="Close">
           <Icon name="close" size={14} />
         </button>
 

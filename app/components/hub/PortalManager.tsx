@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PortalTemplate, SharePortal } from '@/app/types/brand'
 import { useHub } from './HubContext'
 import { Icon } from './Icon'
+import { Toggle as RecipeToggle } from '../transitions'
 import { uploadAsset } from './upload-client'
 
 const TEMPLATES: Array<{ id: PortalTemplate; label: string; blurb: string }> = [
@@ -435,14 +436,7 @@ function Row({ label, hint, children }: { label: string; hint: string; children:
 }
 
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`relative w-10 h-6 rounded-full transition-colors ${on ? 'bg-primary' : 'bg-border'}`}
-    >
-      <span className={`absolute top-0.5 w-5 h-5 bg-card rounded-full shadow transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
-    </button>
-  )
+  return <RecipeToggle on={on} onChange={onClick} label="Allow downloads" />
 }
 
 /** Tiny wireframe of what each template looks like. */

@@ -111,3 +111,6 @@ export const useSmokyDissolve = useSmokyDissolveImpl as (
 
 /** Convenience wrapper around smoky-dissolve — see SmokyTile.tsx. */
 export { SmokyTile } from './SmokyTile'
+
+/** Wiring for the free recipes — see motion.tsx. */
+export { useModalTransition, TextSwap, IconSwap, Toggle } from './motion'

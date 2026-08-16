@@ -4,10 +4,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useHub } from './HubContext'
 import { Icon } from './Icon'
 import { PortalManager } from './PortalManager'
-import { useConfettiBurst } from '../transitions'
+import { Toggle, useConfettiBurst, useModalTransition } from '../transitions'
 
 export function ShareModal({ onClose, isOwner, canEdit, demo, section }: { onClose: () => void; isOwner: boolean; canEdit: boolean; demo: boolean; section?: string }) {
   const { config } = useHub()
+  // Opens on mount, and stays mounted through its exit — see useModalTransition.
+  const [open, setOpen] = useState(true)
+  const transition = useModalTransition(open, onClose)
   // Opened from a section's own share action: name what's being shared, and
   // seed the portal builder with just that section.
   const sectionLabel = section ? config.sections.find(s => s.id === section)?.label : undefined
@@ -126,11 +129,13 @@ export function ShareModal({ onClose, isOwner, canEdit, demo, section }: { onClo
     if (res.ok) setEditors(list => list.filter(e => e !== email))
   }
 
+  if (!transition.mounted) return null
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-foreground/30" onClick={onClose} />
-      <div className="relative bg-card rounded-2xl border border-border shadow-2xl w-full max-w-[520px] p-6 max-h-[85vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground/60 hover:text-foreground transition-colors" title="Close">
+      <div className={`absolute inset-0 bg-foreground/30 transition-opacity ${open ? 'opacity-100' : 'opacity-0'}`} onClick={() => setOpen(false)} />
+      <div className={`t-modal ${transition.className} relative bg-card rounded-2xl border border-border shadow-2xl w-full max-w-[520px] p-6 max-h-[85vh] overflow-y-auto`} role="dialog" aria-modal="true">
+        <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-muted-foreground/60 hover:text-foreground transition-colors" title="Close">
           <Icon name="close" size={14} />
         </button>
 
@@ -174,13 +179,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo, section }: { onClo
                     {pin ? 'Viewers must enter it to open the hub' : 'Anyone with the link can view'}
                   </p>
                 </div>
-                <button
-                  onClick={togglePin}
-                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${pin ? 'bg-primary' : 'bg-muted'}`}
-                  title={pin ? 'Turn protection off' : 'Turn protection on'}
-                >
-                  <span className={`absolute top-0.5 w-5 h-5 bg-card rounded-full shadow transition-all ${pin ? 'left-[18px]' : 'left-0.5'}`} />
-                </button>
+                <Toggle on={Boolean(pin)} onChange={togglePin} label={pin ? 'Turn protection off' : 'Turn protection on'} />
               </div>
               {pin && (
                 <div className="flex gap-2 mt-2">
