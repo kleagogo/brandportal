@@ -41,9 +41,11 @@ export default async function DashboardPage() {
   // else can happen there, in place.
   if (hubs.length === 0) {
     const existing = await getStudioHub(user.id)
-    const hub = existing?.hub
-      ?? await createHub(blankHubConfig('Our studio', { kind: 'studio' }), user.id, { studio: true })
-    redirect(`/${hub.slug}`)
+    if (existing) redirect(`/${existing.hub.slug}`)
+    // Only a hub made just now earns the welcome; coming back to an existing
+    // one shouldn't replay it.
+    const hub = await createHub(blankHubConfig('Our studio', { kind: 'studio' }), user.id, { studio: true })
+    redirect(`/${hub.slug}?new=1`)
   }
 
   const limits = limitsFor(user)

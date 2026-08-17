@@ -14,6 +14,7 @@ import { SettingsModal } from './SettingsModal'
 import { HomeSection } from './HomeSection'
 import { SpaceSwitcher } from './SpaceSwitcher'
 import { SearchOverlay } from './SearchOverlay'
+import { WelcomeModal } from './WelcomeModal'
 import { useConfirm } from './useConfirm'
 import { IconSwap, TextSwap } from '../transitions'
 import {
@@ -66,6 +67,15 @@ function HubShell({ access }: { access: HubAccess }) {
   const [shareSection, setShareSection] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  // Set by the redirect that created this hub, and cleared as it opens so a
+  // reload or a shared link never celebrates twice.
+  const [welcome, setWelcome] = useState(false)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (!params.has('new')) return
+    setWelcome(true)
+    window.history.replaceState({}, '', window.location.pathname)
+  }, [])
   // Light by default, remembered per browser.
   const [dark, setDark] = useState(false)
   useEffect(() => {
@@ -190,6 +200,7 @@ function HubShell({ access }: { access: HubAccess }) {
       )}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {searchOpen && <SearchOverlay onNavigate={setActive} onClose={() => setSearchOpen(false)} />}
+      {welcome && <WelcomeModal onClose={() => setWelcome(false)} />}
     </div>
   )
 }
