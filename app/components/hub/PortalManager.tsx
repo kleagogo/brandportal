@@ -359,7 +359,7 @@ function Editor({
             placeholder="Never"
           />
         </Row>
-        <Row label="White-label" hint="Your logo and colors, no Pitho credit">
+        <Row label="White-label" hint="Use the client’s own logo and colors">
           <Toggle
             on={whiteLabel}
             onClick={() => {

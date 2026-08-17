@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import { SITE_URL } from "@/lib/seo";
+import { MARKETING_URL, SITE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               name: "Pitho",
               applicationCategory: "BusinessApplication",
               description: DESCRIPTION,
-              url: SITE_URL,
+              url: MARKETING_URL,
               offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
             }),
           }}
