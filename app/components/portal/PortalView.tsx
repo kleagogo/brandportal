@@ -43,7 +43,7 @@ export function PortalView({ config, portal }: { config: BrandConfig; portal: Sh
 
   return (
     <HubProvider initial={config} allowDownload={portal.allowDownload} portalId={portal.id}>
-      <div className="h-screen overflow-hidden bg-background text-foreground flex flex-col" style={style}>
+      <div className="min-h-screen bg-background text-foreground flex flex-col" style={style}>
         {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
         {portal.template === 'full'
           ? <FullTemplate config={config} portal={portal} />
@@ -111,7 +111,7 @@ function FullTemplate({ config, portal }: { config: BrandConfig; portal: SharePo
   const section = sections.find(s => s.id === active) || sections[0]
 
   return (
-    <div className="flex-1 flex min-h-0">
+    <div className="flex-1 flex">
       {navOpen && <div className="fixed inset-0 bg-foreground/20 z-30 md:hidden" onClick={() => setNavOpen(false)} />}
 
       <aside className={`w-60 shrink-0 border-r border-border bg-card flex flex-col h-screen z-40 transition-transform
@@ -136,7 +136,7 @@ function FullTemplate({ config, portal }: { config: BrandConfig; portal: SharePo
         </nav>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+      <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 shrink-0 bg-card border-b border-border flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-20">
           <button onClick={() => setNavOpen(o => !o)} className="md:hidden text-muted-foreground hover:text-foreground transition-colors" title="Menu">
             <Icon name="menu" size={18} />
@@ -173,14 +173,7 @@ function GalleryTemplate({ config, portal }: { config: BrandConfig; portal: Shar
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-5 sm:px-8 py-12">
-        <h1 className="text-[32px] sm:text-[40px] font-bold tracking-tight leading-[1.05] mb-2">
-          {portal.branding?.name || config.name}
-        </h1>
-        <p className="text-[15px] text-muted-foreground max-w-lg">
-          {portal.branding?.note || config.tagline}
-        </p>
-      </div>
+      <GalleryHero config={config} portal={portal} />
 
       {sections.map((s, i) => (
         <section key={s.id} id={s.id} className={`border-t border-border ${i % 2 ? 'bg-card' : ''}`}>
@@ -191,6 +184,72 @@ function GalleryTemplate({ config, portal }: { config: BrandConfig; portal: Shar
       ))}
     </div>
   )
+}
+
+
+/**
+ * The first thing a client sees when the link opens.
+ *
+ * A portal presents somebody else's brand, so it opens in that brand rather
+ * than in ours: their primary colour fills the band, their display typeface
+ * sets the name, their logo sits above it. The typefaces are already being
+ * loaded for the type section, so using one here costs nothing.
+ */
+function GalleryHero({ config, portal }: { config: BrandConfig; portal: SharePortal }) {
+  const branding = portal.branding || {}
+  const name = branding.name || config.name
+  const note = branding.note || config.tagline
+  const logo = branding.logoUrl || config.logoUrl
+  const primary = brandPrimary(config, portal)
+  const display = config.typography[0]?.fonts[0]?.name
+  const files = Object.values(config.assets).reduce((n, list) => n + (list?.length || 0), 0)
+
+  // Without a colour to stand on, a tinted band would just be grey — better to
+  // keep the page's own surface than to invent a brand colour.
+  const onBrand = Boolean(primary)
+  const style = onBrand
+    ? { background: primary as string, color: readableOn(primary as string) }
+    : undefined
+
+  return (
+    <header className={onBrand ? '' : 'border-b border-border'} style={style}>
+      <div className="max-w-4xl mx-auto px-5 sm:px-8 py-16 sm:py-20">
+        {logo && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logo}
+            alt=""
+            className="h-12 sm:h-14 w-auto object-contain mb-7"
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        )}
+        <h1
+          className="text-[38px] sm:text-[52px] font-bold tracking-tight leading-[1.02] mb-3"
+          style={display ? { fontFamily: `'${display}', sans-serif` } : undefined}
+        >
+          {name}
+        </h1>
+        {note && (
+          <p className="text-[16px] sm:text-[17px] max-w-xl leading-relaxed" style={onBrand ? { opacity: 0.8 } : undefined}>
+            {note}
+          </p>
+        )}
+        <p className="text-[12px] uppercase tracking-widest mt-8" style={{ opacity: onBrand ? 0.6 : 0.45 }}>
+          {files} file{files === 1 ? '' : 's'} shared with you
+        </p>
+      </div>
+    </header>
+  )
+}
+
+/** The colour this brand leads with: the share's own accent, else its first swatch. */
+function brandPrimary(config: BrandConfig, portal: SharePortal): string | null {
+  const accent = portal.branding?.accent
+  if (accent) return accent
+  for (const group of config.colors) {
+    for (const swatch of group.swatches) if (swatch.hex) return swatch.hex
+  }
+  return null
 }
 
 // ─── Minimal: downloads only ──────────────────────────────────────────────────
