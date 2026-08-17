@@ -5,6 +5,12 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+/**
+ * One page for signing up and signing in, because one link does both.
+ *
+ * Kept deliberately bare: a line saying what will happen, a field, a button.
+ * Anything else here is a thing to read before the one action on the page.
+ */
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle')
@@ -51,47 +57,64 @@ export default function LoginPage() {
         </Link>
       </nav>
 
-      <main className="flex-1 flex items-center justify-center px-6">
-        <div className="w-full max-w-[380px] bg-card border border-border rounded-2xl p-7">
+      <main className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-[380px]">
           {state === 'sent' ? (
-            <div>
-              <h1 className="text-[19px] font-bold tracking-tight mb-2">Check your email</h1>
-              <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-4">
-                We sent a sign-in link to <span className="font-medium text-foreground">{email}</span>. It works once and expires in an hour.
+            <div className="bg-card border border-border rounded-2xl p-7">
+              <h1 className="text-[18px] font-bold tracking-tight mb-2 text-foreground">Check your email</h1>
+              <p className="text-[13.5px] text-muted-foreground leading-relaxed">
+                We sent a link to <span className="font-medium text-foreground">{email}</span>. Click it and you’re in.
+              </p>
+              <p className="text-[12.5px] text-muted-foreground/70 leading-relaxed mt-3">
+                It works once and expires in an hour. Nothing after a minute? Check spam, or{' '}
+                <button
+                  onClick={() => { setState('idle'); setDevLink('') }}
+                  className="underline underline-offset-2 hover:text-foreground transition-colors"
+                >
+                  try another address
+                </button>.
               </p>
               {devLink && (
-                <div className="border-t border-dashed border-border pt-4">
+                <div className="border-t border-dashed border-border pt-4 mt-5">
                   <p className="text-[12px] text-muted-foreground/60 mb-2">
                     Email sending isn’t configured yet (no RESEND_API_KEY). Use your link directly:
                   </p>
-                  <Button nativeButton={false} render={<a href={devLink} />} className="w-full">
+                  <Button nativeButton={false} render={<a href={devLink} />} variant="highlight" className="w-full">
                     Open my sign-in link →
                   </Button>
                 </div>
               )}
             </div>
           ) : (
-            <form onSubmit={submit}>
-              <h1 className="text-[19px] font-bold tracking-tight mb-1">Sign in</h1>
-              <p className="text-[13.5px] text-muted-foreground mb-5">No password. We email you a link.</p>
-              <Input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                autoFocus
-                className="mb-3"
-              />
-              {error && <p className="text-[12.5px] text-destructive mb-3">{error}</p>}
-              <Button type="submit" disabled={state === 'sending'} className="w-full">
-                {state === 'sending' ? 'Sending…' : 'Email me a sign-in link'}
-              </Button>
-              <p className="text-[11.5px] text-muted-foreground/60 mt-4 text-center">
-                New here? The same link creates your account.
+            <div className="bg-card border border-border rounded-2xl p-7">
+              <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-5">
+                We’ll email you a link to sign up.
               </p>
-            </form>
+
+              <form onSubmit={submit}>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  required
+                  autoFocus
+                  aria-label="Email address"
+                  className="mb-3"
+                />
+                {error && <p className="text-[12.5px] text-destructive mb-3">{error}</p>}
+                <Button type="submit" variant="highlight" disabled={state === 'sending'} className="w-full">
+                  {state === 'sending' ? 'Sending…' : 'Email me a sign-in link'}
+                </Button>
+              </form>
+
+              <p className="text-[12.5px] text-muted-foreground mt-4">
+                Already have an account? The same link signs you in.
+              </p>
+            </div>
           )}
+
+          <p className="text-[12px] text-muted-foreground/60 text-center mt-5">by Pitho.io</p>
         </div>
       </main>
     </div>
