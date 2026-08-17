@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Icon } from './Icon'
 import { useConfettiBurst, useModalTransition } from '../transitions'
 import { Button } from '@/components/ui/button'
 
@@ -18,7 +17,7 @@ export function WelcomeModal({ onClose }: { onClose: () => void }) {
 
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const markRef = useRef<HTMLSpanElement>(null)
+  const markRef = useRef<HTMLDivElement>(null)
   const burst = useConfettiBurst(stageRef, canvasRef, markRef)
 
   // Fire once the card has been laid out, so the canvas has a size to fill and
@@ -59,21 +58,18 @@ export function WelcomeModal({ onClose }: { onClose: () => void }) {
       >
         <canvas ref={canvasRef} className="t-confetti-canvas" aria-hidden="true" />
 
-        <span
-          ref={markRef}
-          className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-highlight text-highlight-foreground mb-4"
-        >
-          <Icon name="check" size={20} />
-        </span>
-
         <h2 className="text-[19px] font-bold tracking-tight mb-1.5">You’re all set</h2>
         <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-6">
-          This is your brand hub. Drop your logo in and it starts filling itself.
+          Add your brand files, create a hub for each client, and share them with a link.
         </p>
 
-        <Button variant="highlight" onClick={() => setOpen(false)} className="w-full">
-          Add my first files
-        </Button>
+        {/* The confetti settles on whatever this points at, so it lands on the
+            button rather than the floor of the card. */}
+        <div ref={markRef}>
+          <Button variant="highlight" onClick={() => setOpen(false)} className="w-full">
+            Add my first files
+          </Button>
+        </div>
       </div>
     </div>
   )
