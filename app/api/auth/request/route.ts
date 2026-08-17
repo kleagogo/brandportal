@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!allow(`auth:${clientIp(req)}`, 10, 15 * 60_000) || !allow(`auth:${email}`, 5, 15 * 60_000)) {
-    return NextResponse.json({ error: 'Too many attempts — try again in a few minutes' }, { status: 429 })
+    return NextResponse.json({ error: 'Too many attempts. Try again in a few minutes.' }, { status: 429 })
   }
 
   const redirect = typeof body.redirect === 'string' && body.redirect.startsWith('/') ? body.redirect : undefined
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[auth] Could not issue a sign-in token:', err)
     return NextResponse.json(
-      { error: 'Sign-in is unavailable — this deployment has no database configured (see /api/health)' },
+      { error: 'Sign-in is unavailable. This deployment has no database configured (see /api/health).' },
       { status: 503 },
     )
   }

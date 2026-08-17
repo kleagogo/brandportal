@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   const limits = limitsFor(user)
   if ((await countOwnedHubs(user.id)) >= limits.hubs) {
-    return NextResponse.json({ error: `Your plan includes ${limits.hubs} client spaces — Studio raises the limit` }, { status: 403 })
+    return NextResponse.json({ error: `Your plan includes ${limits.hubs} client spaces. Studio raises the limit.` }, { status: 403 })
   }
 
   // House style: a client space starts from the studio hub's own layout, minus

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   if (file.size > limit) {
     return NextResponse.json({
       error: blobEnabled() || r2DirectUploads()
-        ? `Files over ${humanSize(limit)} upload straight to storage — reload the page and try again`
+        ? `Files over ${humanSize(limit)} upload straight to storage. Reload the page and try again.`
         : `File is too large (max ${humanSize(limit)}). Connect object storage to upload bigger files.`,
     }, { status: 413 })
   }

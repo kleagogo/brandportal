@@ -139,7 +139,7 @@ export function blankHubConfig(name: string, options: BlankHubOptions = {}): Bra
         description: `How ${brandName} speaks and writes. Edit these principles to match your voice.`,
         principles: [
           { name: 'Clear', description: 'We say what we mean. No jargon, no fluff.' },
-          { name: 'Confident', description: 'We know our subject and it shows — without arrogance.' },
+          { name: 'Confident', description: 'We know our subject and it shows, without arrogance.' },
           { name: 'Human', description: 'We write to a person, not an audience.' },
         ],
       },
@@ -160,7 +160,7 @@ export function blankHubConfig(name: string, options: BlankHubOptions = {}): Bra
     agent: {
       enabled: true,
       name: 'Brand Agent',
-      greeting: `Ask me anything about the ${brandName} brand — colors, logo usage, typography, tone of voice.`,
+      greeting: `Ask me anything about the ${brandName} brand: colors, logo usage, typography, tone of voice.`,
       model: 'claude-haiku-4-5-20251001',
     },
   }

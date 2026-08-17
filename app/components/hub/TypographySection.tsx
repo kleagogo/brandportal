@@ -2,6 +2,7 @@
 
 import { useHub } from './HubContext'
 import { Editable } from './Editable'
+import { useConfirm } from './useConfirm'
 import { Icon } from './Icon'
 import { HubCard } from './HubCard'
 
@@ -15,14 +16,16 @@ function googleFontUrl(name: string, weights: string[]): string {
 
 export function TypographySection() {
   const { config, editing, update } = useHub()
+  const { confirm, confirmDialog } = useConfirm()
 
   return (
     <div>
+      {confirmDialog}
       <h1 className="text-[22px] font-bold tracking-tight mb-1">Typography</h1>
       <p className="text-[14px] text-muted-foreground mb-8">
         {editing
           ? 'Edit typefaces, weights, and specimens. Google Fonts load automatically by name.'
-          : 'Our type system — font families, weights, and usage guidelines.'}
+          : 'Our typefaces, weights, and how to use them.'}
       </p>
 
       {config.typography.map((group, gi) => (
@@ -80,8 +83,13 @@ export function TypographySection() {
                   })}
                   {editing && (
                     <button
-                      onClick={() => {
-                        if (!window.confirm(`Remove "${font.name}" from the type system?`)) return
+                      onClick={async () => {
+                        if (!(await confirm({
+                          title: `Remove "${font.name}"?`,
+                          description: 'It comes out of the type system.',
+                          confirmLabel: 'Remove font',
+                          destructive: true,
+                        }))) return
                         update(c => { c.typography[gi].fonts.splice(fi, 1) })
                       }}
                       className="ml-2 text-muted-foreground/60 hover:text-destructive opacity-0 group-hover/font:opacity-100 transition-all"

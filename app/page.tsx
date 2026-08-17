@@ -15,8 +15,8 @@ const CLIENT_SPACES = [
 ]
 
 const PROBLEMS = [
-  { file: 'final-final-v2.svg', title: 'Four versions of the logo. Six folders.', body: 'Drive, Dropbox, Slack, email, Figma — and nobody’s sure which mark the client actually approved.' },
-  { file: '~40 min / search', title: 'Every handoff starts with archaeology.', body: 'New designer, new dev, client request — cue the dig through five tools and three inboxes.' },
+  { file: 'final-final-v2.svg', title: 'Four versions of the logo. Six folders.', body: 'Drive, Dropbox, Slack, email, Figma. Nobody is sure which mark the client approved.' },
+  { file: '~40 min / search', title: 'Every handoff starts with archaeology.', body: 'New designer, new dev, client request. Cue the dig through five tools and three inboxes.' },
   { file: 'guidelines_FINAL.pdf', title: 'Guidelines nobody opens.', body: 'The brand PDF went stale a week after the rebrand shipped. The old logo still makes appearances.' },
 ]
 
@@ -24,18 +24,18 @@ const FEATURES = [
   { tag: '0.4s', title: 'Instant search', body: 'Across names, tags, colors and clients. The approved file, first result, every time.' },
   { tag: 'AI', title: 'Auto-tagging on upload', body: 'Every file tagged, categorized and duplicate-checked on arrival. Zero manual filing.' },
   { tag: 'v4', title: 'Latest-approved versioning', body: 'One source of truth per asset. Devs, decks and vendors all pull the same file.' },
-  { tag: '1-click', title: 'Client portals & approvals', body: 'Send a clean portal, not a zip. Clients approve in one click — no accounts to babysit.' },
+  { tag: '1-click', title: 'Client portals & approvals', body: 'Send a clean portal, not a zip. Clients approve in one click, no accounts to babysit.' },
   { tag: 'Spaces', title: 'Multi-client spaces', body: 'Every client gets a separate, branded home. Switch in a keystroke, keep permissions clean.' },
-  { tag: 'Synced', title: 'Living guidelines', body: 'Guidelines that pull straight from the library. Update an asset once — never stale, never a PDF.' },
+  { tag: 'Synced', title: 'Living guidelines', body: 'Guidelines that pull straight from the library. Update an asset once. Never stale, never a PDF.' },
 ]
 
 const INTEGRATIONS = [
   { name: 'Figma', body: 'Push finals straight from your files. Pitho versions them and flags anything stale in the design file.' },
-  { name: 'Slack', body: 'Search the library from any channel. Drop the approved file into the thread — not a guess from Drive.' },
-  { name: 'Canva', body: 'Locked templates with the right logos, colors and type — safe for the non-designers on the client side.' },
+  { name: 'Slack', body: 'Search the library from any channel. Drop the approved file into the thread, not a guess from Drive.' },
+  { name: 'Canva', body: 'Locked templates with the right logos, colors and type. Safe for non-designers on the client side.' },
   { name: 'Notion', body: 'Embed living guidelines and asset grids in your wiki. They update themselves when the library changes.' },
-  { name: 'Google Drive', body: 'Point Pitho at the mess once. It migrates, dedupes and tags everything — folders stay behind.' },
-  { name: 'Adobe CC', body: 'Open assets in Illustrator, Photoshop and InDesign with version history intact — saves the round-trip back.' },
+  { name: 'Google Drive', body: 'Point Pitho at the mess once. It migrates, dedupes and tags everything. The folders stay behind.' },
+  { name: 'Adobe CC', body: 'Open assets in Illustrator, Photoshop and InDesign, version history intact.' },
 ]
 
 const PLANS = [
@@ -54,7 +54,7 @@ const PLANS = [
   {
     name: 'Growth', monthly: '$199', annual: '$159', per: '/mo',
     who: 'For studios that keep growing',
-    features: ['Unlimited client spaces', '1 TB storage', 'White-label client portals', 'Usage analytics per client', 'Priority migration — we move your mess'],
+    features: ['Unlimited client spaces', '1 TB storage', 'White-label client portals', 'Usage analytics per client', 'Priority migration, we move your mess'],
     cta: 'Start 14-day trial →', popular: false,
   },
 ]
@@ -99,11 +99,11 @@ export default function PithoLanding() {
             Stop <GradientText>hunting</GradientText> for the latest logo.
           </h1>
           <p className="text-[16px] leading-relaxed text-[#6b6b66] max-w-[48ch] mb-8">
-            Pitho gives every client one clean brand hub — every asset, every version, findable in seconds. Live in ten minutes. No consultants, no enterprise bloat.
+            Pitho gives every client one clean brand hub: every asset, every version, findable in seconds. Live in ten minutes. No consultants, no enterprise bloat.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Link href="/login" className="text-[14px] font-semibold px-5 py-3 rounded-xl bg-[#1a1a1a] text-white hover:bg-[#333] transition-colors">
-              Start free — no card required →
+              Start free, no card required →
             </Link>
             <Link href="/demo" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-[#e8e7e4] hover:border-[#1a1a1a] transition-colors">
               See it in action
@@ -136,9 +136,9 @@ export default function PithoLanding() {
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 {[
-                  { t: 'Wordmark — Reversed', m: 'SVG · V4 · Latest', badge: 'Approved', dark: true },
-                  { t: 'Wordmark — Primary', m: 'SVG · V4', dark: false },
-                  { t: 'Palette — Core', m: 'ASE · V1', swatch: true },
+                  { t: 'Wordmark · Reversed', m: 'SVG · V4 · Latest', badge: 'Approved', dark: true },
+                  { t: 'Wordmark · Primary', m: 'SVG · V4', dark: false },
+                  { t: 'Palette · Core', m: 'ASE · V1', swatch: true },
                   { t: 'roastery-04.jpg', m: 'JPG · 4.2 MB', photo: true },
                 ].map(a => (
                   <div key={a.t} className="rounded-lg border border-[#e8e7e4] overflow-hidden">
@@ -285,7 +285,7 @@ export default function PithoLanding() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link href="/login" className="text-[14px] font-semibold px-5 py-3 rounded-xl bg-white text-[#1a1a1a] hover:bg-white/90 transition-colors">
-              Start free — no card required →
+              Start free, no card required →
             </Link>
             <Link href="/demo" className="text-[14px] font-semibold px-5 py-3 rounded-xl border border-white/25 hover:border-white transition-colors">
               Open the demo
@@ -298,7 +298,7 @@ export default function PithoLanding() {
       <footer className="border-t border-[#e8e7e4] py-10 bg-white">
         <div className="max-w-[1120px] mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
           <Wordmark />
-          <p className="text-[12px] text-[#b0afa9]">© 2026 Pitho — made for agencies</p>
+          <p className="text-[12px] text-[#b0afa9]">© 2026 Pitho, made for agencies</p>
           <div className="flex items-center gap-6 text-[13px] text-[#8a8a85]">
             <a href="#product" className="hover:text-[#1a1a1a] transition-colors">Product</a>
             <a href="#pricing" className="hover:text-[#1a1a1a] transition-colors">Pricing</a>

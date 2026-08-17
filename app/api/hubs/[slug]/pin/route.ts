@@ -18,14 +18,14 @@ export async function POST(
 
   // A short PIN falls in seconds to an unlimited guesser.
   if (!allow(`pin:${slug}:${clientIp(req)}`, 10, 15 * 60_000) || !allow(`pin:${slug}`, 60, 15 * 60_000)) {
-    return NextResponse.json({ error: 'Too many attempts — try again in a few minutes' }, { status: 429 })
+    return NextResponse.json({ error: 'Too many attempts. Try again in a few minutes.' }, { status: 429 })
   }
 
   const meta = await getMeta(slug)
   if (!meta.pin) return NextResponse.json({ ok: true }) // hub is public
 
   if (String(pin).trim() !== meta.pin) {
-    return NextResponse.json({ error: 'Wrong PIN — check with whoever shared the link' }, { status: 401 })
+    return NextResponse.json({ error: 'Wrong PIN. Check with whoever shared the link.' }, { status: 401 })
   }
 
   const res = NextResponse.json({ ok: true })

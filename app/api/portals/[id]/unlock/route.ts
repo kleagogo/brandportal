@@ -18,7 +18,7 @@ export async function POST(
 
   // Same reasoning as the hub PIN: guessing must cost something.
   if (!allow(`portal:${id}:${clientIp(req)}`, 10, 15 * 60_000) || !allow(`portal:${id}`, 60, 15 * 60_000)) {
-    return NextResponse.json({ error: 'Too many attempts — try again in a few minutes' }, { status: 429 })
+    return NextResponse.json({ error: 'Too many attempts. Try again in a few minutes.' }, { status: 429 })
   }
 
   const portal = await getPortal(id)
@@ -26,7 +26,7 @@ export async function POST(
   if (!portal.password) return NextResponse.json({ ok: true }) // portal is open
 
   if (String(password).trim() !== portal.password) {
-    return NextResponse.json({ error: 'Wrong password — check with whoever shared the link' }, { status: 401 })
+    return NextResponse.json({ error: 'Wrong password. Check with whoever shared the link.' }, { status: 401 })
   }
 
   const res = NextResponse.json({ ok: true })

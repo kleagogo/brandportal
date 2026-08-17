@@ -51,8 +51,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'This hub is locked' }, { status: 401 })
   }
 
+  // The public demo needs no sign-in, so its Brand Agent would be an open,
+  // billable endpoint — and the rate limiter counts per Worker isolate, which
+  // barely holds under real traffic. Answer without calling the model.
+  if (meta.demo) {
+    return NextResponse.json({
+      reply: `The Brand Agent answers from a hub's own colors, type, and files — so it runs in your hub rather than this shared demo. Start a free hub and it'll know your brand.`,
+    })
+  }
+
   if (!allow(`chat:${clientIp(req)}`, 30, 60 * 60_000)) {
-    return NextResponse.json({ reply: 'The Brand Agent is taking a breather — try again in a little while.' })
+    return NextResponse.json({ reply: 'The Brand Agent is taking a breather. Try again in a little while.' })
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {

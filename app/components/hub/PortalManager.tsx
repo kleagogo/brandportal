@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PortalTemplate, SharePortal } from '@/app/types/brand'
 import { useHub } from './HubContext'
+import { DatePicker } from './DatePicker'
 import { Icon } from './Icon'
+import { useConfirm } from './useConfirm'
 import { Toggle as RecipeToggle } from '../transitions'
 import { uploadAsset } from './upload-client'
 
 const TEMPLATES: Array<{ id: PortalTemplate; label: string; blurb: string }> = [
-  { id: 'full',    label: 'Full hub',  blurb: 'Sidebar and every section — the hub, read-only' },
+  { id: 'full',    label: 'Full hub',  blurb: 'The whole hub, read-only' },
   { id: 'gallery', label: 'Gallery',   blurb: 'One scrolling page, presentation-style' },
   { id: 'minimal', label: 'Downloads', blurb: 'A plain file list, nothing else' },
 ]
@@ -19,7 +21,7 @@ interface PortalSummary { views: number; downloads: number; lastViewAt?: string 
 
 function emptyDraft(name: string): Draft {
   return {
-    name: `${name} — client share`,
+    name: `${name} client share`,
     template: 'full',
     sections: [],
     password: null,
@@ -46,6 +48,7 @@ export function PortalManager({ canEdit, initialSection }: { canEdit: boolean; i
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [copiedId, setCopiedId] = useState('')
+  const { confirm, confirmDialog } = useConfirm()
 
   const base = `/api/hubs/${encodeURIComponent(config.slug)}/portals`
 
@@ -99,7 +102,13 @@ export function PortalManager({ canEdit, initialSection }: { canEdit: boolean; i
   }
 
   async function destroy(id: string) {
-    if (!window.confirm('Delete this share link? Anyone using it loses access immediately.')) return
+    const ok = await confirm({
+      title: 'Delete this share link?',
+      description: 'Anyone using it loses access immediately.',
+      confirmLabel: 'Delete link',
+      destructive: true,
+    })
+    if (!ok) return
     await fetch(`${base}/${id}`, { method: 'DELETE' })
     setPortals(list => list.filter(p => p.id !== id))
   }
@@ -114,6 +123,7 @@ export function PortalManager({ canEdit, initialSection }: { canEdit: boolean; i
 
   return (
     <div className="border-t border-dashed border-border pt-4">
+      {confirmDialog}
       <div className="flex items-center justify-between gap-3 mb-3">
         <div>
           <p className="text-[13px] font-medium text-foreground">Share links</p>
@@ -142,7 +152,7 @@ export function PortalManager({ canEdit, initialSection }: { canEdit: boolean; i
       ) : (
         <div className="space-y-2">
           {loaded && portals.length === 0 && (
-            <p className="text-[12px] text-muted-foreground/60">No share links yet — create one to send a client a tailored view.</p>
+            <p className="text-[12px] text-muted-foreground/60">No share links yet. Create one to send a client a tailored view.</p>
           )}
           {portals.map(portal => {
             const stat = stats[portal.id] || { views: 0, downloads: 0 }
@@ -209,7 +219,7 @@ function Activity({ slug, portalId }: { slug: string; portalId: string }) {
   }, [slug, portalId])
 
   if (!events) return <p className="text-[11px] text-muted-foreground/60 mt-2">Loading…</p>
-  if (events.length === 0) return <p className="text-[11px] text-muted-foreground/60 mt-2">Nothing yet — no one has opened this link.</p>
+  if (events.length === 0) return <p className="text-[11px] text-muted-foreground/60 mt-2">No one has opened this link yet.</p>
 
   return (
     <div className="mt-2 pt-2 border-t border-dashed border-border space-y-1 max-h-40 overflow-y-auto">
@@ -331,7 +341,7 @@ function Editor({
 
       {/* Access */}
       <div className="space-y-2.5">
-        <Row label="Downloads allowed" hint={draft.allowDownload ? 'Viewers can download files' : 'View only — no download buttons'}>
+        <Row label="Downloads allowed" hint={draft.allowDownload ? 'Viewers can download files' : 'View only, no download buttons'}>
           <Toggle on={draft.allowDownload} onClick={() => set({ allowDownload: !draft.allowDownload })} />
         </Row>
         <Row label="Password" hint={draft.password ? 'Required to open the link' : 'Anyone with the link can open it'}>
@@ -343,11 +353,10 @@ function Editor({
           />
         </Row>
         <Row label="Expires" hint={draft.expiresAt ? `Stops working ${new Date(draft.expiresAt).toLocaleDateString()}` : 'Never expires'}>
-          <input
-            type="date"
-            value={draft.expiresAt ? new Date(draft.expiresAt).toISOString().slice(0, 10) : ''}
-            onChange={e => set({ expiresAt: e.target.value ? new Date(`${e.target.value}T23:59:59`).toISOString() : null })}
-            className="text-[12px] px-2.5 py-1.5 rounded-xl bg-card border-[1.5px] border-border outline-none focus:border-ring transition-colors"
+          <DatePicker
+            value={draft.expiresAt || null}
+            onChange={iso => set({ expiresAt: iso })}
+            placeholder="Never"
           />
         </Row>
         <Row label="White-label" hint="Your logo and colors, no Pitho credit">

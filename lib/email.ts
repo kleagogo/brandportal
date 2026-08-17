@@ -38,7 +38,7 @@ const ACTIONS: Record<Kind, string> = {
 
 const LEADS: Record<Kind, (hub?: string) => string> = {
   login: () => 'Click below to sign in. No password needed.',
-  invite: hub => `You can now edit ${hub || 'a brand hub'} — colors, type, logos, and files.`,
+  invite: hub => `You can now edit ${hub || 'a brand hub'}: colors, type, logos, and files.`,
   transfer: hub => `Accept to become the owner of ${hub || 'this brand hub'}. The current owner stays on as an editor.`,
 }
 
@@ -82,13 +82,13 @@ export async function sendMagicLink(opts: {
       console.error(`[email] Resend rejected the send (${res.status}): ${detail.slice(0, 300)}`)
       // Common cause: EMAIL_FROM isn't a verified domain on the Resend account.
       if (devLinksAllowed()) return { sent: false, devLink: opts.url }
-      return { sent: false, error: 'We couldn’t send that email — try again in a minute' }
+      return { sent: false, error: 'We couldn’t send that email. Try again in a minute.' }
     }
     return { sent: true }
   } catch (err) {
     console.error('[email] Send failed:', err)
     if (devLinksAllowed()) return { sent: false, devLink: opts.url }
-    return { sent: false, error: 'We couldn’t send that email — try again in a minute' }
+    return { sent: false, error: 'We couldn’t send that email. Try again in a minute.' }
   }
 }
 
@@ -109,7 +109,7 @@ function htmlBody(subject: string, lead: string, action: string, url: string): s
             </p>
           </td></tr>
         </table>
-        <p style="margin:16px 0 0;font-size:11px;color:#b0afa9">Sent by Pitho — brand hubs for agencies</p>
+        <p style="margin:16px 0 0;font-size:11px;color:#b0afa9">Sent by Pitho, brand hubs for agencies</p>
       </td></tr>
     </table>
   </body>

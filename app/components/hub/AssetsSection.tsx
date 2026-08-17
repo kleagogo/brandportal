@@ -15,7 +15,9 @@ import {
   stripCommonRoot,
   type PickedFile,
 } from './pick-files'
-import type { AssetFile } from '@/app/types/brand'
+import { applyAnswers, planImport, unplaced, type ImportBucket } from './route-files'
+import { ImportReview, type ImportDecision } from './ImportReview'
+import type { AssetFile, SectionConfig } from '@/app/types/brand'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { HubCard } from './HubCard'
@@ -107,8 +109,8 @@ function EmptyDropzone({
         <OrganicShimmer width={168} height={96} radius={12} playing />
         <p className="text-[14px] font-medium text-foreground">
           {progress.total === 1
-            ? `${progress.name} — ${Math.round(progress.percent)}%`
-            : `Uploading ${progress.done} of ${progress.total} — ${progress.name}`}
+            ? `${progress.name} · ${Math.round(progress.percent)}%`
+            : `Uploading ${progress.done} of ${progress.total} · ${progress.name}`}
         </p>
         <span className="w-56 h-1 rounded-full bg-border overflow-hidden">
           <span className="block h-full bg-foreground transition-all" style={{ width: `${percent}%` }} />
@@ -133,11 +135,10 @@ function EmptyDropzone({
       </span>
       <p className="text-[16px] font-semibold text-foreground mb-1.5">Drop files here</p>
       <p className="text-[13.5px] text-muted-foreground leading-relaxed max-w-[42ch] mx-auto mb-6">
-        Drag in files, a whole folder, or a .zip. Folders keep their structure as groups, and
-        archives are unpacked for you.
+        Single files, a .zip, or a whole folder. Folder structure is kept.
       </p>
 
-      <div className="flex items-center justify-center gap-2 flex-wrap mb-7">
+      <div className="flex flex-col items-center gap-2.5 mb-7">
         <button
           onClick={onPickFiles}
           className="text-[13px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:opacity-85 transition-opacity"
@@ -146,17 +147,16 @@ function EmptyDropzone({
         </button>
         <button
           onClick={onPickFolder}
-          className="text-[13px] font-semibold bg-highlight text-highlight-foreground px-4 py-2.5 rounded-xl hover:brightness-95 transition-all"
+          className="text-[12.5px] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
         >
-          Choose a folder
+          or pick a whole folder
         </button>
       </div>
 
       <div className="border-t border-border pt-5 max-w-[46ch] mx-auto">
         <p className="text-[12.5px] text-muted-foreground leading-relaxed">
           <span className="font-semibold text-foreground">Coming from Google Drive?</span>{' '}
-          Open the client&rsquo;s folder, hit Download — Drive hands you a .zip — and drop that
-          straight in here.
+          Download the client&rsquo;s folder as a .zip and drop it here.
         </p>
         <p className="text-[11.5px] text-muted-foreground/60 mt-3">
           Logos, source files, fonts, video and archives{maxLabel ? ` · up to ${maxLabel} per file` : ''}
@@ -172,6 +172,11 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  // The sorted plan, waiting for approval. Null when nothing is being reviewed.
+  const [review, setReview] = useState<{ buckets: ImportBucket[]; scanning: boolean } | null>(null)
+  // Unsupported files are counted while preparing but only reported once the
+  // upload actually runs, which can be a dialog away.
+  const skippedRef = useRef(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
 
@@ -191,8 +196,9 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
    * Take everything the user picked — files, folders, archives — and add it.
    *
    * Archives are opened and folders flattened first, so what gets uploaded is
-   * always plain files; the folder each one came from is kept as its subgroup
-   * so a dropped brand folder arrives organised rather than as a heap.
+   * always plain files. A drop that carries folders is then sorted into the
+   * hub's sections rather than piled into whichever one is open, and shown for
+   * approval before anything lands.
    */
   async function addFiles(picked: PickedFile[]) {
     setError('')
@@ -202,6 +208,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
     const caps = await uploadConfig()
     const prepared = stripCommonRoot(await expandArchives(picked))
     const { usable, skipped } = splitByAllowed(prepared, caps.allowed)
+    skippedRef.current = skipped
 
     if (!usable.length) {
       setError(skipped
@@ -210,16 +217,106 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
       return
     }
 
-    const total = usable.length
-    const queue = [...usable]
+    const buckets = planImport(usable, config.sections, sectionId)
+
+    // A plain drop of loose files goes where the person is standing — they
+    // picked the section by being on it, and a dialog would only be in the way.
+    const trivial = buckets.length === 1 && buckets[0].sectionId === sectionId
+    if (trivial) {
+      await runUpload(usable.map(item => ({ item, sectionId })), skipped)
+      return
+    }
+
+    setReview({ buckets, scanning: unplaced(buckets).length > 0 })
+
+    // Ask about the folders the rules couldn't place. The dialog is already up
+    // with the rules' own answer, so a slow or absent AI just means it doesn't
+    // change — never a blocked upload.
+    const asking = unplaced(buckets)
+    if (!asking.length) return
+    try {
+      const res = await fetch('/api/upload/classify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: config.slug,
+          folders: asking.map(b => ({
+            key: b.key,
+            name: b.folder,
+            files: b.items.slice(0, 6).map(i => i.file.name),
+          })),
+        }),
+      })
+      const data = await res.json().catch(() => ({ answers: [] }))
+      setReview(current => current && ({
+        buckets: applyAnswers(current.buckets, data.answers || [], config.sections),
+        scanning: false,
+      }))
+    } catch {
+      setReview(current => current && { ...current, scanning: false })
+    }
+  }
+
+  /** Turn the reviewed plan into real sections and real uploads. */
+  async function confirmImport(decisions: ImportDecision[]) {
+    setReview(null)
+
+    // New sections are created first and all at once, so their ids exist
+    // before any file needs one to land in.
+    const taken = new Set(config.sections.map(s => s.id))
+    const created: Array<{ id: string; label: string; icon: SectionConfig['icon'] }> = []
+    const targets: Array<{ item: PickedFile; sectionId: string }> = []
+
+    for (const { bucket, destination } of decisions) {
+      if (destination.kind === 'skip') continue
+      let target: string
+      if (destination.kind === 'section') {
+        target = destination.sectionId
+      } else {
+        const base = destination.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'section'
+        let id = base
+        for (let n = 2; taken.has(id); n++) id = `${base}-${n}`
+        taken.add(id)
+        created.push({ id, label: destination.label, icon: bucket.icon })
+        target = id
+      }
+      for (const item of bucket.items) targets.push({ item, sectionId: target })
+    }
+
+    if (created.length) {
+      update(c => {
+        for (const section of created) {
+          c.sections.push({ id: section.id, label: section.label, type: 'assets', icon: section.icon, group: 'assets' })
+          c.assets[section.id] = []
+        }
+      })
+    }
+
+    if (!targets.length) {
+      setNotice('Nothing added')
+      return
+    }
+    await runUpload(targets, skippedRef.current, created.length)
+  }
+
+  /** Upload each file into the section the plan gave it. */
+  async function runUpload(
+    targets: Array<{ item: PickedFile; sectionId: string }>,
+    skipped: number,
+    newSections = 0
+  ) {
+    const total = targets.length
+    const queue = [...targets]
     const failed: string[] = []
+    const touched = new Set<string>()
     let done = 0
-    setProgress({ done: 0, total, name: usable[0].file.name, percent: 0 })
+    setProgress({ done: 0, total, name: targets[0].item.file.name, percent: 0 })
 
     async function worker() {
       for (;;) {
-        const item = queue.shift()
-        if (!item) return
+        const next = queue.shift()
+        if (!next) return
+        const { item, sectionId: target } = next
         try {
           // Per-file percentages only mean something when there's one file;
           // in a batch the count is the useful signal.
@@ -236,9 +333,10 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
             tags: data.suggestion?.tags || [],
             ...(item.path ? { subgroup: item.path } : {}),
           }
+          touched.add(target)
           update(c => {
-            if (!c.assets[sectionId]) c.assets[sectionId] = []
-            c.assets[sectionId].push(asset)
+            if (!c.assets[target]) c.assets[target] = []
+            c.assets[target].push(asset)
           })
         } catch (e) {
           failed.push(item.file.name)
@@ -257,6 +355,8 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
     const added = total - failed.length
     const parts: string[] = []
     if (added) parts.push(`${added} file${added > 1 ? 's' : ''} added`)
+    if (touched.size > 1) parts.push(`across ${touched.size} sections`)
+    if (newSections) parts.push(`${newSections} new section${newSections > 1 ? 's' : ''}`)
     if (failed.length) parts.push(`${failed.length} failed`)
     if (skipped) parts.push(`${skipped} skipped as unsupported`)
     if (added && !editing) parts.push('hit Edit to rename or tag them')
@@ -267,6 +367,15 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
 
   return (
     <div>
+      {review && (
+        <ImportReview
+          buckets={review.buckets}
+          sections={config.sections}
+          scanning={review.scanning}
+          onConfirm={confirmImport}
+          onCancel={() => setReview(null)}
+        />
+      )}
       <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
         <h1 className="text-[22px] font-bold tracking-tight">{label}</h1>
         {assets.length > 0 && hasLocalFiles && allowDownload && (
@@ -283,10 +392,10 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
       {(editing || assets.length > 0) && (
         <p className="text-[14px] text-muted-foreground mb-8">
           {editing
-            ? 'Drop files, folders, or a .zip anywhere below to add them, and click names, notes, or tags to edit.'
+            ? 'Drop files anywhere below. Click a name, note, or tag to edit it.'
             : sectionId === 'logo'
-              ? 'Our logo system. Download approved assets and follow usage guidelines.'
-              : `${label} — download for presentations, product, and marketing.`}
+              ? 'The approved logo files, ready to download.'
+              : `Everything in ${label}, ready to download.`}
         </p>
       )}
       {!editing && assets.length === 0 && <div className="mb-8" />}
@@ -317,7 +426,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
         ) : assets.length === 0 ? (
           <div className="border-2 border-dashed border-border rounded-2xl p-12 text-center">
             <p className="text-[14px] font-medium text-muted-foreground mb-1">Nothing here yet</p>
-            <p className="text-[12px] text-muted-foreground/60">This section hasn&rsquo;t been filled in.</p>
+            <p className="text-[12px] text-muted-foreground/60">Check back soon.</p>
           </div>
         ) : (
           <div className="space-y-8">
@@ -341,8 +450,8 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                 <span className="text-[13px] font-medium">
                   {progress
                     ? progress.total === 1
-                      ? `${progress.name} — ${Math.round(progress.percent)}%`
-                      : `Uploading ${progress.done}/${progress.total} — ${progress.name}`
+                      ? `${progress.name} · ${Math.round(progress.percent)}%`
+                      : `Uploading ${progress.done}/${progress.total} · ${progress.name}`
                     : 'Add files'}
                 </span>
                 {progress ? (
@@ -353,7 +462,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                     />
                   </span>
                 ) : (
-                  <span className="text-[11px]">drop files, a folder, or a .zip — or click to browse</span>
+                  <span className="text-[11px]">drop files here, or click to browse</span>
                 )}
               </button>
             )}

@@ -9,12 +9,13 @@ import { ColorsSection } from './ColorsSection'
 import { TypographySection } from './TypographySection'
 import { AssetsSection } from './AssetsSection'
 import { GuidelinesSection } from './GuidelinesSection'
-import { BrandAgent } from './BrandAgent'
 import { ShareModal } from './ShareModal'
 import { SettingsModal } from './SettingsModal'
 import { HomeSection } from './HomeSection'
 import { SpaceSwitcher } from './SpaceSwitcher'
-import { GooeyPlusMenu, IconSwap, StatusBadge, TextSwap } from '../transitions'
+import { SearchOverlay } from './SearchOverlay'
+import { useConfirm } from './useConfirm'
+import { IconSwap, TextSwap } from '../transitions'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuAction,
@@ -42,6 +43,8 @@ export interface HubAccess {
   isOwner?: boolean
   demo?: boolean
   signedIn?: boolean
+  /** The account's own hub, as opposed to a client space. */
+  studio?: boolean
 }
 
 export default function Hub({ initial, ...access }: { initial: BrandConfig } & HubAccess) {
@@ -53,10 +56,11 @@ export default function Hub({ initial, ...access }: { initial: BrandConfig } & H
 }
 
 function HubShell({ access }: { access: HubAccess }) {
-  const { config, active, saveState } = useHub()
+  const { config, active, setActive, editingSection, setEditingSection, cancelEditing } = useHub()
   // Which section a share link should be scoped to, or '' for the whole hub.
   const [shareSection, setShareSection] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   // Light by default, remembered per browser.
   const [dark, setDark] = useState(false)
   useEffect(() => {
@@ -69,6 +73,40 @@ function HubShell({ access }: { access: HubAccess }) {
       return !d
     })
   }
+
+  // ⌘K or ⌘Space opens search from anywhere in the hub. (macOS usually keeps
+  // ⌘Space for Spotlight; when the browser does receive it, it works here too.)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 'k' || e.code === 'Space')) {
+        e.preventDefault()
+        setSearchOpen(open => !open)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Edit mode answers the keys people expect: Enter keeps the changes and
+  // leaves, Escape leaves and puts everything back.
+  useEffect(() => {
+    if (!editingSection || searchOpen) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        cancelEditing()
+        return
+      }
+      // Enter inside a textarea makes a newline, and a field that already
+      // handled Enter (like the tag input) keeps its own behavior. Matched by
+      // code as well as key, since some input paths send one without the other.
+      const isEnter = e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter'
+      if (isEnter && !e.defaultPrevented && !(e.target instanceof HTMLTextAreaElement)) {
+        setEditingSection(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [editingSection, searchOpen, cancelEditing, setEditingSection])
 
   // If the active section gets deleted, fall back to the first one.
   const activeSection = config.sections.find(s => s.id === active) || config.sections[0]
@@ -108,7 +146,6 @@ function HubShell({ access }: { access: HubAccess }) {
           onToggleTheme={toggleTheme}
           onShareSection={setShareSection}
           onSettings={() => setSettingsOpen(true)}
-          saveState={saveState}
           access={access}
         />
 
@@ -116,13 +153,17 @@ function HubShell({ access }: { access: HubAccess }) {
           {/* The trigger lives in a header rather than floating over the
               content, as upstream's sidebar blocks have it. It sits outside the
               rail, which is what lets it expand a collapsed one. `shrink-0`
-              keeps it in place while `main` scrolls under it.
-
-              Upstream puts a vertical separator after the trigger to divide it
-              from the breadcrumbs; with no breadcrumbs yet there is nothing to
-              divide, so it would read as a stray mark. */}
+              keeps it in place while `main` scrolls under it. */}
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="ml-auto flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-[12.5px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Icon name="search" size={13} />
+              <span>Search</span>
+              <kbd className="text-[10px] font-medium border border-border rounded-md px-1.5 py-px">⌘K</kbd>
+            </button>
           </header>
           <main className="flex-1 min-h-0 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
@@ -142,7 +183,7 @@ function HubShell({ access }: { access: HubAccess }) {
         />
       )}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
-      <BrandAgent />
+      {searchOpen && <SearchOverlay onNavigate={setActive} onClose={() => setSearchOpen(false)} />}
     </div>
   )
 }
@@ -182,32 +223,17 @@ function WelcomeToast() {
  * appear in edit mode.
  */
 function HubSidebar({
-  dark, onToggleTheme, onShareSection, onSettings, saveState, access,
+  dark, onToggleTheme, onShareSection, onSettings, access,
 }: {
   dark: boolean
   onToggleTheme: () => void
   onShareSection: (sectionId: string) => void
   onSettings: () => void
-  saveState: 'idle' | 'saving' | 'saved' | 'error'
   access: HubAccess
 }) {
-  const { config, active, setActive, editingSection, update } = useHub()
-  const SECTION_KINDS: Record<string, { label: string; icon: SectionConfig['icon'] }> = {
-    assets: { label: 'New files', icon: 'screenshots' },
-    colors: { label: 'New colors', icon: 'colors' },
-    guidelines: { label: 'New guidelines', icon: 'guidelines' },
-  }
+  const { config, active, setActive } = useHub()
 
-  function addSection(type: SectionConfig['type'] = 'assets') {
-    const kind = SECTION_KINDS[type] || SECTION_KINDS.assets
-    update(c => {
-      let n = c.sections.length + 1
-      let id = `section-${n}`
-      while (c.sections.some(s => s.id === id)) id = `section-${++n}`
-      c.sections.push({ id, label: kind.label, type, icon: kind.icon })
-      if (type === 'assets') c.assets[id] = []
-    })
-  }
+  const kindLabel = access.demo ? 'Demo hub' : access.studio ? 'Studio hub' : 'Client space'
 
   const GROUPS = [
     ['main', ''],
@@ -220,7 +246,7 @@ function HubSidebar({
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <SpaceSwitcher currentSlug={config.slug} />
+        <SpaceSwitcher currentSlug={config.slug} kindLabel={kindLabel} />
       </SidebarHeader>
 
       <SidebarContent>
@@ -239,7 +265,6 @@ function HubSidebar({
                       key={section.id}
                       section={section}
                       index={i}
-                      count={config.sections.length}
                       active={active === section.id}
                       onSelect={setActive}
                       onShare={onShareSection}
@@ -254,29 +279,7 @@ function HubSidebar({
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        {access.canEdit && (
-          <div className="mb-1 flex justify-center group-data-[collapsible=icon]:hidden">
-            {/* The plus splits into the section kinds — it used to always make an
-                assets section, so choosing one was a rename away. */}
-            <GooeyPlusMenu
-              items={[
-                { id: 'assets', label: 'Files', fx: '-54px', fy: '-34px', icon: <Icon name="screenshots" size={15} /> },
-                { id: 'colors', label: 'Colors', fx: '0px', fy: '-64px', icon: <Icon name="colors" size={15} /> },
-                { id: 'guidelines', label: 'Guidelines', fx: '54px', fy: '-34px', icon: <Icon name="guidelines" size={15} /> },
-              ]}
-              onSelect={item => addSection(item.id as SectionConfig['type'])}
-            />
-          </div>
-        )}
         <SidebarMenu>
-          {editingSection && (
-            <SidebarMenuItem>
-              <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-                <StatusBadge state={saveState === 'saving' ? 'loading' : 'done'} label={saveState === 'saving' ? 'Saving' : 'Saved'} />
-                <TextSwap>{saveState === 'error' ? 'Couldn’t save' : saveState === 'saving' ? 'Saving…' : 'Saved'}</TextSwap>
-              </div>
-            </SidebarMenuItem>
-          )}
           <SidebarMenuItem>
             <SidebarMenuButton onClick={onToggleTheme} tooltip={dark ? 'Light mode' : 'Dark mode'}>
               <IconSwap on={dark} a={<Icon name="moon" size={14} />} b={<Icon name="sun" size={14} />} />
@@ -310,17 +313,17 @@ function HubSidebar({
 }
 
 function HubSidebarItem({
-  section, index, count, active, onSelect, onShare, canEdit,
+  section, index, active, onSelect, onShare, canEdit,
 }: {
   section: SectionConfig
   index: number
-  count: number
   active: boolean
   onSelect: (id: string) => void
   onShare: (sectionId: string) => void
   canEdit: boolean
 }) {
   const { editingSection, setEditingSection, update } = useHub()
+  const { confirm, confirmDialog } = useConfirm()
   const isEditing = editingSection === section.id
 
   // External links are just links; they have nothing to edit or share.
@@ -341,6 +344,7 @@ function HubSidebarItem({
 
   return (
     <SidebarMenuItem>
+      {confirmDialog}
       {isEditing ? (
         <SidebarMenuButton isActive={active} render={<div />} className="gap-1.5">
           <Icon name={section.icon} size={14} />
@@ -392,8 +396,14 @@ function HubSidebarItem({
             showOnHover
             className="hover:!text-destructive md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all"
             title={`Delete ${section.label}`}
-            onClick={() => {
-              if (!window.confirm(`Delete the "${section.label}" section?`)) return
+            onClick={async () => {
+              const ok = await confirm({
+                title: `Delete the "${section.label}" section?`,
+                description: 'Everything filed under it goes too.',
+                confirmLabel: 'Delete section',
+                destructive: true,
+              })
+              if (!ok) return
               if (editingSection === section.id) setEditingSection(null)
               update(c => { c.sections.splice(index, 1) })
             }}

@@ -2,15 +2,16 @@ import { PRIVATE_PAGE } from '@/lib/seo'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSessionUser } from '@/lib/auth'
-import { isExpired, listHubsForUser } from '@/lib/store'
+import { createHub, getStudioHub, isExpired, listHubsForUser } from '@/lib/store'
+import { blankHubConfig } from '@/lib/brand-builder'
 import { limitsFor } from '@/lib/limits'
 import { labelsFor } from '@/lib/labels'
-import { NewHubButton, AccountMenu, StudioSetup, AccountTypePicker } from './parts'
+import { NewHubButton, AccountMenu, StudioSetup } from './parts'
 import { HubCardStack } from './HubCardStack'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { ...PRIVATE_PAGE, title: { absolute: 'Client spaces — Pitho' } }
+export const metadata = { ...PRIVATE_PAGE, title: { absolute: 'Client spaces · Pitho' } }
 
 /** The first few image assets in a hub, for the card's fanning stack. */
 function previewImages(assets: Record<string, Array<{ file?: string }>>): string[] {
@@ -34,6 +35,17 @@ export default async function DashboardPage() {
   if (!user) redirect('/login')
 
   const hubs = await listHubsForUser(user)
+
+  // A brand-new account skips setup questions entirely: their hub is made for
+  // them and they land in it, on the Logo drop zone. Naming and everything
+  // else can happen there, in place.
+  if (hubs.length === 0) {
+    const existing = await getStudioHub(user.id)
+    const hub = existing?.hub
+      ?? await createHub(blankHubConfig('Our studio', { kind: 'studio' }), user.id, { studio: true })
+    redirect(`/${hub.slug}`)
+  }
+
   const limits = limitsFor(user)
   const labels = labelsFor(user.accountType)
 
@@ -42,10 +54,6 @@ export default async function DashboardPage() {
   const clients = hubs.filter(h => h !== studio)
   const ownedClients = clients.filter(h => h.role === 'owner').length
   const sharedCount = clients.length - ownedClients
-
-  // Asked once, on a genuinely empty account. Anyone already using Pitho keeps
-  // the wording they've had rather than being stopped for a question.
-  const askWhatFor = !user.accountType && hubs.length === 0
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,10 +67,7 @@ export default async function DashboardPage() {
 
       <main className="max-w-[900px] mx-auto px-5 sm:px-8 py-10 flex flex-col gap-10">
 
-        {askWhatFor ? (
-          <AccountTypePicker />
-        ) : (
-          <>
+        <>
             {/* ── The account's own brand — hub zero ────────────────────────── */}
             <section>
               <div className="mb-4">
@@ -153,8 +158,7 @@ export default async function DashboardPage() {
                 </div>
               )}
             </section>
-          </>
-        )}
+        </>
       </main>
     </div>
   )

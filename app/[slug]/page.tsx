@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // indexing. Its copy is written for a searcher, not for the client whose
   // brand it holds.
   if (PUBLIC_HUB_SLUGS.has(slug)) {
-    const title = 'Brand hub demo — see a working brand hub'
+    const title = 'Brand hub demo: see a working brand hub'
     const description =
       'A live brand hub: logos, colours, fonts and guidelines in one place your clients can actually use. No signup, nothing to install.'
     return {
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     ...PRIVATE_PAGE,
     // `absolute` stops the site-wide "%s — Pitho" template appending a second
     // "Pitho" to a hub that is already named.
-    title: { absolute: `${hub.name} — Brand Hub` },
+    title: { absolute: `${hub.name} · Brand Hub` },
     description: hub.tagline,
     ...icons,
   }
@@ -75,6 +75,7 @@ export default async function HubPage({ params }: { params: Promise<{ slug: stri
       isOwner={isOwner}
       demo={Boolean(meta.demo)}
       signedIn={Boolean(user)}
+      studio={Boolean(meta.studio)}
     />
   )
 }

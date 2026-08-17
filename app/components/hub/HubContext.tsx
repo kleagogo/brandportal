@@ -21,6 +21,8 @@ interface HubContextValue {
    */
   editingSection: string | null
   setEditingSection: (id: string | null) => void
+  /** Leave edit mode and throw away everything changed since it began. */
+  cancelEditing: () => void
   /** True when the section currently on screen is the one being edited. */
   editing: boolean
   saveState: SaveState
@@ -47,9 +49,14 @@ const SAVE_DEBOUNCE_MS = 800
 export function HubProvider({ initial, children, canEdit = false, allowDownload = true, portalId }: { initial: BrandConfig; children: React.ReactNode; canEdit?: boolean; allowDownload?: boolean; portalId?: string }) {
   const [config, setConfig] = useState<BrandConfig>(initial)
   const [active, setActive] = useState(initial.sections[0]?.id || '')
-  const [editingSection, setEditingSection] = useState<string | null>(null)
+  const [editingSection, setEditingSectionState] = useState<string | null>(null)
   const editing = editingSection !== null && editingSection === active
   const [saveState, setSaveState] = useState<SaveState>('idle')
+
+  // What the hub looked like when edit mode began, so Escape can put it back.
+  const snapshot = useRef<BrandConfig | null>(null)
+  const configRef = useRef(config)
+  configRef.current = config
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pending = useRef<BrandConfig | null>(null)
@@ -91,6 +98,28 @@ export function HubProvider({ initial, children, canEdit = false, allowDownload 
     })
   }, [flush])
 
+  const setEditingSection = useCallback((id: string | null) => {
+    setEditingSectionState(prev => {
+      // The snapshot is taken when editing begins and dropped when it ends;
+      // switching sections mid-edit keeps the original, so one Escape undoes
+      // the whole editing session.
+      if (prev === null && id !== null) snapshot.current = structuredClone(configRef.current)
+      if (id === null) snapshot.current = null
+      return id
+    })
+  }, [])
+
+  const cancelEditing = useCallback(() => {
+    const snap = snapshot.current
+    if (snap) {
+      // Restore through update() so the revert also autosaves over anything
+      // the debounced save already wrote.
+      update(draft => Object.assign(draft, structuredClone(snap)))
+    }
+    snapshot.current = null
+    setEditingSectionState(null)
+  }, [update])
+
   // Warn before leaving with unsaved changes.
   useEffect(() => {
     function onBeforeUnload(e: BeforeUnloadEvent) {
@@ -101,7 +130,7 @@ export function HubProvider({ initial, children, canEdit = false, allowDownload 
   }, [])
 
   return (
-    <HubContext.Provider value={{ config, active, setActive, editingSection, setEditingSection, editing, saveState, update, canEdit, allowDownload, portalId }}>
+    <HubContext.Provider value={{ config, active, setActive, editingSection, setEditingSection, cancelEditing, editing, saveState, update, canEdit, allowDownload, portalId }}>
       {children}
     </HubContext.Provider>
   )

@@ -94,7 +94,7 @@ export async function uploadAsset(
     throw new Error(
       config.blob
         ? `${file.name} is too large (max ${humanSize(config.maxBytes)})`
-        : `${file.name} is ${humanSize(file.size)} — files over ${humanSize(config.directLimit)} need blob storage connected`
+        : `${file.name} is ${humanSize(file.size)}. Files over ${humanSize(config.directLimit)} need blob storage connected.`
     )
   }
 

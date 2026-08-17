@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useConfirm } from '@/app/components/hub/useConfirm'
 
 export function ChangeEmail() {
   const [open, setOpen] = useState(false)
@@ -86,10 +87,17 @@ export function ChangeEmail() {
 }
 
 export function LeaveHubButton({ slug, name }: { slug: string; name: string }) {
+  const { confirm, confirmDialog } = useConfirm()
   const [busy, setBusy] = useState(false)
 
   async function leave() {
-    if (!window.confirm(`Leave "${name}"? You’ll lose edit access until re-invited.`)) return
+    const ok = await confirm({
+      title: `Leave "${name}"?`,
+      description: 'You’ll lose edit access until someone invites you back.',
+      confirmLabel: 'Leave hub',
+      destructive: true,
+    })
+    if (!ok) return
     setBusy(true)
     const res = await fetch(`/api/hubs/${encodeURIComponent(slug)}/leave`, { method: 'POST' })
     if (res.ok) window.location.reload()
@@ -97,9 +105,12 @@ export function LeaveHubButton({ slug, name }: { slug: string; name: string }) {
   }
 
   return (
-    <button onClick={leave} disabled={busy} className="text-[12px] text-muted-foreground/60 hover:text-destructive transition-colors disabled:opacity-50">
-      Leave
-    </button>
+    <>
+      {confirmDialog}
+      <button onClick={leave} disabled={busy} className="text-[12px] text-muted-foreground/60 hover:text-destructive transition-colors disabled:opacity-50">
+        Leave
+      </button>
+    </>
   )
 }
 

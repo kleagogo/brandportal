@@ -13,7 +13,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has('invalid')) {
-      setError('That link is invalid or already used — request a fresh one.')
+      setError('That link is invalid or already used. Request a fresh one.')
     }
   }, [])
 
@@ -62,7 +62,7 @@ export default function LoginPage() {
               {devLink && (
                 <div className="border-t border-dashed border-border pt-4">
                   <p className="text-[12px] text-muted-foreground/60 mb-2">
-                    Email sending isn’t configured yet (no RESEND_API_KEY) — use your link directly:
+                    Email sending isn’t configured yet (no RESEND_API_KEY). Use your link directly:
                   </p>
                   <Button nativeButton={false} render={<a href={devLink} />} className="w-full">
                     Open my sign-in link →
@@ -73,7 +73,7 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={submit}>
               <h1 className="text-[19px] font-bold tracking-tight mb-1">Sign in</h1>
-              <p className="text-[13.5px] text-muted-foreground mb-5">No password — we email you a link.</p>
+              <p className="text-[13.5px] text-muted-foreground mb-5">No password. We email you a link.</p>
               <Input
                 type="email"
                 value={email}

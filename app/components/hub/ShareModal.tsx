@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useHub } from './HubContext'
+import { DatePicker } from './DatePicker'
 import { Icon } from './Icon'
 import { PortalManager } from './PortalManager'
 import { Toggle, useConfettiBurst, useModalTransition } from '../transitions'
@@ -145,7 +146,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo, section }: { onClo
         <p className="text-[13px] text-muted-foreground mb-5">
           {sectionLabel
             ? `The link below opens the whole hub. To send ${sectionLabel} on its own, create a share link below.`
-            : 'Anyone with the link can view — no account needed.'}
+            : 'Anyone with the link can view. No account needed.'}
         </p>
 
         <div ref={stageRef} className="t-confetti-stage flex gap-2 mb-5">
@@ -206,18 +207,12 @@ export function ShareModal({ onClose, isOwner, canEdit, demo, section }: { onClo
                   {expiresAt ? `Stops working ${new Date(expiresAt).toLocaleDateString()}` : 'Never expires'}
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <input
-                  type="date"
-                  value={expiresAt ? new Date(expiresAt).toISOString().slice(0, 10) : ''}
-                  onChange={e => saveExpiry(e.target.value)}
-                  className="text-[12px] px-2.5 py-1.5 rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors"
+              <div className="shrink-0">
+                <DatePicker
+                  value={expiresAt || null}
+                  onChange={iso => saveExpiry(iso ? iso.slice(0, 10) : '')}
+                  placeholder="Never"
                 />
-                {expiresAt && (
-                  <button onClick={() => saveExpiry('')} className="text-muted-foreground/60 hover:text-destructive transition-colors" title="Remove expiry">
-                    <Icon name="close" size={12} />
-                  </button>
-                )}
               </div>
             </div>
 
@@ -300,7 +295,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo, section }: { onClo
               <div>
                 <p className="text-[13px] font-medium text-foreground">PIN protection & editor invites</p>
                 <p className="text-[12px] text-muted-foreground/60">
-                  {demo ? 'Not available on the demo hub — claim your own to use these' : 'Only the hub owner can manage access'}
+                  {demo ? 'Not available on the demo hub. Claim your own to use these.' : 'Only the hub owner can manage access'}
                 </p>
               </div>
             </div>

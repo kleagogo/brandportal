@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useHub } from './HubContext'
 import { Editable } from './Editable'
+import { useConfirm } from './useConfirm'
 import { Icon } from './Icon'
 import { GradientsBlock } from './GradientsBlock'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ function isValidHex(v: string): boolean {
 
 export function ColorsSection() {
   const { config, editing, update } = useHub()
+  const { confirm, confirmDialog } = useConfirm()
   const [copied, setCopied] = useState<string | null>(null)
   const [open, setOpen] = useState<string | null>(null) // "groupIdx:swatchIdx"
 
@@ -31,9 +33,10 @@ export function ColorsSection() {
 
   return (
     <div>
+      {confirmDialog}
       <h1 className="text-[22px] font-bold tracking-tight mb-1">Colors</h1>
       <p className="text-[14px] text-muted-foreground mb-8">
-        {editing ? 'Click a swatch to edit it, or add colors and groups.' : 'Our color palette — click any swatch to copy the hex value.'}
+        {editing ? 'Click a swatch to edit it, or add colors and groups.' : 'Click a swatch to copy its hex value.'}
       </p>
 
       {config.colors.map((group, gi) => (
@@ -49,8 +52,13 @@ export function ColorsSection() {
             </p>
             {editing && (
               <button
-                onClick={() => {
-                  if (group.swatches.length > 0 && !window.confirm(`Delete the "${group.group}" group and its ${group.swatches.length} colors?`)) return
+                onClick={async () => {
+                  if (group.swatches.length > 0 && !(await confirm({
+                    title: `Delete the "${group.group}" group?`,
+                    description: `Its ${group.swatches.length} colors go with it.`,
+                    confirmLabel: 'Delete group',
+                    destructive: true,
+                  }))) return
                   update(c => { c.colors.splice(gi, 1) })
                 }}
                 className="opacity-0 group-hover/head:opacity-100 text-muted-foreground/60 hover:text-destructive transition-all"

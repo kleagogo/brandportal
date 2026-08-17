@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useHub } from './HubContext'
 import { Icon } from './Icon'
+import { useConfirm } from './useConfirm'
 import { useModalTransition } from '../transitions'
 
 /** Owner-only hub settings: address and deletion. */
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const { config } = useHub()
+  const { confirm, confirmDialog } = useConfirm()
   const [open, setOpen] = useState(true)
   const transition = useModalTransition(open, onClose)
   const [slug, setSlug] = useState(config.slug)
@@ -54,7 +56,13 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   }
 
   async function destroy() {
-    if (!window.confirm(`Delete the "${config.name}" hub permanently? This can’t be undone.`)) return
+    const ok = await confirm({
+      title: `Delete "${config.name}" permanently?`,
+      description: 'The hub and its share links go for good. This can’t be undone.',
+      confirmLabel: 'Delete hub',
+      destructive: true,
+    })
+    if (!ok) return
     setBusy(true)
     try {
       const res = await fetch(`/api/hubs/${encodeURIComponent(config.slug)}/settings`, { method: 'DELETE' })
@@ -72,6 +80,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className={`absolute inset-0 bg-foreground/30 transition-opacity ${open ? 'opacity-100' : 'opacity-0'}`} onClick={() => setOpen(false)} />
       <div className={`t-modal ${transition.className} relative bg-card rounded-2xl border border-border shadow-2xl w-full max-w-[440px] p-6`} role="dialog" aria-modal="true">
+        {confirmDialog}
         <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-muted-foreground/60 hover:text-foreground transition-colors" title="Close">
           <Icon name="close" size={14} />
         </button>
@@ -142,6 +151,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
 /** Hand the hub to a client or teammate — the agency handoff moment. */
 function TransferSection({ slug, name }: { slug: string; name: string }) {
+  const { confirm, confirmDialog } = useConfirm()
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
@@ -152,7 +162,12 @@ function TransferSection({ slug, name }: { slug: string; name: string }) {
   async function transfer(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim() || busy) return
-    if (!window.confirm(`Transfer ownership of "${name}" to ${email.trim()}? Once they accept, they own it and you become an editor.`)) return
+    const ok = await confirm({
+      title: `Transfer "${name}" to ${email.trim()}?`,
+      description: 'Once they accept, they own the hub and you stay on as an editor.',
+      confirmLabel: 'Send transfer',
+    })
+    if (!ok) return
     setBusy(true)
     setError('')
     try {
@@ -174,10 +189,11 @@ function TransferSection({ slug, name }: { slug: string; name: string }) {
 
   return (
     <div className="border-t border-dashed border-border pt-4 mb-6">
+      {confirmDialog}
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[13px] font-medium text-foreground">Hand off to a client</p>
-          <p className="text-[12px] text-muted-foreground/60">Transfer ownership — they accept by email, you stay on as an editor</p>
+          <p className="text-[12px] text-muted-foreground/60">Transfer ownership. They accept by email and you stay on as an editor.</p>
         </div>
         {!open && !sentTo && (
           <button onClick={() => setOpen(true)} className="text-[13px] font-semibold border-[1.5px] border-border text-foreground px-3.5 py-2 rounded-xl hover:border-ring transition-colors whitespace-nowrap">

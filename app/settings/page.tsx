@@ -8,7 +8,7 @@ import { ChangeEmail, LeaveHubButton, DeleteAccount } from './parts'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { ...PRIVATE_PAGE, title: 'Account settings — Pitho' }
+export const metadata = { ...PRIVATE_PAGE, title: 'Account settings · Pitho' }
 
 export default async function SettingsPage() {
   const user = await getSessionUser()
@@ -50,7 +50,7 @@ export default async function SettingsPage() {
           <p className="text-[13px] font-medium text-foreground mb-3">Your hubs</p>
           {hubs.length === 0 ? (
             <p className="text-[13px] text-muted-foreground">
-              None yet — <Link href="/" className="underline underline-offset-2">scan your website</Link> to create one.
+              None yet. <Link href="/" className="underline underline-offset-2">Scan your website</Link> to create one.
             </p>
           ) : (
             <div className="space-y-2">

@@ -29,7 +29,7 @@ export async function POST(
     return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
   }
   if (email === user!.email) {
-    return NextResponse.json({ error: 'That’s you — you already own this hub' }, { status: 400 })
+    return NextResponse.json({ error: 'That’s you. You already own this hub.' }, { status: 400 })
   }
   if (meta.editors.includes(email)) {
     return NextResponse.json({ error: 'That person can already edit this hub' }, { status: 400 })
@@ -41,7 +41,7 @@ export async function POST(
   }
   const limits = limitsFor(user!)
   if (meta.editors.length + pending.length >= limits.editorsPerHub) {
-    return NextResponse.json({ error: `Your plan allows ${limits.editorsPerHub} editors per hub — Pro (coming soon) raises the limit` }, { status: 403 })
+    return NextResponse.json({ error: `Your plan allows ${limits.editorsPerHub} editors per hub. Pro raises the limit.` }, { status: 403 })
   }
 
   const hub = await getHub(slug)

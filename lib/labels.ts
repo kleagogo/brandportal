@@ -38,12 +38,12 @@ const AGENCY: HubLabels = {
   namePlaceholder: 'Client name',
   setupTitle: 'Start with your own brand',
   setupBody:
-    'Put your studio’s logo, colors, type and photography in a hub first. You’ll know the product before a client sees it, every client link you share gets signed with your studio’s name and color, and each client space you set up copies this hub’s layout.',
+    'Your studio’s logo, colors, and type in one hub. Client links carry your studio’s name, and new client spaces copy this hub’s layout.',
   setupAction: 'Create studio hub',
   setupPlaceholder: 'Studio name',
   emptyTitle: 'No client spaces yet',
-  emptyBody: 'One per client — each gets its own brand hub, its own address, and its own share link.',
-  ownCardNote: 'Your own brand. Client spaces copy its layout; client links carry its name and color.',
+  emptyBody: 'One hub per client, each with its own address and share link.',
+  ownCardNote: 'Your own brand. Client spaces copy its layout.',
 }
 
 const BRAND: HubLabels = {
@@ -53,12 +53,12 @@ const BRAND: HubLabels = {
   namePlaceholder: 'Product or campaign',
   setupTitle: 'Start with your brand',
   setupBody:
-    'Put your logo, colors, type and photography in one hub. It becomes the place you send anyone who needs a file — teammates, freelancers, press, printers — and the layout you set here carries to any other space you add.',
+    'Your logo, colors, and type in one hub. Send anyone who needs a file here.',
   setupAction: 'Create brand hub',
   setupPlaceholder: 'Brand name',
   emptyTitle: 'No other spaces yet',
-  emptyBody: 'Add one for a product line, a campaign, or a press kit — each with its own address and share link.',
-  ownCardNote: 'Your main brand. Other spaces copy its layout; share links carry its name and color.',
+  emptyBody: 'Add a space for a product line, a campaign, or a press kit.',
+  ownCardNote: 'Your main brand. Other spaces copy its layout.',
 }
 
 export function labelsFor(accountType: AccountType | undefined | null): HubLabels {

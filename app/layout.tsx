@@ -9,9 +9,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // that client's brand declares, loaded per hub from its own config.
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
-const TITLE = "Pitho — brand hub & brand asset management for agencies";
+const TITLE = "Pitho · brand asset management for agencies";
 const DESCRIPTION =
-  "Pitho gives every client one clean brand hub — logos, colours, fonts and guidelines in one shareable place. Built for agencies and studios managing brands for clients. Live in ten minutes.";
+  "Pitho gives every client one clean brand hub: logos, colours, fonts and guidelines in one shareable place. Built for agencies and studios managing brands for clients. Live in ten minutes.";
 
 /**
  * Site-wide metadata. `metadataBase` matters more than it looks: without it
@@ -21,7 +21,7 @@ const DESCRIPTION =
  */
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: TITLE, template: "%s — Pitho" },
+  title: { default: TITLE, template: "%s · Pitho" },
   description: DESCRIPTION,
   applicationName: "Pitho",
   alternates: { canonical: "/" },

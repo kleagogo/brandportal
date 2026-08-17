@@ -27,6 +27,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Not allowed' }, { status: 403 })
   }
 
+  // Anyone may edit the public demo without signing in, so describing its
+  // uploads would be an open, billable endpoint. Files still upload; they just
+  // keep their filenames.
+  if (meta.demo) return NextResponse.json({ suggestion: null })
+
   // A key names a file this app just stored — read it back and look at it.
   if (key) {
     const safe = String(key).replace(/[^\w.\-]/g, '')

@@ -53,7 +53,7 @@ export function HomeSection() {
         )}
         <h1 className="text-[30px] font-bold tracking-tight mb-2">{agent.name}</h1>
         <p className="text-[15px] text-muted-foreground leading-relaxed mb-2 max-w-[440px]">
-          {agent.home || `Your AI-powered assistant for everything ${config.name} brand — from guidelines to copy to asset discovery.`}
+          {agent.home || `Your AI-powered assistant for everything ${config.name} brand: from guidelines to copy to asset discovery.`}
         </p>
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary bg-primary/15 px-2.5 py-1 rounded-full mb-8">
           <Icon name="sparkles" size={11} /> Pro feature

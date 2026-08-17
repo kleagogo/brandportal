@@ -144,7 +144,7 @@ export async function listHubsForUser(user: User): Promise<Array<{ hub: BrandCon
 /** Move a hub to a new slug. Returns the final slug or an error string. */
 export async function renameHub(oldSlug: string, wanted: string): Promise<{ slug?: string; error?: string }> {
   const next = slugify(wanted)
-  if (!next) return { error: 'That address isn’t valid — use letters and numbers' }
+  if (!next) return { error: 'That address isn’t valid. Use letters and numbers.' }
   if (next === oldSlug) return { slug: oldSlug }
   if (RESERVED_SLUGS.has(next) || next === seed.slug || (await getStorage().getJSON('hubs', next))) {
     return { error: 'That address is already taken' }
