@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import type { BrandConfig, SectionConfig, SharePortal } from '@/app/types/brand'
 import { HubProvider, useHub } from '../hub/HubContext'
@@ -18,8 +17,8 @@ import { trackPortal, trackPortalView } from './track'
  *   full    — the hub layout, sidebar and all
  *   gallery — everything on one scrolling page
  *   minimal — a download list, nothing else
- * White-label branding replaces the logo, name, and accent, and can drop the
- * Pitho credit entirely.
+ * White-label branding replaces the logo, name, and accent. Nothing here
+ * carries our name: a portal is the agency's deliverable to their own client.
  */
 export function PortalView({ config, portal }: { config: BrandConfig; portal: SharePortal }) {
   const branding = portal.branding || {}
@@ -50,13 +49,6 @@ export function PortalView({ config, portal }: { config: BrandConfig; portal: Sh
           : portal.template === 'gallery'
             ? <GalleryTemplate config={config} portal={portal} />
             : <MinimalTemplate config={config} portal={portal} />}
-        {!branding.hideCredit && (
-          <footer className="border-t border-border py-5 text-center">
-            <Link href="/" className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors">
-              Made with Pitho
-            </Link>
-          </footer>
-        )}
       </div>
     </HubProvider>
   )
