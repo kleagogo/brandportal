@@ -82,6 +82,22 @@ async function describeStored(body: { key?: string; url?: string; name: string; 
   }
 }
 
+/**
+ * The demo's stand-in for uploading: the file is shown straight from the
+ * browser and never sent anywhere.
+ *
+ * The tile looks exactly like a real one, so a visitor can see how uploading
+ * behaves; the URL lives only as long as the tab, which is the whole point —
+ * nothing is stored, so nobody inherits the last visitor's files.
+ */
+export function localPreview(file: File): UploadResult {
+  return {
+    url: URL.createObjectURL(file),
+    format: (file.name.split('.').pop() || 'file').toUpperCase(),
+    size: file.size,
+  }
+}
+
 export async function uploadAsset(
   file: File,
   slug: string,

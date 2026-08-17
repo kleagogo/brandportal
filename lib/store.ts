@@ -102,10 +102,28 @@ export async function saveMeta(meta: HubMeta): Promise<HubMeta> {
   return meta
 }
 
+/**
+ * May this request *write* to the hub?
+ *
+ * A demo hub is not editable here, even though the page lets a visitor try
+ * everything. Its edits live in the browser and are thrown away on reload, so
+ * one visitor never redecorates the demo for the next — see the `sandbox` flag
+ * the hub page hands to <Hub>. Everything that persists asks this question, so
+ * refusing here is what makes the sandbox real rather than cosmetic.
+ */
 export function canEditHub(meta: HubMeta, user: User | null): boolean {
-  if (meta.demo) return true
+  if (meta.demo) return false
   if (!user) return false
   return meta.ownerId === user.id || meta.editors.includes(user.email)
+}
+
+/**
+ * May this viewer try things out, with nothing kept?
+ *
+ * True only for the demo, and only for someone who can't really edit it.
+ */
+export function isSandboxHub(meta: HubMeta, user: User | null): boolean {
+  return Boolean(meta.demo) && !canEditHub(meta, user)
 }
 
 export function isHubOwner(meta: HubMeta, user: User | null): boolean {

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { PRIVATE_PAGE, PUBLIC_HUB_SLUGS } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { canEditHub, getHub, getMeta, isExpired, isHubOwner } from '@/lib/store'
+import { canEditHub, getHub, getMeta, isExpired, isHubOwner, isSandboxHub } from '@/lib/store'
 import { getSessionUser, pinCookieName, pinCookieValue } from '@/lib/auth'
 import Hub from '@/app/components/hub/Hub'
 import { PinGate } from '@/app/components/hub/PinGate'
@@ -55,6 +55,9 @@ export default async function HubPage({ params }: { params: Promise<{ slug: stri
   const user = await getSessionUser()
   const canEdit = canEditHub(meta, user)
   const isOwner = isHubOwner(meta, user)
+  // The demo hands out edit controls that write to nothing, so a visitor can
+  // try uploading and renaming without leaving a trace for the next one.
+  const sandbox = isSandboxHub(meta, user)
 
   // Expired share links close to outside viewers; editors keep access.
   if (isExpired(meta) && !canEdit) {
@@ -71,7 +74,8 @@ export default async function HubPage({ params }: { params: Promise<{ slug: stri
   return (
     <Hub
       initial={hub}
-      canEdit={canEdit}
+      canEdit={canEdit || sandbox}
+      sandbox={sandbox}
       isOwner={isOwner}
       demo={Boolean(meta.demo)}
       signedIn={Boolean(user)}

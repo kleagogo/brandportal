@@ -5,7 +5,7 @@ import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
 import { trackPortal } from '../portal/track'
-import { humanSize, uploadAsset, uploadConfig } from './upload-client'
+import { humanSize, localPreview, uploadAsset, uploadConfig } from './upload-client'
 import { ImageOpenTilt, OrganicShimmer, useSmokyDissolve } from '../transitions'
 import {
   expandArchives,
@@ -167,7 +167,7 @@ function EmptyDropzone({
 }
 
 export function AssetsSection({ sectionId }: { sectionId: string }) {
-  const { config, editing, update, canEdit, allowDownload, portalId } = useHub()
+  const { config, editing, update, canEdit, sandbox, allowDownload, portalId } = useHub()
   const [progress, setProgress] = useState<{ done: number; total: number; name: string; percent: number } | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState('')
@@ -233,7 +233,10 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
     // with the rules' own answer, so a slow or absent AI just means it doesn't
     // change — never a blocked upload.
     const asking = unplaced(buckets)
-    if (!asking.length) return
+    if (!asking.length || sandbox) {
+      if (sandbox) setReview(current => current && { ...current, scanning: false })
+      return
+    }
     try {
       const res = await fetch('/api/upload/classify', {
         method: 'POST',
@@ -320,11 +323,13 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
         try {
           // Per-file percentages only mean something when there's one file;
           // in a batch the count is the useful signal.
-          const data = await uploadAsset(
-            item.file,
-            config.slug,
-            total === 1 ? percent => setProgress({ done, total, name: item.file.name, percent }) : undefined
-          )
+          const data = sandbox
+            ? localPreview(item.file)
+            : await uploadAsset(
+                item.file,
+                config.slug,
+                total === 1 ? percent => setProgress({ done, total, name: item.file.name, percent }) : undefined
+              )
           const asset: AssetFile = {
             name: data.suggestion?.name || item.file.name.replace(/\.[^.]*$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()),
             file: data.url,
@@ -510,7 +515,7 @@ function groupBySubgroup(assets: AssetFile[]): Array<{ subgroup: string; items: 
 }
 
 function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
-  const { config, editing, update, allowDownload, portalId } = useHub()
+  const { config, editing, update, sandbox, allowDownload, portalId } = useHub()
   const i = index
   const tileClass = asset.ratio === 'wide' ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
   const versions = asset.versions || []
@@ -536,7 +541,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
   async function uploadVersion(file: File) {
     setUploadingVersion(true)
     try {
-      const data = await uploadAsset(file, config.slug)
+      const data = sandbox ? localPreview(file) : await uploadAsset(file, config.slug)
       update(c => {
         const a = c.assets[sectionId][i]
         const list = a.versions || []

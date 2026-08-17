@@ -45,11 +45,16 @@ export interface HubAccess {
   signedIn?: boolean
   /** The account's own hub, as opposed to a client space. */
   studio?: boolean
+  /**
+   * The demo: edit controls work, but every change stays in this browser and
+   * is gone on reload, so no visitor inherits the last one's mess.
+   */
+  sandbox?: boolean
 }
 
 export default function Hub({ initial, ...access }: { initial: BrandConfig } & HubAccess) {
   return (
-    <HubProvider initial={initial} canEdit={Boolean(access.canEdit)}>
+    <HubProvider initial={initial} canEdit={Boolean(access.canEdit)} sandbox={Boolean(access.sandbox)}>
       <HubShell access={access} />
     </HubProvider>
   )
@@ -139,6 +144,7 @@ function HubShell({ access }: { access: HubAccess }) {
       {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
 
       <WelcomeToast />
+      {access.sandbox && <SandboxNotice />}
 
       <SidebarProvider className="flex-1 min-h-0 items-stretch">
         <HubSidebar
@@ -184,6 +190,30 @@ function HubShell({ access }: { access: HubAccess }) {
       )}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {searchOpen && <SearchOverlay onNavigate={setActive} onClose={() => setSearchOpen(false)} />}
+    </div>
+  )
+}
+
+/**
+ * Says out loud that this is a sandbox.
+ *
+ * Without it, edits vanishing on reload reads as a bug rather than the point.
+ */
+function SandboxNotice() {
+  const [open, setOpen] = useState(true)
+  if (!open) return null
+  return (
+    <div className="shrink-0 flex items-center gap-3 border-b border-border bg-muted px-4 sm:px-6 py-2 text-[12.5px]">
+      <span className="text-muted-foreground shrink-0"><Icon name="sparkles" size={13} /></span>
+      <span className="text-muted-foreground flex-1 min-w-0">
+        Try anything here. This demo resets when you reload, so nothing you change is saved or shared.
+      </span>
+      <Link href="/login" className="font-semibold text-foreground whitespace-nowrap hover:opacity-70 transition-opacity">
+        Start a free hub
+      </Link>
+      <button onClick={() => setOpen(false)} className="text-muted-foreground/60 hover:text-foreground shrink-0" title="Dismiss">
+        <Icon name="close" size={12} />
+      </button>
     </div>
   )
 }

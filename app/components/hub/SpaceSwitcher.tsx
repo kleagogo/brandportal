@@ -7,7 +7,7 @@ import { Icon } from './Icon'
 import { useHub } from './HubContext'
 import { Editable } from './Editable'
 import { NewSpaceModal } from './NewSpaceModal'
-import { uploadAsset } from './upload-client'
+import { localPreview, uploadAsset } from './upload-client'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -32,7 +32,7 @@ interface Space {
  * trigger yields to inputs.
  */
 export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string; kindLabel: string }) {
-  const { config, editing, update } = useHub()
+  const { config, editing, update, sandbox } = useHub()
   const router = useRouter()
   const [spaces, setSpaces] = useState<Space[]>([])
   const [signedIn, setSignedIn] = useState(false)
@@ -52,7 +52,7 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
   async function pickLogo(file: File) {
     setLogoBusy(true)
     try {
-      const result = await uploadAsset(file, config.slug)
+      const result = sandbox ? localPreview(file) : await uploadAsset(file, config.slug)
       update(c => { c.logoUrl = result.url })
     } catch {
       // A failed logo upload just keeps the current mark.

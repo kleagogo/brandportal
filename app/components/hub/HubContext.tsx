@@ -30,6 +30,11 @@ interface HubContextValue {
   update: (mutate: (draft: BrandConfig) => void) => void
   /** May this viewer change the hub? True before Edit mode is switched on. */
   canEdit: boolean
+  /**
+   * Changes are the visitor's own and are never sent anywhere — the demo.
+   * Sections still render their edit controls; nothing survives a reload.
+   */
+  sandbox: boolean
   /** Show download controls. Share portals can turn downloads off. */
   allowDownload: boolean
   /** Set when the hub is being viewed through a share portal (/s/<id>). */
@@ -46,7 +51,7 @@ export function useHub() {
 
 const SAVE_DEBOUNCE_MS = 800
 
-export function HubProvider({ initial, children, canEdit = false, allowDownload = true, portalId }: { initial: BrandConfig; children: React.ReactNode; canEdit?: boolean; allowDownload?: boolean; portalId?: string }) {
+export function HubProvider({ initial, children, canEdit = false, sandbox = false, allowDownload = true, portalId }: { initial: BrandConfig; children: React.ReactNode; canEdit?: boolean; sandbox?: boolean; allowDownload?: boolean; portalId?: string }) {
   const [config, setConfig] = useState<BrandConfig>(initial)
   const [active, setActive] = useState(initial.sections[0]?.id || '')
   const [editingSection, setEditingSectionState] = useState<string | null>(null)
@@ -90,13 +95,16 @@ export function HubProvider({ initial, children, canEdit = false, allowDownload 
     setConfig(prev => {
       const next = structuredClone(prev)
       mutate(next)
+      // In the sandbox the change lives here and nowhere else: no request, so
+      // nothing to save, fail, or warn about on the way out.
+      if (sandbox) return next
       pending.current = next
       setSaveState('saving')
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(flush, SAVE_DEBOUNCE_MS)
       return next
     })
-  }, [flush])
+  }, [flush, sandbox])
 
   const setEditingSection = useCallback((id: string | null) => {
     setEditingSectionState(prev => {
@@ -130,7 +138,7 @@ export function HubProvider({ initial, children, canEdit = false, allowDownload 
   }, [])
 
   return (
-    <HubContext.Provider value={{ config, active, setActive, editingSection, setEditingSection, cancelEditing, editing, saveState, update, canEdit, allowDownload, portalId }}>
+    <HubContext.Provider value={{ config, active, setActive, editingSection, setEditingSection, cancelEditing, editing, saveState, update, canEdit, sandbox, allowDownload, portalId }}>
       {children}
     </HubContext.Provider>
   )
