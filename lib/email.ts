@@ -117,5 +117,5 @@ function htmlBody(subject: string, lead: string, action: string, url: string): s
 }
 
 function textBody(subject: string, lead: string, url: string): string {
-  return `${subject}\n\n${lead}\n\n${url}\n\nThis link works once and expires. If you didn't request it, ignore this email.\n\n— Pitho`
+  return `${subject}\n\n${lead}\n\n${url}\n\nThis link works once and expires. If you didn't request it, ignore this email.\n\nPitho`
 }

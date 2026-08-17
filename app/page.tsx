@@ -181,7 +181,7 @@ export default function PithoLanding() {
           </div>
           <blockquote className="mt-12 border-l-2 border-white/25 pl-6">
             <p className="text-[clamp(20px,3vw,28px)] font-bold tracking-tight leading-snug max-w-[26ch]">“It isn’t a branding problem. It’s a systems problem.”</p>
-            <p className="text-[11px] font-semibold tracking-widest uppercase text-[#8a8a85] mt-3">— Every agency, eventually</p>
+            <p className="text-[11px] font-semibold tracking-widest uppercase text-[#8a8a85] mt-3">Every agency, eventually</p>
           </blockquote>
         </div>
       </section>
@@ -216,7 +216,7 @@ export default function PithoLanding() {
             Meets your stack where it already works.
           </h2>
           <p className="text-[15px] text-[#6b6b66] max-w-[56ch] mb-12">
-            Pitho is the source of truth — your tools pull from it, so the right asset shows up where the work happens.
+            Pitho is the source of truth. Your tools pull from it, so the right asset shows up where the work happens.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {INTEGRATIONS.map(it => (

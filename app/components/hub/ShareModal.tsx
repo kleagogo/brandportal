@@ -239,7 +239,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo, section }: { onClo
                 <div className="bg-muted rounded-xl p-3 mb-2">
                   <p className="text-[12px] text-muted-foreground mb-1.5">
                     {inviteLink
-                      ? <>Invite created for <b>{inviteSentTo}</b>. Email isn’t configured yet — copy the invite link and send it yourself:</>
+                      ? <>Invite created for <b>{inviteSentTo}</b>. Email isn’t configured yet. Copy the invite link and send it yourself:</>
                       : <>Invite emailed to <b>{inviteSentTo}</b>.</>}
                   </p>
                   {inviteLink && (

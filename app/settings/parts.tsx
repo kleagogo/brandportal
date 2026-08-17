@@ -52,7 +52,7 @@ export function ChangeEmail() {
     return (
       <div className="bg-muted rounded-xl p-3">
         <p className="text-[12.5px] text-muted-foreground">
-          Confirmation sent to <b>{email}</b> — click the link there to switch.
+          Confirmation sent to <b>{email}</b>. Click the link there to switch.
         </p>
         {devLink && (
           <a href={devLink} className="text-[12.5px] font-semibold text-foreground underline underline-offset-2">

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   // barely holds under real traffic. Answer without calling the model.
   if (meta.demo) {
     return NextResponse.json({
-      reply: `The Brand Agent answers from a hub's own colors, type, and files — so it runs in your hub rather than this shared demo. Start a free hub and it'll know your brand.`,
+      reply: `The Brand Agent answers from a hub's own colors, type, and files, so it runs in your hub rather than in this shared demo. Start a free hub and it'll know your brand.`,
     })
   }
 
