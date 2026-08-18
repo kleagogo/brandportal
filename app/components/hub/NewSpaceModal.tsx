@@ -8,19 +8,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-/** Starter palettes for a fresh hub. The custom field takes any hex. */
-const PRESETS = ['#1a1a1a', '#1e5a42', '#a5502a', '#3a5da8', '#6c4a8c', '#b3323b']
-
 /**
- * Create a client hub without leaving the one you're in: name, a brand color,
- * and you land in the new space.
+ * Create a client hub without leaving the one you're in: give it a name and
+ * you land in the new space.
+ *
+ * It used to ask for a brand colour first. Nobody knows a client's hex before
+ * they have opened the client's files, so it was a guess made at the worst
+ * moment, and it is a single click to change once the assets are in. The API
+ * falls back to a neutral on its own.
  */
 export function NewSpaceModal({ onClose }: { onClose: () => void }) {
   const [open, setOpen] = useState(true)
   const transition = useModalTransition(open, onClose)
   const router = useRouter()
   const [name, setName] = useState('')
-  const [color, setColor] = useState(PRESETS[0])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -33,7 +34,7 @@ export function NewSpaceModal({ onClose }: { onClose: () => void }) {
       const res = await fetch('/api/hubs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), primaryColor: color }),
+        body: JSON.stringify({ name: name.trim() }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok || !data?.slug) throw new Error(data?.error || 'Couldn’t create the hub')
@@ -69,31 +70,6 @@ export function NewSpaceModal({ onClose }: { onClose: () => void }) {
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-hub-color">Brand color</Label>
-            <div className="flex items-center gap-2 flex-wrap">
-              {PRESETS.map(hex => (
-                <button
-                  key={hex}
-                  type="button"
-                  onClick={() => setColor(hex)}
-                  title={hex}
-                  className={`w-7 h-7 rounded-full border transition-shadow ${
-                    color === hex ? 'ring-2 ring-ring ring-offset-2 ring-offset-card border-transparent' : 'border-foreground/10'
-                  }`}
-                  style={{ background: hex }}
-                />
-              ))}
-              <Input
-                id="new-hub-color"
-                value={color}
-                onChange={e => setColor(e.target.value)}
-                className="w-24 font-mono text-[12px]"
-                aria-label="Custom hex color"
-              />
-            </div>
-            <p className="text-[12px] text-muted-foreground/60">The starter palette builds from this. Change it any time.</p>
-          </div>
 
           {error && <p className="text-[12.5px] text-destructive">{error}</p>}
 

@@ -71,13 +71,14 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
   /**
    * The slot a client's logo sits in.
    *
-   * A logo gets a neutral surface and room to be its own shape: filling the box
-   * with `bg-primary` hid any dark logo against it, and forcing a square
-   * squeezed a wordmark down to an unreadable smear. Only the initial fallback
-   * keeps the filled square, because a single letter wants one.
+   * A logo gets no surface of its own and room to be its own shape. Filling the
+   * box hid any logo that shared that colour, and forcing a square squeezed a
+   * wordmark down to an unreadable smear. A logo that wants a coloured ground
+   * carries one, the way an app icon does. Only the initial fallback keeps the
+   * filled square, because a single letter wants one.
    */
   const slot = config.logoUrl
-    ? 'h-8 w-auto min-w-8 max-w-[120px] px-1 bg-card border border-border'
+    ? 'h-8 w-auto min-w-8 max-w-[120px]'
     : 'aspect-square size-8 bg-primary text-primary-foreground'
 
   const identity = (
@@ -194,6 +195,17 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
                   <Icon name="spaces" size={12} />
                 </div>
                 <span className="text-muted-foreground font-medium">All spaces</span>
+              </DropdownMenuItem>
+            )}
+            {/* The demo is nobody's space, so leaving it used to strand you:
+                it vanished from this list the moment you switched away, and
+                there was no route back short of typing the address. */}
+            {signedIn && currentSlug !== 'demo' && (
+              <DropdownMenuItem onClick={() => router.push('/demo')} className="gap-2 p-2">
+                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent shrink-0">
+                  <Icon name="sparkles" size={12} />
+                </div>
+                <span className="text-muted-foreground font-medium">Demo hub</span>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

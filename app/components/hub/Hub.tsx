@@ -332,7 +332,7 @@ function HubSidebar({
               <TextSwap>{dark ? 'Light mode' : 'Dark mode'}</TextSwap>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          {access.isOwner && (
+          {(access.isOwner || access.sandbox) && (
             <SidebarMenuItem>
               <SidebarMenuButton onClick={onSettings} tooltip="Hub settings">
                 <Icon name="gear" size={14} />

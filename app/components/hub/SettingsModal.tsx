@@ -8,7 +8,7 @@ import { useModalTransition } from '../transitions'
 
 /** Owner-only hub settings: address and deletion. */
 export function SettingsModal({ onClose }: { onClose: () => void }) {
-  const { config } = useHub()
+  const { config, sandbox } = useHub()
   const { confirm, confirmDialog } = useConfirm()
   const [open, setOpen] = useState(true)
   const transition = useModalTransition(open, onClose)
@@ -86,7 +86,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         </button>
 
         <h2 className="text-[17px] font-bold tracking-tight mb-1">Hub settings</h2>
-        <p className="text-[13px] text-muted-foreground mb-5">Only you, the owner, can see this.</p>
+        <p className="text-[13px] text-muted-foreground mb-5">{sandbox ? 'Try it. Nothing here is saved.' : 'Only you, the owner, can see this.'}</p>
 
         <div className="mb-6">
           <label className="block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Client name</label>
@@ -129,21 +129,29 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
         {error && <p className="text-[12.5px] text-destructive mb-4">{error}</p>}
 
-        <TransferSection slug={config.slug} name={config.name} />
+        {/* Handing the hub to someone else and deleting it are the two things a
+            sandbox cannot honestly offer: they are irreversible, they belong to
+            an owner, and the demo has none. The rest of this panel is safe to
+            try, so the demo shows it. */}
+        {!sandbox && (
+          <>
+            <TransferSection slug={config.slug} name={config.name} />
 
-        <div className="border-t border-dashed border-border pt-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[13px] font-medium text-foreground">Delete this hub</p>
-            <p className="text-[12px] text-muted-foreground/60">Removes the hub and its share link forever</p>
-          </div>
-          <button
-            onClick={destroy}
-            disabled={busy}
-            className="text-[13px] font-semibold text-destructive border-[1.5px] border-destructive/30 px-3.5 py-2 rounded-xl hover:bg-destructive/10 transition-colors disabled:opacity-50 whitespace-nowrap"
-          >
-            Delete hub
-          </button>
-        </div>
+            <div className="border-t border-dashed border-border pt-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[13px] font-medium text-foreground">Delete this hub</p>
+                <p className="text-[12px] text-muted-foreground/60">Removes the hub and its share link forever</p>
+              </div>
+              <button
+                onClick={destroy}
+                disabled={busy}
+                className="text-[13px] font-semibold text-destructive border-[1.5px] border-destructive/30 px-3.5 py-2 rounded-xl hover:bg-destructive/10 transition-colors disabled:opacity-50 whitespace-nowrap"
+              >
+                Delete hub
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
