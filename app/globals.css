@@ -34,7 +34,9 @@
   --card-foreground: oklch(0.153 0.006 107.1);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.153 0.006 107.1);
-  --primary: oklch(0.205 0 0);
+  /* The marketing site's background, so a primary button in the app is the
+     same colour as the page people just came from. */
+  --primary: #080c12;
   --primary-foreground: oklch(0.985 0 0);
   /* The inviting-but-secondary action — "See a demo", not "Get started". Its
      own role because shadcn's `accent` is the subtle hover surface that menus
@@ -70,7 +72,8 @@
 /*---break---
  */
 @theme inline {
-  --font-heading: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-heading: var(--font-display);
   --font-sans: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);

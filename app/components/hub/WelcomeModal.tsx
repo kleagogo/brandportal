@@ -66,7 +66,7 @@ export function WelcomeModal({ onClose }: { onClose: () => void }) {
         {/* The confetti settles on whatever this points at, so it lands on the
             button rather than the floor of the card. */}
         <div ref={markRef}>
-          <Button variant="highlight" onClick={() => setOpen(false)} className="w-full">
+          <Button variant="default" onClick={() => setOpen(false)} className="w-full">
             Add my first files
           </Button>
         </div>

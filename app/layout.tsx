@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter, Onest } from "next/font/google";
 import "./globals.css";
 import { MARKETING_URL, SITE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// The system face — app chrome only. Hub content renders in whatever typefaces
-// that client's brand declares, loaded per hub from its own config.
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+// The two faces the marketing site is set in, so the product reads as the same
+// brand as the page people arrived from: Onest carries the wordmark and
+// headings, Inter carries everything else. Hub *content* still renders in
+// whatever typefaces that client's brand declares, loaded per hub.
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const onest = Onest({ subsets: ["latin"], variable: "--font-display" });
 
 const TITLE = "Pitho · brand asset management for agencies";
 const DESCRIPTION =
@@ -38,7 +41,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
+    <html lang="en" className={cn("font-sans", inter.variable, onest.variable)}>
       <body className="font-sans antialiased">
         <TooltipProvider>
         <script

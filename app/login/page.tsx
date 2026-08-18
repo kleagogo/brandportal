@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Wordmark } from '@/app/components/Wordmark'
 
 /**
  * One page for signing up and signing in, because one link does both.
@@ -51,10 +51,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <nav className="border-b border-border bg-card px-5 sm:px-8 h-14 flex items-center">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold text-[14px]">P</span>
-          <span className="text-[15px] font-semibold tracking-tight">Pitho</span>
-        </Link>
+        <Wordmark />
       </nav>
 
       <main className="flex-1 flex items-center justify-center px-6 py-12">
@@ -79,7 +76,7 @@ export default function LoginPage() {
                   <p className="text-[12px] text-muted-foreground/60 mb-2">
                     Email sending isn’t configured yet (no RESEND_API_KEY). Use your link directly:
                   </p>
-                  <Button nativeButton={false} render={<a href={devLink} />} variant="highlight" className="w-full">
+                  <Button nativeButton={false} render={<a href={devLink} />} variant="default" className="w-full">
                     Open my sign-in link →
                   </Button>
                 </div>
@@ -103,7 +100,7 @@ export default function LoginPage() {
                   className="mb-3"
                 />
                 {error && <p className="text-[12.5px] text-destructive mb-3">{error}</p>}
-                <Button type="submit" variant="highlight" disabled={state === 'sending'} className="w-full">
+                <Button type="submit" variant="default" disabled={state === 'sending'} className="w-full">
                   {state === 'sending' ? 'Sending…' : 'Email me a sign-in link'}
                 </Button>
               </form>

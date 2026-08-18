@@ -8,6 +8,7 @@ import { limitsFor } from '@/lib/limits'
 import { labelsFor } from '@/lib/labels'
 import { NewHubButton, AccountMenu, StudioSetup } from './parts'
 import { HubCardStack } from './HubCardStack'
+import { Wordmark } from '@/app/components/Wordmark'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,10 +61,7 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <nav className="border-b border-border bg-card px-5 sm:px-8 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold text-[14px]">P</span>
-          <span className="text-[15px] font-semibold tracking-tight">Pitho</span>
-        </Link>
+        <Wordmark />
         <AccountMenu email={user.email} />
       </nav>
 
