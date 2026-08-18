@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useHub } from './HubContext'
+import { EmptyState } from './EmptyState'
 import { Editable } from './Editable'
 import { useConfirm } from './useConfirm'
 import { Icon } from './Icon'
@@ -38,6 +39,17 @@ export function ColorsSection() {
       <p className="text-[14px] text-muted-foreground mb-8">
         {editing ? 'Click a swatch to edit it, or add colors and groups.' : 'Click a swatch to copy its hex value.'}
       </p>
+
+      {config.colors.length === 0 && !editing && (
+        <EmptyState
+          title="No colors yet"
+          description="Add your palette so everyone reaches for the same hex, instead of the one they remember."
+          actionLabel="Add a color"
+          onAction={() => update(c => {
+            c.colors.push({ group: 'Brand', swatches: [{ name: 'Brand', hex: '#1a1a1a', usage: '' }] })
+          })}
+        />
+      )}
 
       {config.colors.map((group, gi) => (
         <div key={gi} className="mb-10">

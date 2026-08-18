@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
 import { Logo } from '@/app/components/Logo'
 
 /**
@@ -49,15 +51,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <nav className="border-b border-border bg-card px-5 sm:px-8 h-14 flex items-center">
-        <Logo />
+    // Sign-in wears the marketing site's clothes rather than the app's: this
+    // is the first Pitho screen most people see, and arriving on a white panel
+    // from an Ink website reads as a different product. `dark` forces the dark
+    // tokens so the card and input follow, and Ink is set explicitly because
+    // the app's dark background is a warmer neutral, not the brand ground.
+    <div className="dark min-h-screen flex flex-col bg-[#080C12]">
+      <nav className="border-b border-white/10 px-5 sm:px-8 h-14 flex items-center">
+        <Logo wordmark reverse />
       </nav>
 
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-[380px]">
           {state === 'sent' ? (
-            <div className="bg-card border border-border rounded-2xl p-7">
+            <Card className="bg-[#0E131D] border-white/10">
+              <CardContent>
               <h1 className="text-[18px] font-bold tracking-tight mb-2 text-foreground">Check your email</h1>
               <p className="text-[13.5px] text-muted-foreground leading-relaxed">
                 We sent a link to <span className="font-medium text-foreground">{email}</span>. Click it and you’re in.
@@ -72,7 +80,7 @@ export default function LoginPage() {
                 </button>.
               </p>
               {devLink && (
-                <div className="border-t border-dashed border-border pt-4 mt-5">
+                <div className="border-t border-dashed border-white/15 pt-4 mt-5">
                   <p className="text-[12px] text-muted-foreground/60 mb-2">
                     Email sending isn’t configured yet (no RESEND_API_KEY). Use your link directly:
                   </p>
@@ -81,22 +89,25 @@ export default function LoginPage() {
                   </Button>
                 </div>
               )}
-            </div>
+              </CardContent>
+            </Card>
           ) : (
-            <div className="bg-card border border-border rounded-2xl p-7">
+            <Card className="bg-[#0E131D] border-white/10">
+              <CardContent>
               <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-5">
                 We’ll email you a link to sign up.
               </p>
 
               <form onSubmit={submit}>
+                <Label htmlFor="email" className="sr-only">Email address</Label>
                 <Input
+                  id="email"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@company.com"
                   required
                   autoFocus
-                  aria-label="Email address"
                   className="mb-3"
                 />
                 {error && <p className="text-[12.5px] text-destructive mb-3">{error}</p>}
@@ -108,7 +119,8 @@ export default function LoginPage() {
               <p className="text-[12.5px] text-muted-foreground mt-4">
                 Already have an account? The same link signs you in.
               </p>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           <p className="text-[12px] text-muted-foreground/60 text-center mt-5">by Pitho.io</p>

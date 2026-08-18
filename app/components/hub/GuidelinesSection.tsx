@@ -1,6 +1,7 @@
 'use client'
 
 import { useHub } from './HubContext'
+import { EmptyState } from './EmptyState'
 import { Editable } from './Editable'
 import { Icon } from './Icon'
 import { HubCard } from './HubCard'
@@ -13,6 +14,18 @@ export function GuidelinesSection() {
     <div>
       <h1 className="text-[22px] font-bold tracking-tight mb-1">Guidelines</h1>
       <p className="text-[14px] text-muted-foreground mb-8">How to represent our brand correctly.</p>
+
+      {!voice && !usage && !editing && (
+        <EmptyState
+          title="No guidelines yet"
+          description="Write the few rules that keep the brand recognisable when someone else is using it."
+          actionLabel="Write guidelines"
+          onAction={() => update(c => {
+            c.guidelines.voice = { title: 'Brand voice', description: '', principles: [] }
+            c.guidelines.usage = { dos: [], donts: [] }
+          })}
+        />
+      )}
 
       {voice && (
         <div className="mb-10">

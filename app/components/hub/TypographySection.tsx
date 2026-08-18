@@ -1,6 +1,7 @@
 'use client'
 
 import { useHub } from './HubContext'
+import { EmptyState } from './EmptyState'
 import { Editable } from './Editable'
 import { useConfirm } from './useConfirm'
 import { Icon } from './Icon'
@@ -27,6 +28,27 @@ export function TypographySection() {
           ? 'Edit typefaces, weights, and specimens. Google Fonts load automatically by name.'
           : 'Our typefaces, weights, and how to use them.'}
       </p>
+
+      {config.typography.length === 0 && !editing && (
+        <EmptyState
+          title="No typefaces yet"
+          description="Add the fonts the brand is set in, with the weights and sizes that go with them."
+          actionLabel="Add a typeface"
+          onAction={() => update(c => {
+            c.typography.push({
+              group: 'Brand typefaces',
+              fonts: [{
+                name: 'Inter',
+                role: 'Primary typeface',
+                weights: ['400', '600'],
+                usage: '',
+                importUrl: googleFontUrl('Inter', ['400', '600']),
+                specimens: [],
+              }],
+            })
+          })}
+        />
+      )}
 
       {config.typography.map((group, gi) => (
         <div key={gi} className="mb-10">

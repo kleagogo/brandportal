@@ -14,6 +14,7 @@ import { SettingsModal } from './SettingsModal'
 import { HomeSection } from './HomeSection'
 import { SpaceSwitcher } from './SpaceSwitcher'
 import { SearchOverlay } from './SearchOverlay'
+import { ImportModal } from './ImportModal'
 import { WelcomeModal } from './WelcomeModal'
 import { useConfirm } from './useConfirm'
 import { IconSwap, TextSwap } from '../transitions'
@@ -67,6 +68,7 @@ function HubShell({ access }: { access: HubAccess }) {
   const [shareSection, setShareSection] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   // Set by the redirect that created this hub, and cleared as it opens so a
   // reload or a shared link never celebrates twice.
   const [welcome, setWelcome] = useState(false)
@@ -172,14 +174,27 @@ function HubShell({ access }: { access: HubAccess }) {
               keeps it in place while `main` scrolls under it. */}
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="ml-auto flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-[12.5px] text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Icon name="search" size={13} />
-              <span>Search</span>
-              <kbd className="text-[10px] font-medium border border-border rounded-md px-1.5 py-px">⌘K</kbd>
-            </button>
+            {/* Adding files is what someone came here to do; searching is what
+                they do once there is something to find. Search keeps its ⌘K
+                binding below, so this takes the space rather than the feature. */}
+            {access.canEdit || access.sandbox ? (
+              <button
+                onClick={() => setImportOpen(true)}
+                className="ml-auto flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-[12.5px] font-semibold hover:opacity-85 transition-opacity"
+              >
+                <Icon name="upload" size={13} />
+                <span>Add files</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="ml-auto flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-[12.5px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Icon name="search" size={13} />
+                <span>Search</span>
+                <kbd className="text-[10px] font-medium border border-border rounded-md px-1.5 py-px">⌘K</kbd>
+              </button>
+            )}
           </header>
           <main className="flex-1 min-h-0 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
@@ -200,6 +215,7 @@ function HubShell({ access }: { access: HubAccess }) {
       )}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {searchOpen && <SearchOverlay onNavigate={setActive} onClose={() => setSearchOpen(false)} />}
+      {importOpen && <ImportModal onClose={() => setImportOpen(false)} />}
       {welcome && <WelcomeModal onClose={() => setWelcome(false)} />}
     </div>
   )
