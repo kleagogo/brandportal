@@ -178,7 +178,7 @@ function EmptyDropzone({
 }
 
 export function AssetsSection({ sectionId }: { sectionId: string }) {
-  const { config, editing, canEdit, allowDownload, portalId } = useHub()
+  const { config, editing, canEdit, sandbox, allowDownload, portalId } = useHub()
   const [dragOver, setDragOver] = useState(false)
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<AssetSort>('added')
@@ -242,15 +242,31 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
       )}
       <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
         <h1 className="text-[22px] font-bold tracking-tight">{label}</h1>
-        {assets.length > 0 && hasLocalFiles && allowDownload && (
-          <a
-            href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(sectionId)}`}
-            onClick={() => trackPortal(portalId, 'download', `${label} (.zip)`)}
-            className="flex items-center gap-1.5 text-[13px] font-semibold bg-primary text-primary-foreground px-3.5 py-2 rounded-xl hover:opacity-85 transition-colors"
-          >
-            <Icon name="download" size={13} /> Download all (.zip)
-          </a>
-        )}
+        {/* Both act on this section, and neither is the thing you came to the
+            page to do — the files are. Two quiet buttons rather than one black
+            one shouting over the heading it sits beside. */}
+        <div className="flex items-center gap-2">
+          {assets.length > 0 && hasLocalFiles && allowDownload && (
+            <Button
+              nativeButton={false}
+              size="sm"
+              variant="outline"
+              render={
+                <a
+                  href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(sectionId)}`}
+                  onClick={() => trackPortal(portalId, 'download', `${label} (.zip)`)}
+                />
+              }
+            >
+              <Icon name="download" size={13} /> Download all
+            </Button>
+          )}
+          {(canEdit || sandbox) && (
+            <Button size="sm" variant="outline" onClick={() => inputRef.current?.click()} title={`Add files to ${label}`}>
+              <Icon name="upload" size={13} /> Add to {label}
+            </Button>
+          )}
+        </div>
       </div>
       {/* An empty section is described by the panel below it, not twice. */}
       {(editing || assets.length > 0) && (
