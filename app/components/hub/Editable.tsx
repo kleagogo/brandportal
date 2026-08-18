@@ -9,6 +9,10 @@ import type { CSSProperties } from 'react'
  * The input inherits the exact typography of the text it replaces (Tailwind's
  * preflight sets `font: inherit` on form elements), so editing happens in
  * place with no layout jump.
+ *
+ * Edit state comes from the section unless the caller says otherwise. A card
+ * that opens on its own has to pass its own, or its name and note stay text
+ * while its tags turn into inputs.
  */
 export function Editable({
   value,
@@ -18,6 +22,7 @@ export function Editable({
   placeholder = 'Empty',
   multiline = false,
   inline = false,
+  editing: editingOverride,
 }: {
   value: string
   onChange: (v: string) => void
@@ -27,8 +32,11 @@ export function Editable({
   multiline?: boolean
   /** Size the input to its content instead of filling the row. */
   inline?: boolean
+  /** Override the section's edit state, for a card editing on its own. */
+  editing?: boolean
 }) {
-  const { editing } = useHub()
+  const { editing: sectionEditing } = useHub()
+  const editing = editingOverride ?? sectionEditing
 
   if (!editing) {
     if (!value) return null

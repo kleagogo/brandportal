@@ -590,10 +590,10 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         </div>
       )}
       <p className="text-[13px] font-medium text-foreground">
-          <Editable value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
+          <Editable editing={editing} value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
       </p>
       <p className="text-[11px] text-muted-foreground leading-tight">
-        <Editable value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
+        <Editable editing={editing} multiline value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
       </p>
       <TagRow
           editing={editing}
