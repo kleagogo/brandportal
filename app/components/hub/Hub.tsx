@@ -154,7 +154,6 @@ function HubShell({ access }: { access: HubAccess }) {
       {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
 
       <WelcomeToast />
-      {access.sandbox && <SandboxNotice />}
 
       <SidebarProvider className="flex-1 min-h-0 items-stretch">
         <HubSidebar
@@ -166,6 +165,7 @@ function HubShell({ access }: { access: HubAccess }) {
         />
 
         <SidebarInset className="flex flex-col min-w-0 min-h-0">
+          {access.sandbox && <SandboxNotice />}
           {/* The trigger lives in a header rather than floating over the
               content, as upstream's sidebar blocks have it. It sits outside the
               rail, which is what lets it expand a collapsed one. `shrink-0`
@@ -209,6 +209,11 @@ function HubShell({ access }: { access: HubAccess }) {
  * Says out loud that this is a sandbox.
  *
  * Without it, edits vanishing on reload reads as a bug rather than the point.
+ *
+ * It sits inside the inset rather than spanning the window. Stacked above the
+ * provider it looked full width in the markup, but the sidebar is
+ * `fixed inset-y-0`, so it pins itself to the top of the viewport and paints
+ * over the notice's first half. The sentence then began mid-word.
  */
 function SandboxNotice() {
   const [open, setOpen] = useState(true)

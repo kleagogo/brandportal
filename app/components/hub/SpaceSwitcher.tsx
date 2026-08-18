@@ -63,14 +63,26 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
 
   const mark = config.logoUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={config.logoUrl} alt="" className="size-full object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+    <img src={config.logoUrl} alt="" className="max-h-full max-w-full object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
   ) : (
     <span className="text-[13px] font-bold">{config.name.charAt(0).toUpperCase()}</span>
   )
 
+  /**
+   * The slot a client's logo sits in.
+   *
+   * A logo gets a neutral surface and room to be its own shape: filling the box
+   * with `bg-primary` hid any dark logo against it, and forcing a square
+   * squeezed a wordmark down to an unreadable smear. Only the initial fallback
+   * keeps the filled square, because a single letter wants one.
+   */
+  const slot = config.logoUrl
+    ? 'h-8 w-auto min-w-8 max-w-[120px] px-1 bg-card border border-border'
+    : 'aspect-square size-8 bg-primary text-primary-foreground'
+
   const identity = (
     <>
-      <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden shrink-0">
+      <div className={`flex items-center justify-center rounded-lg overflow-hidden shrink-0 ${slot}`}>
         {mark}
       </div>
       <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
@@ -91,10 +103,10 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
               type="button"
               onClick={() => logoInputRef.current?.click()}
               title={config.logoUrl ? 'Change logo' : 'Add your logo'}
-              className={`group/logo relative flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden shrink-0 transition-colors ${
+              className={`group/logo relative flex items-center justify-center rounded-lg overflow-hidden shrink-0 transition-colors ${
                 config.logoUrl
-                  ? 'bg-primary text-primary-foreground'
-                  : 'border border-dashed border-muted-foreground/50 text-muted-foreground hover:border-ring hover:text-foreground'
+                  ? slot
+                  : 'aspect-square size-8 border border-dashed border-muted-foreground/50 text-muted-foreground hover:border-ring hover:text-foreground'
               }`}
             >
               {logoBusy ? (
@@ -102,7 +114,7 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
               ) : config.logoUrl ? (
                 <>
                   {mark}
-                  <span className="absolute inset-0 hidden items-center justify-center bg-primary/70 text-primary-foreground group-hover/logo:flex">
+                  <span className="absolute inset-0 hidden items-center justify-center bg-foreground/70 text-background group-hover/logo:flex">
                     <Icon name="edit" size={12} />
                   </span>
                 </>
