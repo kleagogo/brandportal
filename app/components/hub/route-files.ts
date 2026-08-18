@@ -78,11 +78,20 @@ function extensionOf(name: string): string {
   return (name.split('.').pop() || '').toLowerCase()
 }
 
-/** Title-case a folder name for use as a section label. */
+/**
+ * Title-case a folder name for use as a section label.
+ *
+ * People number folders to order them — "01 Logos", "08 Upload Edge Cases" —
+ * and the number is about the folder list, not about the brand. A section
+ * called "08 Upload Edge Cases" reads as a mistake, so leading digits go.
+ * Kept when that is all there is, because "2024" is a real name for a folder.
+ */
 export function labelFromFolder(folder: string): string {
   const words = normalize(folder).split(' ').filter(Boolean)
   if (!words.length) return 'New files'
-  return words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').slice(0, 40)
+  const named = words.findIndex(w => !/^\d+$/.test(w))
+  const useful = named === -1 ? words : words.slice(named)
+  return useful.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').slice(0, 40)
 }
 
 export function iconForLabel(label: string): SectionConfig['icon'] {

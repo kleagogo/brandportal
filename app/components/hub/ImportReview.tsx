@@ -50,6 +50,18 @@ export function ImportReview({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   // A section name being typed inside a row's dropdown.
   const [naming, setNaming] = useState<Record<string, string>>({})
+  // Which row's destination menu is open. Controlled so that naming a section
+  // can close it: the confirmation is the row updating behind the menu, and
+  // leaving it open hides the only feedback there is.
+  const [menuFor, setMenuFor] = useState<string | null>(null)
+
+  function chooseNewName(key: string, label: string) {
+    const name = label.trim()
+    if (!name) return
+    setChoices(c => ({ ...c, [key]: { kind: 'new', label: name } }))
+    setNaming(n => ({ ...n, [key]: '' }))
+    setMenuFor(null)
+  }
 
   const toggle = (key: string) => setExpanded(e => ({ ...e, [key]: !e[key] }))
 
@@ -115,11 +127,11 @@ export function ImportReview({
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">Into existing sections</p>
               {matched.map(bucket => (
                 <div key={bucket.key} className="rounded-xl bg-muted px-3 py-2">
-                  <button onClick={() => toggle(bucket.key)} className="flex w-full items-center gap-2.5 text-left">
-                    <span className={`text-muted-foreground/50 shrink-0 transition-transform ${expanded[bucket.key] ? '' : '-rotate-90'}`}>
+                  <button onClick={() => toggle(bucket.key)} className="flex w-full items-start gap-2.5 text-left">
+                    <span className={`mt-0.5 text-muted-foreground/50 shrink-0 transition-transform ${expanded[bucket.key] ? '' : '-rotate-90'}`}>
                       <Icon name="down" size={14} />
                     </span>
-                    <span className="text-muted-foreground shrink-0"><Icon name={bucket.icon} size={14} /></span>
+                    <span className="mt-0.5 text-muted-foreground shrink-0"><Icon name={bucket.icon} size={14} /></span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[13px] font-medium truncate">{bucket.label}</span>
                       <span className="block text-[11.5px] text-muted-foreground/60 truncate">
@@ -144,12 +156,12 @@ export function ImportReview({
                 const typed = naming[bucket.key] ?? ''
                 return (
                   <div key={bucket.key} className="rounded-xl border border-border px-3 py-2">
-                    <div className="flex items-center gap-2.5">
-                      <button onClick={() => toggle(bucket.key)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
-                        <span className={`text-muted-foreground/50 shrink-0 transition-transform ${expanded[bucket.key] ? '' : '-rotate-90'}`}>
+                    <div className="flex items-start gap-2.5">
+                      <button onClick={() => toggle(bucket.key)} className="flex min-w-0 flex-1 items-start gap-2.5 text-left">
+                        <span className={`mt-0.5 text-muted-foreground/50 shrink-0 transition-transform ${expanded[bucket.key] ? '' : '-rotate-90'}`}>
                           <Icon name="down" size={14} />
                         </span>
-                        <span className="text-muted-foreground shrink-0"><Icon name={bucket.icon} size={14} /></span>
+                        <span className="mt-0.5 text-muted-foreground shrink-0"><Icon name={bucket.icon} size={14} /></span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2">
                             <span className="text-[13px] font-medium truncate">“{bucket.folder}”</span>
@@ -165,7 +177,7 @@ export function ImportReview({
                           </span>
                         </span>
                       </button>
-                      <DropdownMenu>
+                      <DropdownMenu open={menuFor === bucket.key} onOpenChange={o => setMenuFor(o ? bucket.key : null)}>
                         <DropdownMenuTrigger
                           render={<Button variant="outline" size="sm" className="shrink-0 font-normal">Change</Button>}
                         />
@@ -203,16 +215,16 @@ export function ImportReview({
                                 onClick={e => e.stopPropagation()}
                                 onChange={e => setNaming(n => ({ ...n, [bucket.key]: e.target.value }))}
                                 onKeyDown={e => {
-                                  if (e.key !== 'Enter' || !typed.trim()) return
+                                  if (e.key !== 'Enter') return
                                   e.preventDefault()
-                                  setChoices(c => ({ ...c, [bucket.key]: { kind: 'new', label: typed.trim() } }))
+                                  chooseNewName(bucket.key, typed)
                                 }}
                               />
                               <Button
                                 size="sm"
                                 variant="outline"
                                 disabled={!typed.trim()}
-                                onClick={() => setChoices(c => ({ ...c, [bucket.key]: { kind: 'new', label: typed.trim() } }))}
+                                onClick={() => chooseNewName(bucket.key, typed)}
                               >
                                 Add
                               </Button>
