@@ -12,6 +12,14 @@
   "observability": {
     "enabled": true
   },
+  // Public, non-secret config. It lives here rather than in the dashboard
+  // because `wrangler deploy` replaces the Worker's plain-text variables with
+  // whatever this file declares — a dashboard-only value silently disappears
+  // on the next push, which is how sign-in email broke on 2026-08-18.
+  // Secrets are stored separately by Cloudflare and survive a deploy.
+  "vars": {
+    "EMAIL_FROM": "Pitho <hello@pitho.io>"
+  },
   // Uploaded assets. Binding the bucket means no S3 API token to issue,
   // store, or rotate — see lib/r2.ts for what the binding can and can't do.
   "r2_buckets": [
