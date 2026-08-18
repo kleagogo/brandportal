@@ -60,10 +60,18 @@ Open `https://yourdomain.com/api/health`. It writes and reads a row and
 reports what's configured:
 
 ```json
-{ "storage": true, "database": true, "files": "r2", "email": true, ... }
+{ "storage": true, "database": true, "files": "r2",
+  "email": { "configured": true, "senderDomain": "yourdomain.com",
+             "canReachAnyone": true, "problem": null }, ... }
 ```
 
 `storage: false` comes with the reason attached.
+
+**`email.canReachAnyone` is the one to read before launch.** A key on its own
+proves nothing: with `EMAIL_FROM` unset or on an unverified domain, Resend
+accepts mail to the address that owns the Resend account and rejects everyone
+else — so you sign in happily while every other person gets "We couldn't send
+that email." When `canReachAnyone` is false, `problem` says what to change.
 
 Locally: `npm run cf:preview` runs the real Workers runtime, reading secrets
 from a `.dev.vars` file (git-ignored).
