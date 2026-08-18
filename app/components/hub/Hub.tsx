@@ -17,6 +17,7 @@ import { SearchOverlay } from './SearchOverlay'
 import { ImportModal } from './ImportModal'
 import { WelcomeModal } from './WelcomeModal'
 import { useConfirm } from './useConfirm'
+import { Button } from '@/components/ui/button'
 import { IconSwap, TextSwap } from '../transitions'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -64,6 +65,8 @@ export default function Hub({ initial, ...access }: { initial: BrandConfig } & H
 
 function HubShell({ access }: { access: HubAccess }) {
   const { config, active, setActive, editingSection, setEditingSection, cancelEditing } = useHub()
+  // Whether the section on screen is the one in edit mode, for the header toggle.
+  const headerEditing = editingSection !== null && editingSection === active
   // Which section a share link should be scoped to, or '' for the whole hub.
   const [shareSection, setShareSection] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -179,17 +182,28 @@ function HubShell({ access }: { access: HubAccess }) {
               keeps it in place while `main` scrolls under it. */}
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
-            {/* Adding files is what someone came here to do; searching is what
-                they do once there is something to find. Search keeps its ⌘K
-                binding below, so this takes the space rather than the feature. */}
+            {/* The hub's own controls. Everything below this bar now acts on
+                one section with quiet outline buttons, so this is the one place
+                a solid button means something: adding files is what someone
+                came here to do. The rest stay secondary — sharing the hub,
+                switching edit on, and search, which editors used to reach only
+                by knowing ⌘K existed because Add files had taken its slot. */}
             {access.canEdit || access.sandbox ? (
-              <button
-                onClick={() => setImportOpen(true)}
-                className="ml-auto flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-[12.5px] font-semibold hover:opacity-85 transition-opacity"
-              >
-                <Icon name="upload" size={13} />
-                <span>Add files</span>
-              </button>
+              <div className="ml-auto flex items-center gap-2">
+                <Button size="icon-sm" variant="ghost" onClick={() => setSearchOpen(true)} title="Search (⌘K)" aria-label="Search">
+                  <Icon name="search" size={14} />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditingSection(headerEditing ? null : active)}>
+                  <IconSwap on={headerEditing} a={<Icon name="edit" size={13} />} b={<Icon name="check" size={13} />} />
+                  {headerEditing ? 'Done' : 'Edit'}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShareSection('')}>
+                  <Icon name="share" size={13} /> Share
+                </Button>
+                <Button size="sm" onClick={() => setImportOpen(true)}>
+                  <Icon name="upload" size={13} /> Add files
+                </Button>
+              </div>
             ) : (
               <button
                 onClick={() => setSearchOpen(true)}
@@ -426,14 +440,14 @@ function HubSidebarItem({
           <input
             value={section.label}
             autoFocus
-            // The field must stop short of the row's three actions. `size={1}`
+            // The field must stop short of the row's two actions. `size={1}`
             // drops the input's intrinsic width so it can shrink at all, and the
             // clearance is a margin rather than padding on the button — the
             // component's own variants win that one, resolving pr-20 to 32px.
             size={1}
             onChange={e => update(c => { c.sections[index].label = e.target.value })}
             onKeyDown={e => e.key === 'Enter' && setEditingSection(null)}
-            className="mr-11 w-0 min-w-0 flex-1 rounded-md bg-background px-1.5 py-0.5 text-foreground ring-1 ring-border outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="mr-7 w-0 min-w-0 flex-1 rounded-md bg-background px-1.5 py-0.5 text-foreground ring-1 ring-border outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </SidebarMenuButton>
       ) : (
@@ -448,17 +462,6 @@ function HubSidebarItem({
           chrome shared by all of them. */}
       {canEdit && (
         <>
-          <SidebarMenuAction
-            showOnHover
-            className="right-13 md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all"
-            title={isEditing ? 'Done editing' : `Edit ${section.label}`}
-            onClick={() => {
-              onSelect(section.id)
-              setEditingSection(isEditing ? null : section.id)
-            }}
-          >
-            <IconSwap on={isEditing} a={<Icon name="edit" size={16} />} b={<Icon name="check" size={16} />} />
-          </SidebarMenuAction>
           <SidebarMenuAction
             showOnHover
             className="right-7 md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all"
