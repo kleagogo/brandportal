@@ -16,7 +16,9 @@ const config: BrandConfig = {
   slug: 'demo',
   name: 'Pitho',
   tagline: 'One clean brand hub for every client.',
-  logoUrl: '/brand/pitho-logo.svg',
+  // The mark alone. The hub's name is written beside it in the sidebar, so a
+  // lockup would set the word twice.
+  logoUrl: '/brand/pitho-mark.svg',
   website: 'https://pitho.io',
 
   // ─── Colors ─────────────────────────────────────────────────────────────────
