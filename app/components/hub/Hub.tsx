@@ -69,6 +69,11 @@ function HubShell({ access }: { access: HubAccess }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  // Opening the importer straight from the welcome card put a dialog under the
+  // same click that dismissed the card, and the click landed outside it, so it
+  // closed again on the frame it appeared. It waits for the card to finish
+  // leaving instead.
+  const [importAfterWelcome, setImportAfterWelcome] = useState(false)
   // Set by the redirect that created this hub, and cleared as it opens so a
   // reload or a shared link never celebrates twice.
   const [welcome, setWelcome] = useState(false)
@@ -216,7 +221,15 @@ function HubShell({ access }: { access: HubAccess }) {
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {searchOpen && <SearchOverlay onNavigate={setActive} onClose={() => setSearchOpen(false)} />}
       {importOpen && <ImportModal onClose={() => setImportOpen(false)} />}
-      {welcome && <WelcomeModal onClose={() => setWelcome(false)} />}
+      {welcome && (
+        <WelcomeModal
+          onClose={() => {
+            setWelcome(false)
+            if (importAfterWelcome) { setImportAfterWelcome(false); setImportOpen(true) }
+          }}
+          onAddFiles={() => setImportAfterWelcome(true)}
+        />
+      )}
     </div>
   )
 }

@@ -158,7 +158,7 @@ function EmptyDropzone({
         </EmptyDescription>
       </EmptyHeader>
 
-      <EmptyContent>
+      <EmptyContent className="flex-row flex-wrap justify-center">
         <Button variant="default" onClick={onPickFiles}>Choose files</Button>
         <Button variant="outline" onClick={onPickFolder}>Pick a whole folder</Button>
       </EmptyContent>

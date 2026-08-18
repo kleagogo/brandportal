@@ -117,7 +117,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
                   match a section becomes a new one, with your say-so.
                 </EmptyDescription>
               </EmptyHeader>
-              <EmptyContent>
+              <EmptyContent className="flex-row flex-wrap justify-center">
                 <Button variant="default" onClick={() => inputRef.current?.click()}>Choose files</Button>
                 <Button variant="outline" onClick={() => folderInputRef.current?.click()}>Pick a whole folder</Button>
               </EmptyContent>

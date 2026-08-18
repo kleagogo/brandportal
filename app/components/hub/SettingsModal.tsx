@@ -1,14 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useHub } from './HubContext'
 import { Icon } from './Icon'
+import { localPreview, uploadAsset } from './upload-client'
+import { Button } from '@/components/ui/button'
 import { useConfirm } from './useConfirm'
 import { useModalTransition } from '../transitions'
 
 /** Owner-only hub settings: address and deletion. */
 export function SettingsModal({ onClose }: { onClose: () => void }) {
-  const { config, sandbox } = useHub()
+  const { config, sandbox, update } = useHub()
+  const logoInput = useRef<HTMLInputElement>(null)
+  const [logoBusy, setLogoBusy] = useState(false)
   const { confirm, confirmDialog } = useConfirm()
   const [open, setOpen] = useState(true)
   const transition = useModalTransition(open, onClose)
@@ -24,6 +28,18 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
       .then(d => { if (d) setClient(d.client || '') })
       .catch(() => {})
   }, [config.slug])
+
+  async function pickLogo(file: File) {
+    setLogoBusy(true)
+    try {
+      const result = sandbox ? localPreview(file) : await uploadAsset(file, config.slug)
+      update(c => { c.logoUrl = result.url })
+    } catch {
+      // A failed upload leaves the mark as it was.
+    } finally {
+      setLogoBusy(false)
+    }
+  }
 
   async function saveClient() {
     await fetch(`/api/hubs/${encodeURIComponent(config.slug)}/settings`, {
@@ -87,6 +103,53 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
         <h2 className="text-[17px] font-bold tracking-tight mb-1">Hub settings</h2>
         <p className="text-[13px] text-muted-foreground mb-5">{sandbox ? 'Try it. Nothing here is saved.' : 'Only you, the owner, can see this.'}</p>
+
+        <div className="mb-6">
+          <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">Logo</label>
+          <div className="flex items-center gap-3">
+            {/* An empty slot that says it is empty. Until now the only way to
+                set a hub's logo was a dashed square in the sidebar, visible
+                only once you had switched a section into edit mode. */}
+            <button
+              onClick={() => logoInput.current?.click()}
+              title={config.logoUrl ? 'Replace logo' : 'Add a logo'}
+              className={`flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl transition-colors ${
+                config.logoUrl
+                  ? 'border border-border bg-muted'
+                  : 'border border-dashed border-muted-foreground/40 text-muted-foreground hover:border-ring hover:text-foreground'
+              }`}
+            >
+              {logoBusy ? (
+                <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : config.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={config.logoUrl} alt="" className="max-h-full max-w-full object-contain" />
+              ) : (
+                <Icon name="upload" size={16} />
+              )}
+            </button>
+            <div className="min-w-0">
+              <Button size="sm" variant="outline" onClick={() => logoInput.current?.click()}>
+                {config.logoUrl ? 'Replace' : 'Upload a logo'}
+              </Button>
+              {config.logoUrl && (
+                <Button size="sm" variant="ghost" onClick={() => update(c => { c.logoUrl = '' })}>
+                  Remove
+                </Button>
+              )}
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground/60">
+                Shown in the sidebar and on every share link. A square mark works best.
+              </p>
+            </div>
+          </div>
+          <input
+            ref={logoInput}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) pickLogo(f); e.target.value = '' }}
+          />
+        </div>
 
         <div className="mb-6">
           <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">Client name</label>

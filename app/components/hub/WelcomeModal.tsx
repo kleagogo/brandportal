@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
  * strips the flag from the URL as this opens, so a reload or a shared link
  * doesn't replay it.
  */
-export function WelcomeModal({ onClose }: { onClose: () => void }) {
+export function WelcomeModal({ onClose, onAddFiles }: { onClose: () => void; onAddFiles: () => void }) {
   const [open, setOpen] = useState(true)
   const transition = useModalTransition(open, onClose)
 
@@ -66,7 +66,11 @@ export function WelcomeModal({ onClose }: { onClose: () => void }) {
         {/* The confetti settles on whatever this points at, so it lands on the
             button rather than the floor of the card. */}
         <div ref={markRef}>
-          <Button variant="default" onClick={() => setOpen(false)} className="w-full">
+          {/* The button said what it would do and then didn't do it: it closed
+              the card and left you looking at the drop zone it had been
+              covering. It opens the importer now, which is the one moment
+              someone is most willing to hand over a folder. */}
+          <Button variant="default" onClick={() => { setOpen(false); onAddFiles() }} className="w-full">
             Add my first files
           </Button>
         </div>
