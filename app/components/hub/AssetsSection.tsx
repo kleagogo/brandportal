@@ -14,6 +14,10 @@ import type { AssetFile } from '@/app/types/brand'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import {
+  Attachment, AttachmentActions, AttachmentContent, AttachmentDescription,
+  AttachmentGroup, AttachmentTitle,
+} from '@/components/ui/attachment'
+import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent,
   DropdownMenuSubTrigger, DropdownMenuTrigger,
@@ -33,8 +37,7 @@ function isVideo(file: string): boolean {
 }
 
 /** Metadata tags on an asset: chips in view mode, editable in edit mode. */
-function TagRow({ tags, onAdd, onRemove }: { tags: string[]; onAdd: (t: string) => void; onRemove: (t: string) => void }) {
-  const { editing } = useHub()
+function TagRow({ tags, onAdd, onRemove, editing }: { tags: string[]; onAdd: (t: string) => void; onRemove: (t: string) => void; editing: boolean }) {
   const [draft, setDraft] = useState('')
 
   function commit() {
@@ -332,9 +335,14 @@ function groupBySubgroup(assets: AssetFile[]): Array<{ subgroup: string; items: 
 }
 
 function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
-  const { config, editing, update, sandbox, canEdit, allowDownload, portalId, setEditingSection } = useHub()
+  const { config, editing: sectionEditing, update, sandbox, canEdit, allowDownload, portalId } = useHub()
   const i = index
   const [copied, setCopied] = useState(false)
+  // Editing one file used to switch the whole section on, so asking to rename
+  // a logo put every card on the page into inputs. A card opens on its own;
+  // the section-wide mode still opens all of them, for going through a batch.
+  const [editingSelf, setEditingSelf] = useState(false)
+  const editing = sectionEditing || editingSelf
   const tileClass = asset.ratio === 'wide' || isVideo(asset.file) ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
   const versions = asset.versions || []
   const current = asset.approvedVersion || versions[versions.length - 1]?.label
@@ -378,6 +386,13 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
       setUploadingVersion(false)
     }
   }
+
+  useEffect(() => {
+    if (!editingSelf) return
+    const close = (e: KeyboardEvent) => { if (e.key === 'Escape') setEditingSelf(false) }
+    window.addEventListener('keydown', close)
+    return () => window.removeEventListener('keydown', close)
+  }, [editingSelf])
 
   /** Somewhere else in this hub that holds files. */
   const otherSections = config.sections.filter(sec => sec.type === 'assets' && sec.id !== sectionId)
@@ -490,9 +505,9 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
               />
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => setEditingSection(sectionId)}>
-                    <Icon name="edit" size={14} />
-                    {editing ? 'Editing' : 'Rename and edit'}
+                  <DropdownMenuItem onClick={() => setEditingSelf(v => !v)}>
+                    <Icon name={editingSelf ? 'check' : 'edit'} size={14} />
+                    {editingSelf ? 'Done editing' : 'Rename and edit'}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={copyLink}>
                     <Icon name="share" size={14} />
@@ -540,9 +555,16 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
       }
     >
       {current && (
-        <span className="absolute top-2 left-2 z-10 text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary text-primary-foreground">
-          {current} · Approved
-        </span>
+        <Badge className="absolute top-2 left-2 z-10">{current} · Approved</Badge>
+      )}
+      {/* Editing one card used to look identical to not editing it, give or
+          take a dotted outline on a field. A bar says which card is open and
+          how to close it. */}
+      {editingSelf && (
+        <div className="-mx-3 -mt-3 mb-1 flex items-center justify-between gap-2 border-b bg-muted px-3 py-1.5">
+          <span className="text-muted-foreground">Editing this file</span>
+          <Button size="xs" variant="outline" onClick={() => setEditingSelf(false)}>Done</Button>
+        </div>
       )}
       <p className="text-[13px] font-medium text-foreground">
           <Editable value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
@@ -551,20 +573,25 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         <Editable value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
       </p>
       <TagRow
+          editing={editing}
           tags={asset.tags || []}
         onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
         onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
       />
-        {/* Versions — history for everyone, uploading for editors */}
-        {(versions.length > 1 || editing) && (
+        {/* Versions — history for everyone, uploading for editors.
+            Shown whenever an asset has any history at all, not only once
+            there are two: "v1" is the answer to "which one is this?", and
+            hiding it until a second upload made the whole feature invisible. */}
+        {(versions.length > 0 || editing) && (
           <div className="mt-2 pt-2 border-t border-dashed border-border relative">
             <div className="flex items-center gap-3">
-              {versions.length > 1 && (
+              {versions.length > 0 && (
                 <button
                   onClick={() => setShowHistory(h => !h)}
                   className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
-                  <Icon name="history" size={11} /> {versions.length} versions
+                  <Icon name="history" size={11} />
+                  {versions.length === 1 ? '1 version' : `${versions.length} versions`}
                 </button>
               )}
               {editing && !asset.external && (
@@ -580,25 +607,40 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
             {showHistory && (
               <>
                 <div className="fixed inset-0 z-20" onMouseDown={() => setShowHistory(false)} />
-                <div className="absolute left-0 right-0 bottom-7 z-30 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
+                <AttachmentGroup className="absolute left-0 right-0 bottom-7 z-30 rounded-xl border bg-popover p-1 shadow-xl">
                   {[...versions].reverse().map(v => (
-                    <div key={v.label} className="flex items-center gap-2 px-3 py-2 hover:bg-muted transition-colors">
-                      <span className="text-[11px] font-mono font-semibold w-6 shrink-0">{v.label}</span>
-                      <span className="text-[10px] text-muted-foreground/60 flex-1 min-w-0 truncate">
-                        {v.uploadedAt && new Date(v.uploadedAt).getFullYear() > 1971 ? new Date(v.uploadedAt).toLocaleDateString() : 'original'}
-                      </span>
-                      {v.label === current ? (
-                        <span className="text-[11px] font-medium text-primary shrink-0">Current</span>
-                      ) : editing ? (
-                        <button onClick={() => approve(v.label)} className="text-[10px] font-semibold text-foreground hover:underline shrink-0">Make current</button>
-                      ) : allowDownload ? (
-                        <a href={downloadHref(v.file)} download className="text-muted-foreground/60 hover:text-foreground shrink-0" title={`Download ${v.label}`}>
-                          <Icon name="download" size={11} />
-                        </a>
-                      ) : null}
-                    </div>
+                    <Attachment key={v.label}>
+                      <AttachmentContent>
+                        <AttachmentTitle>
+                          {v.label}
+                          {v.label === current && <Badge variant="secondary">Current</Badge>}
+                        </AttachmentTitle>
+                        <AttachmentDescription>
+                          {v.uploadedAt && new Date(v.uploadedAt).getFullYear() > 1971
+                            ? new Date(v.uploadedAt).toLocaleDateString()
+                            : 'original'}
+                          {v.uploadedBy ? ` · ${v.uploadedBy}` : ''}
+                        </AttachmentDescription>
+                      </AttachmentContent>
+                      <AttachmentActions>
+                        {v.label !== current && editing && (
+                          <Button size="xs" variant="outline" onClick={() => approve(v.label)}>Make current</Button>
+                        )}
+                        {allowDownload && (
+                          <Button
+                            nativeButton={false}
+                            size="icon-xs"
+                            variant="ghost"
+                            aria-label={`Download ${v.label}`}
+                            render={<a href={downloadHref(v.file)} download />}
+                          >
+                            <Icon name="download" size={11} />
+                          </Button>
+                        )}
+                      </AttachmentActions>
+                    </Attachment>
                   ))}
-                </div>
+                </AttachmentGroup>
               </>
             )}
 
