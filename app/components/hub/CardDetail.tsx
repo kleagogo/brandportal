@@ -38,6 +38,7 @@ export function CardDetail({
   chips,
   actions,
   children,
+  className,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -51,12 +52,14 @@ export function CardDetail({
   /** The card's actions, unchanged. */
   actions?: ReactNode
   children?: ReactNode
+  /** Widen or otherwise reshape the dialog. Merged over the default width. */
+  className?: string
 }) {
   const filled = rows.filter(r => r.value !== null && r.value !== undefined && r.value !== '')
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px]">
+      <DialogContent className={cn('sm:max-w-[460px]', className)}>
         <DialogHeader>
           <DialogTitle className="truncate">{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
@@ -66,9 +69,11 @@ export function CardDetail({
             full type scale is several screens of 64px headlines, and without
             this the title and the buttons were pushed off the top and bottom
             of the viewport. */}
-        <div className="-mx-1 flex max-h-[60vh] flex-col gap-4 overflow-y-auto px-1">
+        <div className="-mx-1 flex max-h-[68vh] flex-col gap-4 overflow-y-auto px-1">
         {media && (
-          <div className={cn('flex items-center justify-center overflow-hidden rounded-lg bg-muted p-6', mediaClassName)}>
+          // shrink-0, or the scroll column squeezes the picture flat to avoid
+          // scrolling — the one child that can give, giving everything.
+          <div className={cn('flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted p-6', mediaClassName)}>
             {media}
           </div>
         )}

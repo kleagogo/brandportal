@@ -14,10 +14,11 @@ import { ButtonGroup } from '@/components/ui/button-group'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
-import { GOOGLE_FONTS } from './google-fonts'
+import { FEATURED_FONTS, GOOGLE_FONTS } from './google-fonts'
 import { addFontFile, isFontFile } from './font-files'
 import { localPreview, uploadAsset } from './upload-client'
 import {
@@ -79,18 +80,19 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
    * Add a Google-hosted typeface by name and open it for editing. Seeds the
    * first group when there is none, so this always works.
    */
-  function addGoogleTypeface(name: string) {
+  function addGoogleTypeface(name: string, weights: string[]) {
     const gi = Math.max(0, config.typography.length - 1)
     const fi = config.typography[gi]?.fonts.length ?? 0
+    const chosen = weights.length ? weights : ['400']
     update(c => {
       if (c.typography.length === 0) c.typography.push({ group: 'Brand typefaces', fonts: [] })
       c.typography[c.typography.length - 1].fonts.push({
         name,
         role: 'Typeface',
-        weights: ['400', '600'],
+        weights: chosen,
         usage: '',
-        importUrl: googleFontUrl(name, ['400', '600']),
-        specimens: [{ label: 'Sample', size: '20px', weight: '400', sample: 'The quick brown fox jumps over the lazy dog' }],
+        importUrl: googleFontUrl(name, chosen),
+        specimens: [{ label: 'Sample', size: '20px', weight: chosen[0], sample: 'The quick brown fox jumps over the lazy dog' }],
       })
     })
     setPicker(false)
@@ -106,10 +108,19 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
     }
     setFontError('')
     setUploadingFonts(fonts.length)
+    // Where the last file landed, so the typeface can open when the batch is
+    // done — showing the weights the filenames carried, ready to adjust.
+    let landed: FontAt | null = null
     for (const file of fonts) {
       try {
         const data = sandbox ? localPreview(file) : await uploadAsset(file, config.slug)
-        update(c => { addFontFile(c, file.name, data.url) })
+        update(c => {
+          const font = addFontFile(c, file.name, data.url)
+          for (let gi = 0; gi < c.typography.length; gi++) {
+            const fi = c.typography[gi].fonts.indexOf(font)
+            if (fi !== -1) { landed = { gi, fi }; break }
+          }
+        })
       } catch {
         setFontError(prev => prev || `Couldn’t upload ${file.name}`)
       } finally {
@@ -117,6 +128,7 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
       }
     }
     setPicker(false)
+    if (landed) setDetail(landed)
   }
 
   /**
@@ -388,87 +400,148 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
 /**
  * Where a typeface comes from: Google Fonts by name, or the files themselves.
  *
- * The list is a bundled slice of the catalogue, not the API — sixty families
- * cover almost every brand deck, and the search doubles as free text: any
- * Google family loads by name alone, so a name that matches nothing here is
- * offered as-is rather than rejected.
+ * Two steps, because a family is not a decision yet — the weights are.
+ * Each listed family carries its real coverage, and the second step offers
+ * exactly that, which also stops single-weight faces like Bebas Neue being
+ * requested at weights they don't have (the stylesheet endpoint rejects the
+ * whole request over one bad weight).
+ *
+ * The browse list stays short until someone types: eight families, one taste
+ * of each shelf. Free text is still accepted — any Google family loads by
+ * name — with all nine weights offered and 400 preselected, since coverage
+ * for an unlisted family is its own business.
  */
 function TypefacePicker({
   onClose, onPick, onFiles,
 }: {
   onClose: () => void
-  onPick: (name: string) => void
+  onPick: (name: string, weights: string[]) => void
   onFiles: (files: File[]) => void
 }) {
   const [query, setQuery] = useState('')
+  // Step two: a family has been chosen; now the weights.
+  const [chosen, setChosen] = useState<{ name: string; offered: string[]; known: boolean } | null>(null)
+  const [picked, setPicked] = useState<string[]>([])
   const fileInput = useRef<HTMLInputElement>(null)
+
   const needle = query.trim().toLowerCase()
-  const matches = GOOGLE_FONTS.filter(f => !needle || f.name.toLowerCase().includes(needle))
+  const matches = needle
+    ? GOOGLE_FONTS.filter(f => f.name.toLowerCase().includes(needle))
+    : GOOGLE_FONTS.filter(f => FEATURED_FONTS.includes(f.name))
   const exact = GOOGLE_FONTS.some(f => f.name.toLowerCase() === needle)
+
+  function choose(font: { name: string; weights: string[] } | { name: string }) {
+    const offered = 'weights' in font ? font.weights : ALL_WEIGHTS
+    const known = 'weights' in font
+    setChosen({ name: font.name, offered, known })
+    // Regular and a heading weight when the family has them; otherwise
+    // whatever it does have.
+    setPicked(['400', '600'].filter(w => offered.includes(w)).length
+      ? ['400', '600'].filter(w => offered.includes(w))
+      : [offered[0]])
+  }
 
   return (
     <Dialog open onOpenChange={o => { if (!o) onClose() }}>
       <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
-          <DialogTitle>Add a typeface</DialogTitle>
+          <DialogTitle>{chosen ? chosen.name : 'Add a typeface'}</DialogTitle>
           <DialogDescription>
-            Pick from Google Fonts, or upload the font files you have.
+            {chosen
+              ? chosen.known
+                ? 'Pick the weights to bring in. You can change these later.'
+                : 'Pick the weights this family offers on Google Fonts.'
+              : 'Pick from Google Fonts, or upload the font files you have.'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative">
-          <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground">
-            <Icon name="search" size={14} />
-          </span>
-          <Input
-            autoFocus
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search Google Fonts…"
-            className="pl-8"
-            aria-label="Search Google Fonts"
-            onKeyDown={e => {
-              if (e.key !== 'Enter') return
-              e.preventDefault()
-              if (matches.length > 0) onPick(matches[0].name)
-              else if (query.trim()) onPick(query.trim())
-            }}
-          />
-        </div>
+        {chosen ? (
+          <>
+            <div className="flex flex-wrap gap-1.5">
+              {chosen.offered.map(w => {
+                const active = picked.includes(w)
+                return (
+                  <Button
+                    key={w}
+                    size="xs"
+                    variant={active ? 'default' : 'outline'}
+                    onClick={() => setPicked(prev => active ? prev.filter(x => x !== w) : [...prev, w].sort((a, b) => Number(a) - Number(b)))}
+                    title={`Weight ${w}`}
+                  >
+                    {w}
+                  </Button>
+                )
+              })}
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="ghost" onClick={() => setChosen(null)}>Back</Button>
+              <Button disabled={picked.length === 0} onClick={() => onPick(chosen.name, picked)}>
+                Add {chosen.name}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="relative">
+              <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground">
+                <Icon name="search" size={14} />
+              </span>
+              <Input
+                autoFocus
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search Google Fonts…"
+                className="pl-8"
+                aria-label="Search Google Fonts"
+                onKeyDown={e => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  if (matches.length > 0) choose(matches[0])
+                  else if (query.trim()) choose({ name: query.trim() })
+                }}
+              />
+            </div>
 
-        <div className="flex max-h-[40vh] flex-col gap-0.5 overflow-y-auto">
-          {matches.map(f => (
-            <button
-              key={f.name}
-              type="button"
-              onClick={() => onPick(f.name)}
-              className="flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted"
-            >
-              <span className="text-[13px] font-medium">{f.name}</span>
-              <span className="text-[11px] text-muted-foreground">{f.category}</span>
-            </button>
-          ))}
-          {/* The catalogue is bigger than this list; a miss is still a font. */}
-          {needle && !exact && query.trim() && (
-            <button
-              type="button"
-              onClick={() => onPick(query.trim())}
-              className="flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted"
-            >
-              <span className="text-[13px] font-medium">Use “{query.trim()}”</span>
-              <span className="text-[11px] text-muted-foreground">Any Google Font works by name</span>
-            </button>
-          )}
-        </div>
+            <div className="flex max-h-[40vh] flex-col gap-0.5 overflow-y-auto">
+              {matches.map(f => (
+                <button
+                  key={f.name}
+                  type="button"
+                  onClick={() => choose(f)}
+                  className="flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted"
+                >
+                  <span className="text-[13px] font-medium">{f.name}</span>
+                  <span className="text-[11px] text-muted-foreground">{f.category}</span>
+                </button>
+              ))}
+              {!needle && (
+                <p className="px-2.5 py-1.5 text-[11px] text-muted-foreground/60">
+                  A few favourites. Search for the rest — every Google Font works.
+                </p>
+              )}
+              {/* The catalogue is bigger than this list; a miss is still a font. */}
+              {needle && !exact && query.trim() && (
+                <button
+                  type="button"
+                  onClick={() => choose({ name: query.trim() })}
+                  className="flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted"
+                >
+                  <span className="text-[13px] font-medium">Use “{query.trim()}”</span>
+                  <span className="text-[11px] text-muted-foreground">Any Google Font works by name</span>
+                </button>
+              )}
+            </div>
 
-        <div className="flex items-center justify-between gap-3 border-t pt-4">
-          <p className="text-[12px] text-muted-foreground">
-            Have the files? OTF, TTF, WOFF and WOFF2.
-          </p>
-          <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()}>
-            <Icon name="upload" size={13} /> Upload font files
-          </Button>
-        </div>
+            <div className="flex items-center justify-between gap-3 border-t pt-4">
+              <p className="text-[12px] text-muted-foreground">
+                Have the files? OTF, TTF, WOFF and WOFF2.
+              </p>
+              <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()}>
+                <Icon name="upload" size={13} /> Upload font files
+              </Button>
+            </div>
+          </>
+        )}
 
         <input
           ref={fileInput}
@@ -504,13 +577,24 @@ function TypeDetail({
     <CardDetail
       open
       onOpenChange={o => { if (!o) onClose() }}
+      className="sm:max-w-[600px]"
       title={<span style={face}>{font.name}</span>}
       description={groupName}
-      media={<span className="text-[56px] leading-none text-foreground" style={face}>Ag</span>}
+      /* leading-none clipped the g's descender against the band's own
+         overflow; the taller line box keeps the whole glyph. */
+      media={<span className="text-[96px] leading-[1.15] text-foreground" style={face}>Ag</span>}
+      mediaClassName="py-2"
       chips={font.weights.map(w => <Badge key={w} variant="secondary">{w}</Badge>)}
       rows={editing ? [] : [
         { label: 'Role', value: font.primaryLabel || font.role },
         { label: 'Usage', value: font.usage },
+        { label: 'About', value: font.description },
+        {
+          label: 'Source',
+          value: font.importUrl
+            ? 'Google Fonts'
+            : (font.downloads || []).some(d => d.file) ? 'Uploaded files' : null,
+        },
         { label: 'CSS', value: cssFor(font), mono: true },
       ]}
       actions={
@@ -539,7 +623,9 @@ function TypeDetail({
               // value, so "Inter" used to request I, In, Int and Inte too.
               onBlur={() => update(c => {
                 const f = c.typography[at.gi].fonts[at.fi]
-                f.importUrl = googleFontUrl(f.name, f.weights)
+                // Only Google-hosted faces have a stylesheet URL to rebuild;
+                // an uploaded font renaming itself must not grow one.
+                if (f.importUrl) f.importUrl = googleFontUrl(f.name, f.weights)
               })}
             />
           </div>
@@ -562,6 +648,16 @@ function TypeDetail({
             />
           </div>
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor="font-description">Description</Label>
+            <Textarea
+              id="font-description"
+              value={font.description || ''}
+              rows={2}
+              placeholder="Anything worth knowing — where it came from, its licence, when to reach for it."
+              onChange={e => update(c => { c.typography[at.gi].fonts[at.fi].description = e.target.value })}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
             <Label>Weights</Label>
             <div className="flex flex-wrap gap-1.5">
               {ALL_WEIGHTS.map(w => {
@@ -576,7 +672,7 @@ function TypeDetail({
                       f.weights = active
                         ? f.weights.filter(x => x !== w)
                         : [...f.weights, w].sort((a, b) => Number(a) - Number(b))
-                      f.importUrl = googleFontUrl(f.name, f.weights)
+                      if (f.importUrl) f.importUrl = googleFontUrl(f.name, f.weights)
                     })}
                     title={`Weight ${w}`}
                   >

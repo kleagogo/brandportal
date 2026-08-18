@@ -48,6 +48,8 @@ export interface FontConfig {
   role: string
   weights: string[]
   usage: string
+  /** A longer note than `usage` — provenance, licensing, where it came from. */
+  description?: string
   importUrl?: string
   /** e.g. "Primary — All UI, Headings & Body". */
   primaryLabel?: string
