@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useHub } from './HubContext'
 import { EmptyState } from './EmptyState'
 import { Editable } from './Editable'
@@ -14,6 +14,12 @@ import { ButtonGroup } from '@/components/ui/button-group'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog'
+import { GOOGLE_FONTS } from './google-fonts'
+import { addFontFile, isFontFile } from './font-files'
+import { localPreview, uploadAsset } from './upload-client'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -51,6 +57,10 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
   const [sort, setSort] = useState<FontSort>('added')
   const [copied, setCopied] = useState<string | null>(null)
   const [detail, setDetail] = useState<FontAt | null>(null)
+  const [picker, setPicker] = useState(false)
+  const [uploadingFonts, setUploadingFonts] = useState(0)
+  const [fontError, setFontError] = useState('')
+  const [dragOver, setDragOver] = useState(false)
 
   const mayEdit = canEdit || sandbox
   const needle = query.trim().toLowerCase()
@@ -65,19 +75,48 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
     setTimeout(() => setCopied(null), 1500)
   }
 
-  /** Seed the first group when there is none, so "Add typeface" always works. */
-  function addTypeface() {
+  /**
+   * Add a Google-hosted typeface by name and open it for editing. Seeds the
+   * first group when there is none, so this always works.
+   */
+  function addGoogleTypeface(name: string) {
+    const gi = Math.max(0, config.typography.length - 1)
+    const fi = config.typography[gi]?.fonts.length ?? 0
     update(c => {
       if (c.typography.length === 0) c.typography.push({ group: 'Brand typefaces', fonts: [] })
       c.typography[c.typography.length - 1].fonts.push({
-        name: 'Inter',
-        role: 'New typeface',
+        name,
+        role: 'Typeface',
         weights: ['400', '600'],
         usage: '',
-        importUrl: googleFontUrl('Inter', ['400', '600']),
+        importUrl: googleFontUrl(name, ['400', '600']),
         specimens: [{ label: 'Sample', size: '20px', weight: '400', sample: 'The quick brown fox jumps over the lazy dog' }],
       })
     })
+    setPicker(false)
+    setDetail({ gi, fi })
+  }
+
+  /** Upload dropped or chosen font files and file each into a typeface. */
+  async function addFontFiles(files: File[]) {
+    const fonts = files.filter(f => isFontFile(f.name))
+    if (!fonts.length) {
+      setFontError('None of those are font files. OTF, TTF, WOFF and WOFF2 work.')
+      return
+    }
+    setFontError('')
+    setUploadingFonts(fonts.length)
+    for (const file of fonts) {
+      try {
+        const data = sandbox ? localPreview(file) : await uploadAsset(file, config.slug)
+        update(c => { addFontFile(c, file.name, data.url) })
+      } catch {
+        setFontError(prev => prev || `Couldn’t upload ${file.name}`)
+      } finally {
+        setUploadingFonts(n => n - 1)
+      }
+    }
+    setPicker(false)
   }
 
   /**
@@ -101,13 +140,29 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
           (font.usage || '').toLowerCase().includes(needle))
         .sort((a, b) => (sort === 'name' ? a.font.name.localeCompare(b.font.name) : 0)),
     }))
-    .filter(g => g.items.length > 0)
+    // A group with nothing in it shows while editing — it was just created
+    // and needs to be seen to be named or filled.
+    .filter(g => g.items.length > 0 || (editing && group === 'all' && weight === 'all' && !needle))
 
   const open = detail ? config.typography[detail.gi]?.fonts[detail.fi] : undefined
   const openGroup = detail ? config.typography[detail.gi]?.group : undefined
 
   return (
-    <div>
+    <div
+      className={dragOver ? 'rounded-xl ring-2 ring-ring ring-offset-4' : ''}
+      onDragOver={e => {
+        if (!(canEdit || sandbox)) return
+        e.preventDefault()
+        setDragOver(true)
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => {
+        if (!(canEdit || sandbox)) return
+        e.preventDefault()
+        setDragOver(false)
+        addFontFiles(Array.from(e.dataTransfer.files))
+      }}
+    >
       {confirmDialog}
 
       <SectionHeader
@@ -118,10 +173,21 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
             : 'Our typefaces, weights, and how to use them.'
         }
         actions={
-          editing && (
-            <Button size="sm" variant="outline" onClick={addTypeface}>
-              <Icon name="plus" size={13} /> Add typeface
-            </Button>
+          (canEdit || sandbox) && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => setPicker(true)}>
+                <Icon name="plus" size={13} /> Add typeface
+              </Button>
+              {editing && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => update(c => { c.typography.push({ group: 'New group', fonts: [] }) })}
+                >
+                  <Icon name="plus" size={13} /> Add group
+                </Button>
+              )}
+            </>
           )
         }
         edit={mayEdit ? { editing, onToggle: () => setEditingSection(editing ? null : active) } : undefined}
@@ -161,12 +227,19 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
         }}
       />
 
+      {uploadingFonts > 0 && (
+        <p className="mb-4 text-[13px] text-muted-foreground">
+          Adding {uploadingFonts} font file{uploadingFonts === 1 ? '' : 's'}…
+        </p>
+      )}
+      {fontError && <p className="mb-4 text-[13px] text-destructive">{fontError}</p>}
+
       {total === 0 && !editing && (
         <EmptyState
           title="No typefaces yet"
           description="Add the fonts the brand is set in, with the weights and sizes that go with them."
           actionLabel="Add a typeface"
-          onAction={addTypeface}
+          onAction={() => setPicker(true)}
         />
       )}
 
@@ -280,6 +353,14 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
           card itself, which made one typeface taller than a whole section of
           logos. The card is now the same size as every other card, and this is
           where the depth went. */}
+      {picker && (
+        <TypefacePicker
+          onClose={() => setPicker(false)}
+          onPick={addGoogleTypeface}
+          onFiles={addFontFiles}
+        />
+      )}
+
       {detail && open && (
         <TypeDetail
           at={detail}
@@ -300,6 +381,105 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
         />
       )}
     </div>
+  )
+}
+
+
+/**
+ * Where a typeface comes from: Google Fonts by name, or the files themselves.
+ *
+ * The list is a bundled slice of the catalogue, not the API — sixty families
+ * cover almost every brand deck, and the search doubles as free text: any
+ * Google family loads by name alone, so a name that matches nothing here is
+ * offered as-is rather than rejected.
+ */
+function TypefacePicker({
+  onClose, onPick, onFiles,
+}: {
+  onClose: () => void
+  onPick: (name: string) => void
+  onFiles: (files: File[]) => void
+}) {
+  const [query, setQuery] = useState('')
+  const fileInput = useRef<HTMLInputElement>(null)
+  const needle = query.trim().toLowerCase()
+  const matches = GOOGLE_FONTS.filter(f => !needle || f.name.toLowerCase().includes(needle))
+  const exact = GOOGLE_FONTS.some(f => f.name.toLowerCase() === needle)
+
+  return (
+    <Dialog open onOpenChange={o => { if (!o) onClose() }}>
+      <DialogContent className="sm:max-w-[440px]">
+        <DialogHeader>
+          <DialogTitle>Add a typeface</DialogTitle>
+          <DialogDescription>
+            Pick from Google Fonts, or upload the font files you have.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="relative">
+          <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground">
+            <Icon name="search" size={14} />
+          </span>
+          <Input
+            autoFocus
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search Google Fonts…"
+            className="pl-8"
+            aria-label="Search Google Fonts"
+            onKeyDown={e => {
+              if (e.key !== 'Enter') return
+              e.preventDefault()
+              if (matches.length > 0) onPick(matches[0].name)
+              else if (query.trim()) onPick(query.trim())
+            }}
+          />
+        </div>
+
+        <div className="flex max-h-[40vh] flex-col gap-0.5 overflow-y-auto">
+          {matches.map(f => (
+            <button
+              key={f.name}
+              type="button"
+              onClick={() => onPick(f.name)}
+              className="flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted"
+            >
+              <span className="text-[13px] font-medium">{f.name}</span>
+              <span className="text-[11px] text-muted-foreground">{f.category}</span>
+            </button>
+          ))}
+          {/* The catalogue is bigger than this list; a miss is still a font. */}
+          {needle && !exact && query.trim() && (
+            <button
+              type="button"
+              onClick={() => onPick(query.trim())}
+              className="flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted"
+            >
+              <span className="text-[13px] font-medium">Use “{query.trim()}”</span>
+              <span className="text-[11px] text-muted-foreground">Any Google Font works by name</span>
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t pt-4">
+          <p className="text-[12px] text-muted-foreground">
+            Have the files? OTF, TTF, WOFF and WOFF2.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()}>
+            <Icon name="upload" size={13} /> Upload font files
+          </Button>
+        </div>
+
+        <input
+          ref={fileInput}
+          type="file"
+          multiple
+          accept=".otf,.ttf,.woff,.woff2,.eot"
+          className="hidden"
+          onChange={e => { if (e.target.files?.length) onFiles(Array.from(e.target.files)); e.target.value = '' }}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }
 

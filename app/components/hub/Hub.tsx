@@ -17,6 +17,7 @@ import { SearchOverlay } from './SearchOverlay'
 import { ImportModal } from './ImportModal'
 import { WelcomeModal } from './WelcomeModal'
 import { useConfirm } from './useConfirm'
+import { customFontFaceCss } from './font-files'
 import { Button } from '@/components/ui/button'
 import { IconSwap, TextSwap } from '../transitions'
 import {
@@ -145,6 +146,10 @@ function HubShell({ access }: { access: HubAccess }) {
     return [...urls]
   }, [config.typography])
 
+  // Uploaded font files have no Google stylesheet; their faces are declared
+  // here, so a dropped Onest-SemiBold.woff2 actually renders as Onest.
+  const customFaces = useMemo(() => customFontFaceCss(config), [config])
+
   function renderContent() {
     if (!activeSection) return null
     switch (activeSection.type) {
@@ -160,6 +165,7 @@ function HubShell({ access }: { access: HubAccess }) {
   return (
     <div className={`${dark ? 'dark' : ''} h-screen overflow-hidden bg-background text-foreground flex flex-col`}>
       {fontUrls.map(url => <link key={url} rel="stylesheet" href={url} />)}
+      {customFaces && <style dangerouslySetInnerHTML={{ __html: customFaces }} />}
 
       <WelcomeToast />
 
@@ -459,7 +465,7 @@ function HubSidebarItem({
         <>
           <SidebarMenuAction
             showOnHover
-            className="right-7 md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all"
+            className="right-7 md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all [&>svg]:size-3"
             title={`Share ${section.label}`}
             onClick={() => onShare(section.id)}
           >
@@ -467,7 +473,7 @@ function HubSidebarItem({
           </SidebarMenuAction>
           <SidebarMenuAction
             showOnHover
-            className="hover:!text-destructive md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all"
+            className="hover:!text-destructive md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all [&>svg]:size-3"
             title={`Delete ${section.label}`}
             onClick={async () => {
               const ok = await confirm({

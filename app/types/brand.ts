@@ -36,6 +36,11 @@ export interface TypeSpecimen {
 export interface FontDownload {
   label: string
   file?: string
+  /** CSS weight this file carries, e.g. "600". Set for uploaded font files
+   *  so the @font-face rule can say which weight the file is. */
+  weight?: string
+  /** The file is the italic cut. */
+  italic?: boolean
 }
 
 export interface FontConfig {

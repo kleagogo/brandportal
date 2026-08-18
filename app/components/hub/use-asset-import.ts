@@ -7,6 +7,7 @@ import {
   expandArchives, splitByAllowed, stripCommonRoot, type PickedFile,
 } from './pick-files'
 import { applyAnswers, planImport, unplaced, type ImportBucket } from './route-files'
+import { addFontFile, isFontFile } from './font-files'
 import type { ImportDecision } from './ImportReview'
 import type { AssetFile, SectionConfig } from '@/app/types/brand'
 
@@ -195,6 +196,16 @@ export function useAssetImport({
                 config.slug,
                 total === 1 ? percent => setProgress({ done, total, name: item.file.name, percent }) : undefined
               )
+          // A font going to a typography section becomes a typeface, not a
+          // tile in the file store — which is where fonts used to land, on a
+          // page that never reads it. Onest-SemiBold.woff2 becomes (or joins)
+          // "Onest", and the @font-face in Hub makes it render.
+          const targetSection = config.sections.find(sec => sec.id === target)
+          if (targetSection?.type === 'typography' && isFontFile(item.file.name)) {
+            touched.add(target)
+            update(c => { addFontFile(c, item.file.name, data.url) })
+            continue
+          }
           const asset: AssetFile = {
             name: data.suggestion?.name || item.file.name.replace(/\.[^.]*$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()),
             file: data.url,
