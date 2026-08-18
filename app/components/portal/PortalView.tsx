@@ -134,7 +134,7 @@ function FullTemplate({ config, portal }: { config: BrandConfig; portal: SharePo
             <Icon name="menu" size={18} />
           </button>
           <p className="text-[13px] font-medium text-muted-foreground truncate">{section?.label}</p>
-          <span className="ml-auto text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">Shared with you</span>
+          <span className="ml-auto text-[11px] font-medium text-muted-foreground/60">Shared with you</span>
         </header>
         <main className="flex-1">
           <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
@@ -226,7 +226,7 @@ function GalleryHero({ config, portal }: { config: BrandConfig; portal: SharePor
             {note}
           </p>
         )}
-        <p className="text-[12px] uppercase tracking-widest mt-8" style={{ opacity: onBrand ? 0.6 : 0.45 }}>
+        <p className="text-[12px] mt-8" style={{ opacity: onBrand ? 0.6 : 0.45 }}>
           {files} file{files === 1 ? '' : 's'} shared with you
         </p>
       </div>
@@ -268,7 +268,7 @@ function MinimalTemplate({ config, portal }: { config: BrandConfig; portal: Shar
         return (
           <div key={section.id} className="mb-10">
             <div className="flex items-center justify-between gap-4 mb-3">
-              <h2 className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground/60">{section.label}</h2>
+              <h2 className="text-[13px] font-medium text-muted-foreground">{section.label}</h2>
               {allowDownload && hasLocalFiles && (
                 <a
                   href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(section.id)}`}

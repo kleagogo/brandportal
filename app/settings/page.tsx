@@ -35,7 +35,7 @@ export default async function SettingsPage() {
         <section className="bg-card border border-border rounded-2xl p-6 mb-4">
           <div className="flex items-center justify-between gap-4 mb-1">
             <p className="text-[13px] font-medium text-foreground">Email</p>
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
               {user.plan === 'pro' ? 'Pro' : 'Free plan'}
             </span>
           </div>
@@ -61,7 +61,7 @@ export default async function SettingsPage() {
                     <span className="text-[11px] text-muted-foreground/60 ml-2 font-mono">/{hub.slug}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground">{role}</span>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">{role}</span>
                     {role === 'editor' && <LeaveHubButton slug={hub.slug} name={hub.name} />}
                   </div>
                 </div>

@@ -304,7 +304,7 @@ export function ShareModal({ onClose, isOwner, canEdit, demo, section }: { onClo
                 <p className="text-[13px] font-medium text-foreground">Custom domain</p>
                 <p className="text-[12px] text-muted-foreground/60">brand.yourcompany.com</p>
               </div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/15 px-2 py-1 rounded-md whitespace-nowrap">Pro</span>
+              <span className="text-[11px] font-medium text-primary bg-primary/15 px-2 py-1 rounded-md whitespace-nowrap">Pro</span>
             </div>
           </div>
         )}

@@ -318,7 +318,7 @@ function Editor({
 
       {/* Sections */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5">
+        <p className="text-[13px] font-medium text-muted-foreground mb-1.5">
           Sections {chosen.length === 0 ? '· all' : `· ${chosen.length} of ${shareable.length}`}
         </p>
         <div className="flex flex-wrap gap-1.5">

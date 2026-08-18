@@ -247,7 +247,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                   // Same grey eyebrow the colour and gradient groups use, so a
                   // subgroup reads as a label rather than competing with the
                   // section heading above it.
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">{subgroup}</p>
+                  <p className="text-[13px] font-medium text-muted-foreground mb-3">{subgroup}</p>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {items.map(({ asset, i }) => (
@@ -422,7 +422,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
       chips={
         <>
           {asset.platform && (
-            <Badge variant="secondary" className="uppercase tracking-wide">{asset.platform}</Badge>
+            <Badge variant="secondary">{asset.platform}</Badge>
           )}
           {asset.format.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
         </>
@@ -457,7 +457,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         </button>
       )}
       {current && (
-        <span className="absolute top-2 left-2 z-10 text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary text-primary-foreground uppercase tracking-wide">
+        <span className="absolute top-2 left-2 z-10 text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary text-primary-foreground">
           {current} · Approved
         </span>
       )}
@@ -505,7 +505,7 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
                         {v.uploadedAt && new Date(v.uploadedAt).getFullYear() > 1971 ? new Date(v.uploadedAt).toLocaleDateString() : 'original'}
                       </span>
                       {v.label === current ? (
-                        <span className="text-[9px] font-bold text-primary uppercase shrink-0">Current</span>
+                        <span className="text-[11px] font-medium text-primary shrink-0">Current</span>
                       ) : editing ? (
                         <button onClick={() => approve(v.label)} className="text-[10px] font-semibold text-foreground hover:underline shrink-0">Make current</button>
                       ) : allowDownload ? (

@@ -54,7 +54,7 @@ export function ColorsSection() {
       {config.colors.map((group, gi) => (
         <div key={gi} className="mb-10">
           <div className="flex items-center gap-2 mb-4 group/head">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+            <p className="text-[13px] font-medium text-muted-foreground">
               <Editable
                 inline
                 value={group.group}
@@ -118,13 +118,13 @@ export function ColorsSection() {
                     <>
                       <div className="fixed inset-0 z-20" onClick={() => setOpen(null)} />
                       <div className="absolute left-0 top-[92px] z-30 w-[240px] bg-card border border-border rounded-xl shadow-xl p-3">
-                        <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">Name</label>
+                        <label className="block text-[12px] font-medium text-muted-foreground mb-1">Name</label>
                         <input
                           value={swatch.name}
                           onChange={e => update(c => { c.colors[gi].swatches[si].name = e.target.value })}
                           className="w-full text-[13px] px-2 py-1.5 border border-border rounded-lg outline-none focus:border-ring mb-2.5"
                         />
-                        <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">Hex</label>
+                        <label className="block text-[12px] font-medium text-muted-foreground mb-1">Hex</label>
                         <div className="flex gap-1.5 mb-2.5">
                           <input
                             type="color"
@@ -138,7 +138,7 @@ export function ColorsSection() {
                             className={`flex-1 text-[13px] font-mono px-2 py-1.5 border rounded-lg outline-none focus:border-ring ${isValidHex(swatch.hex) ? 'border-border' : 'border-destructive/50'}`}
                           />
                         </div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">Usage note</label>
+                        <label className="block text-[12px] font-medium text-muted-foreground mb-1">Usage note</label>
                         <input
                           value={swatch.usage || ''}
                           onChange={e => update(c => { c.colors[gi].swatches[si].usage = e.target.value })}

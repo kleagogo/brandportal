@@ -89,7 +89,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         <p className="text-[13px] text-muted-foreground mb-5">{sandbox ? 'Try it. Nothing here is saved.' : 'Only you, the owner, can see this.'}</p>
 
         <div className="mb-6">
-          <label className="block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Client name</label>
+          <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">Client name</label>
           <div className="flex gap-2">
             <input
               value={client}
@@ -106,7 +106,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <form onSubmit={rename} className="mb-6">
-          <label className="block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Hub address</label>
+          <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">Hub address</label>
           <div className="flex gap-2">
             <div className="flex items-center flex-1 rounded-xl border-[1.5px] border-border focus-within:border-ring transition-colors overflow-hidden">
               <span className="pl-3 text-[13px] text-muted-foreground/60 font-mono">/</span>

@@ -80,7 +80,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             {/* ── The account's own brand — hub zero ────────────────────────── */}
             <section>
               <div className="mb-4">
-                <h2 className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground/60">{labels.ownHeading}</h2>
+                <h2 className="text-[13px] font-medium text-muted-foreground">{labels.ownHeading}</h2>
               </div>
 
               {studio ? (
@@ -117,7 +117,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <section>
               <div className="flex items-end justify-between gap-4 mb-4 flex-wrap">
                 <div>
-                  <h2 className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">{labels.othersHeading}</h2>
+                  <h2 className="text-[13px] font-medium text-muted-foreground mb-1">{labels.othersHeading}</h2>
                   <p className="text-[13.5px] text-muted-foreground">
                     {ownedClients} of {limits.hubs} used{sharedCount > 0 ? ` · ${sharedCount} shared with you` : ''}
                   </p>
@@ -153,12 +153,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                           {assetCount(hub.assets)} assets · /{hub.slug}
                         </p>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground">{role}</span>
+                          <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">{role}</span>
                           {meta.pin && (
-                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground">Protected</span>
+                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">Protected</span>
                           )}
                           {isExpired(meta) && (
-                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-destructive/10 text-destructive">Link expired</span>
+                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-destructive/10 text-destructive">Link expired</span>
                           )}
                         </div>
                       </div>

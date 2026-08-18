@@ -52,7 +52,7 @@ export function TypographySection() {
 
       {config.typography.map((group, gi) => (
         <div key={gi} className="mb-10">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-4">Font Family</p>
+          <p className="text-[13px] font-medium text-muted-foreground mb-4">Font Family</p>
 
           {group.fonts.map((font, fi) => (
             <HubCard
@@ -148,12 +148,12 @@ export function TypographySection() {
                 </div>
               )}
 
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mt-6 mb-3">Type Scale</p>
+              <p className="text-[13px] font-medium text-muted-foreground mt-6 mb-3">Type Scale</p>
               <div className="space-y-3">
                 {font.specimens.map((spec, si) => (
                   <div key={si} className="group/spec rounded-xl bg-background border border-border px-4 py-3.5">
                     <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-1">
+                      <span className="text-[12px] font-medium text-muted-foreground mr-1">
                         <Editable inline value={spec.label} placeholder="Label" onChange={v => update(c => { c.typography[gi].fonts[fi].specimens[si].label = v })} />
                       </span>
                       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Weight {spec.weight}</span>

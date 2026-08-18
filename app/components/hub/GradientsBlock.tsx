@@ -19,7 +19,7 @@ export function GradientsBlock() {
       {groups.map((group, gi) => (
         <div key={gi} className="mb-10">
           <div className="flex items-center gap-2 mb-4 group/head">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+            <p className="text-[13px] font-medium text-muted-foreground">
               <Editable inline value={group.group} placeholder="Group name" onChange={v => update(c => { c.gradients![gi].group = v })} />
             </p>
             {editing && (

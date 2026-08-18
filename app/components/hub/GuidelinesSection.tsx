@@ -29,7 +29,7 @@ export function GuidelinesSection() {
 
       {voice && (
         <div className="mb-10">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-4">
+          <p className="text-[13px] font-medium text-muted-foreground mb-4">
             <Editable inline value={voice.title} placeholder="Section title" onChange={v => update(c => { c.guidelines.voice!.title = v })} />
           </p>
           <div className="text-[14px] text-muted-foreground mb-4 max-w-[60ch]">
@@ -111,7 +111,7 @@ function RuleList({
 
   return (
     <div>
-      <p className={`text-[11px] font-semibold uppercase tracking-widest mb-4 ${isDo ? 'text-primary' : 'text-destructive'}`}>
+      <p className={`text-[13px] font-medium mb-4 ${isDo ? 'text-primary' : 'text-destructive'}`}>
         {isDo ? 'Do' : "Don't"}
       </p>
       <div className="space-y-2">
