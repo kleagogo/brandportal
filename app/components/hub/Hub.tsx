@@ -65,8 +65,6 @@ export default function Hub({ initial, ...access }: { initial: BrandConfig } & H
 
 function HubShell({ access }: { access: HubAccess }) {
   const { config, active, setActive, editingSection, setEditingSection, cancelEditing } = useHub()
-  // Whether the section on screen is the one in edit mode, for the header toggle.
-  const headerEditing = editingSection !== null && editingSection === active
   // Which section a share link should be scoped to, or '' for the whole hub.
   const [shareSection, setShareSection] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -186,16 +184,13 @@ function HubShell({ access }: { access: HubAccess }) {
                 one section with quiet outline buttons, so this is the one place
                 a solid button means something: adding files is what someone
                 came here to do. The rest stay secondary — sharing the hub,
-                switching edit on, and search, which editors used to reach only
-                by knowing ⌘K existed because Add files had taken its slot. */}
+                and search, which editors used to reach only by knowing ⌘K
+                existed because Add files had taken its slot. Edit lives with
+                the section it acts on, in the section's own header. */}
             {access.canEdit || access.sandbox ? (
               <div className="ml-auto flex items-center gap-2">
                 <Button size="icon-sm" variant="ghost" onClick={() => setSearchOpen(true)} title="Search (⌘K)" aria-label="Search">
                   <Icon name="search" size={14} />
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setEditingSection(headerEditing ? null : active)}>
-                  <IconSwap on={headerEditing} a={<Icon name="edit" size={13} />} b={<Icon name="check" size={13} />} />
-                  {headerEditing ? 'Done' : 'Edit'}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setShareSection('')}>
                   <Icon name="share" size={13} /> Share

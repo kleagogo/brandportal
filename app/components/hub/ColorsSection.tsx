@@ -55,7 +55,7 @@ const SORT_LABELS: Record<ColorSort, string> = {
 }
 
 export function ColorsSection({ label = 'Colors' }: { label?: string }) {
-  const { config, editing, update, canEdit, sandbox } = useHub()
+  const { config, editing, update, canEdit, sandbox, active, setEditingSection } = useHub()
   const { confirm, confirmDialog } = useConfirm()
   const [copied, setCopied] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -127,6 +127,7 @@ export function ColorsSection({ label = 'Colors' }: { label?: string }) {
             </Button>
           )
         }
+        edit={mayEdit ? { editing, onToggle: () => setEditingSection(editing ? null : active) } : undefined}
         toolbar={total > 3}
         search={{
           value: query,

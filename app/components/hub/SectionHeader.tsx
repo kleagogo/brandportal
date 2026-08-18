@@ -38,6 +38,7 @@ export function SectionHeader({
   title,
   description,
   actions,
+  edit,
   search,
   filters = [],
   sort,
@@ -49,6 +50,9 @@ export function SectionHeader({
   description?: ReactNode
   /** Small outline buttons beside the heading. Acts on this section. */
   actions?: ReactNode
+  /** The section's edit switch. Rendered with the actions, so editing lives
+   *  where the things being edited are — not in the hub's own bar. */
+  edit?: { editing: boolean; onToggle: () => void }
   search?: { value: string; onChange: (v: string) => void; placeholder: string; label: string }
   filters?: SelectControl[]
   sort?: SelectControl
@@ -63,7 +67,16 @@ export function SectionHeader({
     <>
       <div className="mb-1 flex flex-wrap items-start justify-between gap-4">
         <h1 className="text-[22px] font-bold tracking-tight">{title}</h1>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+        {(actions || edit) && (
+          <div className="flex items-center gap-2">
+            {actions}
+            {edit && (
+              <Button size="sm" variant="outline" onClick={edit.onToggle}>
+                <Icon name={edit.editing ? 'check' : 'edit'} size={13} /> {edit.editing ? 'Done' : 'Edit'}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {description

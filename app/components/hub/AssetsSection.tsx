@@ -173,7 +173,7 @@ function EmptyDropzone({
 }
 
 export function AssetsSection({ sectionId }: { sectionId: string }) {
-  const { config, editing, canEdit, sandbox, allowDownload, portalId } = useHub()
+  const { config, editing, canEdit, sandbox, allowDownload, portalId, setEditingSection } = useHub()
   const [dragOver, setDragOver] = useState(false)
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<AssetSort>('added')
@@ -277,6 +277,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
         /* Searching and sorting only earn their space once there is enough to
            lose track of. Below that the list is the whole answer. Counted on
            what is stored, never on what is showing. */
+        edit={(canEdit || sandbox) ? { editing, onToggle: () => setEditingSection(editing ? null : sectionId) } : undefined}
         toolbar={assets.length > 3}
         search={{
           value: query,

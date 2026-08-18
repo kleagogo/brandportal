@@ -43,7 +43,7 @@ const SORT_LABELS: Record<FontSort, string> = {
 }
 
 export function TypographySection({ label = 'Typography' }: { label?: string }) {
-  const { config, editing, update, canEdit, sandbox } = useHub()
+  const { config, editing, update, canEdit, sandbox, active, setEditingSection } = useHub()
   const { confirm, confirmDialog } = useConfirm()
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState('all')
@@ -124,6 +124,7 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
             </Button>
           )
         }
+        edit={mayEdit ? { editing, onToggle: () => setEditingSection(editing ? null : active) } : undefined}
         toolbar={total > 3}
         search={{
           value: query,

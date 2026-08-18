@@ -24,7 +24,7 @@ const SORT_LABELS: Record<GuidelineSort, string> = {
 }
 
 export function GuidelinesSection({ label = 'Guidelines' }: { label?: string }) {
-  const { config, editing, update, canEdit, sandbox } = useHub()
+  const { config, editing, update, canEdit, sandbox, active, setEditingSection } = useHub()
   const { confirm, confirmDialog } = useConfirm()
   const { voice, usage } = config.guidelines
   const [query, setQuery] = useState('')
@@ -78,6 +78,7 @@ export function GuidelinesSection({ label = 'Guidelines' }: { label?: string }) 
             </Button>
           )
         }
+        edit={mayEdit ? { editing, onToggle: () => setEditingSection(editing ? null : active) } : undefined}
         toolbar={total > 3}
         search={{
           value: query,
