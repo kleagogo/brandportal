@@ -7,38 +7,149 @@ import { Editable } from './Editable'
 import { useConfirm } from './useConfirm'
 import { Icon } from './Icon'
 import { GradientsBlock } from './GradientsBlock'
-import { Button } from '@/components/ui/button'
 import { HubCard } from './HubCard'
+import { SectionHeader } from './SectionHeader'
+import { CardDetail } from './CardDetail'
+import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 function normalizeHex(v: string): string {
-  let h = v.trim()
-  if (!h.startsWith('#')) h = `#${h}`
-  return h
+  const h = v.trim()
+  if (!h) return h
+  return h.startsWith('#') ? h : `#${h}`
 }
 
 function isValidHex(v: string): boolean {
   return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)
 }
 
-export function ColorsSection() {
-  const { config, editing, update } = useHub()
+/** #abc and #aabbcc both expand to the six-digit form the colour input needs. */
+function expandHex(v: string): string {
+  if (!isValidHex(v)) return '#888888'
+  const h = v.slice(1)
+  return h.length === 3 ? `#${h.split('').map(c => c + c).join('')}` : `#${h}`
+}
+
+/** "18, 24, 32" — the other way people need a brand colour. */
+function toRgb(v: string): string {
+  if (!isValidHex(v)) return ''
+  const h = expandHex(v).slice(1)
+  const n = parseInt(h, 16)
+  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`
+}
+
+/** Where a swatch actually lives, so an action never depends on what is showing. */
+interface SwatchAt { gi: number; si: number }
+
+type ColorSort = 'added' | 'name'
+
+const SORT_LABELS: Record<ColorSort, string> = {
+  added: 'Order added',
+  name: 'Name',
+}
+
+export function ColorsSection({ label = 'Colors' }: { label?: string }) {
+  const { config, editing, update, canEdit, sandbox } = useHub()
   const { confirm, confirmDialog } = useConfirm()
   const [copied, setCopied] = useState<string | null>(null)
-  const [open, setOpen] = useState<string | null>(null) // "groupIdx:swatchIdx"
+  const [query, setQuery] = useState('')
+  const [group, setGroup] = useState('all')
+  const [sort, setSort] = useState<ColorSort>('added')
+  // Which swatch is open, by position. Read back out of config on every render
+  // so an edit made in the dialog shows up in it.
+  const [detail, setDetail] = useState<SwatchAt | null>(null)
 
-  function copyHex(hex: string) {
-    navigator.clipboard.writeText(hex)
-    setCopied(hex)
+  const mayEdit = canEdit || sandbox
+  const total = config.colors.reduce((n, g) => n + g.swatches.length, 0)
+
+  /** Copy keyed by position, not by value — two swatches can share a hex. */
+  function copyHex(key: string, hex: string) {
+    navigator.clipboard.writeText(hex.toUpperCase())
+    setCopied(key)
     setTimeout(() => setCopied(null), 1500)
   }
+
+  const needle = query.trim().toLowerCase()
+
+  /**
+   * Pair every swatch with its stored index before anything filters or sorts.
+   *
+   * Every write here is `c.colors[gi].swatches[si]`, so a list that renumbered
+   * as you searched would rename the wrong colour. The index travels with the
+   * swatch instead of being the position in whatever is on screen.
+   */
+  const groups = config.colors
+    .map((g, gi) => ({
+      gi,
+      group: g,
+      items: g.swatches
+        .map((swatch, si) => ({ swatch, si }))
+        .filter(() => group === 'all' || config.colors[gi].group === group)
+        .filter(({ swatch }) =>
+          !needle ||
+          swatch.name.toLowerCase().includes(needle) ||
+          swatch.hex.toLowerCase().includes(needle) ||
+          (swatch.usage || '').toLowerCase().includes(needle))
+        .sort((a, b) => (sort === 'name' ? a.swatch.name.localeCompare(b.swatch.name) : 0)),
+    }))
+    // A group with nothing left to show is noise; in edit mode it stays,
+    // because that's where you add the colour that would fill it.
+    .filter(g => g.items.length > 0 || (editing && group === 'all' && !needle))
+
+  const open = detail ? config.colors[detail.gi]?.swatches[detail.si] : undefined
+  const openGroup = detail ? config.colors[detail.gi]?.group : undefined
 
   return (
     <div>
       {confirmDialog}
-      <h1 className="text-[22px] font-bold tracking-tight mb-1">Colors</h1>
-      <p className="text-[14px] text-muted-foreground mb-8">
-        {editing ? 'Click a swatch to edit it, or add colors and groups.' : 'Click a swatch to copy its hex value.'}
-      </p>
+
+      <SectionHeader
+        title={label}
+        description={
+          editing
+            ? 'Click a swatch to open it, or add colors and groups.'
+            : 'Click a swatch to open it, or copy its hex straight from the card.'
+        }
+        actions={
+          editing && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => update(c => { c.colors.push({ group: 'New group', swatches: [] }) })}
+            >
+              <Icon name="plus" size={13} /> Add group
+            </Button>
+          )
+        }
+        toolbar={total > 3}
+        search={{
+          value: query,
+          onChange: setQuery,
+          placeholder: 'Search colors…',
+          label: 'Search colors',
+        }}
+        filters={config.colors.length > 1 ? [{
+          value: group,
+          onChange: setGroup,
+          label: 'Filter by group',
+          options: [
+            { value: 'all', label: 'All groups' },
+            ...config.colors.map(g => ({ value: g.group, label: g.group })),
+          ],
+        }] : []}
+        sort={{
+          value: sort,
+          onChange: v => setSort(v as ColorSort),
+          label: 'Sort colors',
+          options: (Object.keys(SORT_LABELS) as ColorSort[]).map(k => ({ value: k, label: SORT_LABELS[k] })),
+        }}
+      />
 
       {config.colors.length === 0 && !editing && (
         <EmptyState
@@ -51,13 +162,17 @@ export function ColorsSection() {
         />
       )}
 
-      {config.colors.map((group, gi) => (
+      {total > 0 && groups.length === 0 && (
+        <p className="text-[13px] text-muted-foreground">No colors match that.</p>
+      )}
+
+      {groups.map(({ gi, group: g, items }) => (
         <div key={gi} className="mb-10">
           <div className="flex items-center gap-2 mb-4 group/head">
             <p className="text-[13px] font-medium text-muted-foreground">
               <Editable
                 inline
-                value={group.group}
+                value={g.group}
                 placeholder="Group name"
                 onChange={v => update(c => { c.colors[gi].group = v })}
               />
@@ -65,9 +180,9 @@ export function ColorsSection() {
             {editing && (
               <button
                 onClick={async () => {
-                  if (group.swatches.length > 0 && !(await confirm({
-                    title: `Delete the "${group.group}" group?`,
-                    description: `Its ${group.swatches.length} colors go with it.`,
+                  if (g.swatches.length > 0 && !(await confirm({
+                    title: `Delete the "${g.group}" group?`,
+                    description: `Its ${g.swatches.length} colors go with it.`,
                     confirmLabel: 'Delete group',
                     destructive: true,
                   }))) return
@@ -81,86 +196,72 @@ export function ColorsSection() {
             )}
           </div>
 
-          <div className="flex flex-wrap gap-4">
-            {group.swatches.map((swatch, si) => {
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {items.map(({ swatch, si }) => {
               const key = `${gi}:${si}`
               return (
                 <HubCard
                   key={key}
-                  className="group relative w-[168px]"
+                  className="group relative"
                   media={
+                    // The picture is the way in, same as a file's thumbnail.
                     <button
-                      onClick={() => (editing ? setOpen(open === key ? null : key) : copyHex(swatch.hex))}
+                      onClick={() => setDetail({ gi, si })}
                       className="w-full h-24"
                       style={{ background: isValidHex(swatch.hex) ? swatch.hex : '#e5e5e0' }}
-                      title={editing ? `Edit ${swatch.name}` : `Copy ${swatch.hex}`}
+                      title={`Open ${swatch.name}`}
+                      aria-label={`Open ${swatch.name}`}
                     />
                   }
+                  /* A colour is not a file, so the thing this card does is hand
+                     you the value — never a download. */
                   action={
-                    !editing && (
+                    <ButtonGroup className="shrink-0">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => copyHex(swatch.hex)}
-                        className="shrink-0 text-muted-foreground"
-                        title={`Copy ${swatch.hex}`}
+                        onClick={() => copyHex(key, swatch.hex)}
+                        title={`Copy ${swatch.hex.toUpperCase()}`}
                       >
-                        <Icon name="copy" size={14} /> {copied === swatch.hex ? 'Copied' : 'Copy'}
+                        <Icon name="copy" size={14} /> {copied === key ? 'Copied' : 'Copy'}
                       </Button>
-                    )
+                      {mayEdit && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button variant="outline" size="icon-sm" aria-label={`Actions for ${swatch.name}`}>
+                                <Icon name="more" size={14} />
+                              </Button>
+                            }
+                          />
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuGroup>
+                              <DropdownMenuItem onClick={() => setDetail({ gi, si })}>
+                                <Icon name="edit" size={14} /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => copyHex(key, swatch.hex)}>
+                                <Icon name="copy" size={14} /> Copy value
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuGroup>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => update(c => { c.colors[gi].swatches.splice(si, 1) })}
+                              >
+                                <Icon name="trash" size={14} /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </ButtonGroup>
                   }
                 >
                   <p className="text-[13px] font-semibold text-foreground truncate">{swatch.name}</p>
                   <p className="text-[12px] font-mono text-muted-foreground">{swatch.hex.toUpperCase()}</p>
-                  {swatch.usage && <p className="text-[11px] text-muted-foreground/60 leading-tight">{swatch.usage}</p>}
-
-                  {editing && open === key && (
-                    <>
-                      <div className="fixed inset-0 z-20" onClick={() => setOpen(null)} />
-                      <div className="absolute left-0 top-[92px] z-30 w-[240px] bg-card border border-border rounded-xl shadow-xl p-3">
-                        <label className="block text-[12px] font-medium text-muted-foreground mb-1">Name</label>
-                        <input
-                          value={swatch.name}
-                          onChange={e => update(c => { c.colors[gi].swatches[si].name = e.target.value })}
-                          className="w-full text-[13px] px-2 py-1.5 border border-border rounded-lg outline-none focus:border-ring mb-2.5"
-                        />
-                        <label className="block text-[12px] font-medium text-muted-foreground mb-1">Hex</label>
-                        <div className="flex gap-1.5 mb-2.5">
-                          <input
-                            type="color"
-                            value={isValidHex(swatch.hex) && swatch.hex.length === 7 ? swatch.hex : '#888888'}
-                            onChange={e => update(c => { c.colors[gi].swatches[si].hex = e.target.value })}
-                            className="w-9 h-8 rounded-lg border border-border cursor-pointer p-0.5"
-                          />
-                          <input
-                            value={swatch.hex}
-                            onChange={e => update(c => { c.colors[gi].swatches[si].hex = normalizeHex(e.target.value) })}
-                            className={`flex-1 text-[13px] font-mono px-2 py-1.5 border rounded-lg outline-none focus:border-ring ${isValidHex(swatch.hex) ? 'border-border' : 'border-destructive/50'}`}
-                          />
-                        </div>
-                        <label className="block text-[12px] font-medium text-muted-foreground mb-1">Usage note</label>
-                        <input
-                          value={swatch.usage || ''}
-                          onChange={e => update(c => { c.colors[gi].swatches[si].usage = e.target.value })}
-                          placeholder="Where is this color used?"
-                          className="w-full text-[12px] px-2 py-1.5 border border-border rounded-lg outline-none focus:border-ring mb-3 placeholder:text-muted-foreground/60"
-                        />
-                        <div className="flex justify-between items-center">
-                          <button
-                            onClick={() => { setOpen(null); update(c => { c.colors[gi].swatches.splice(si, 1) }) }}
-                            className="text-[12px] text-muted-foreground/60 hover:text-destructive flex items-center gap-1 transition-colors"
-                          >
-                            <Icon name="trash" size={12} /> Delete
-                          </button>
-                          <button
-                            onClick={() => setOpen(null)}
-                            className="text-[12px] font-semibold bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-85 transition-colors"
-                          >
-                            Done
-                          </button>
-                        </div>
-                      </div>
-                    </>
+                  {swatch.usage && (
+                    <p className="text-[11px] text-muted-foreground/60 leading-tight">{swatch.usage}</p>
                   )}
                 </HubCard>
               )
@@ -169,10 +270,11 @@ export function ColorsSection() {
             {editing && (
               <button
                 onClick={() => {
+                  const si = config.colors[gi].swatches.length
                   update(c => { c.colors[gi].swatches.push({ name: 'New color', hex: '#888888', usage: '' }) })
-                  setOpen(`${gi}:${group.swatches.length}`)
+                  setDetail({ gi, si })
                 }}
-                className="w-[168px] h-[132px] rounded-2xl border-2 border-dashed border-border text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
+                className="min-h-[132px] rounded-2xl border-2 border-dashed border-border text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
                 title="Add color"
               >
                 <Icon name="plus" size={16} />
@@ -182,13 +284,99 @@ export function ColorsSection() {
         </div>
       ))}
 
-      {editing && (
-        <button
-          onClick={() => update(c => { c.colors.push({ group: 'New group', swatches: [] }) })}
-          className="text-[13px] font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-ring rounded-xl px-4 py-2.5 flex items-center gap-2 transition-colors mb-10"
+      {/* One colour, with room. This replaced a popover pinned inside the card,
+          which `Card`'s own overflow clipped — so the usage field and Delete
+          were half off the tile and unreachable on a narrow screen. */}
+      {detail && open && (
+        <CardDetail
+          open
+          onOpenChange={o => { if (!o) setDetail(null) }}
+          title={open.name || 'Untitled color'}
+          description={openGroup}
+          media={
+            <div
+              className="h-28 w-full rounded-md"
+              style={{ background: isValidHex(open.hex) ? open.hex : '#e5e5e0' }}
+            />
+          }
+          mediaClassName="p-0 bg-transparent"
+          rows={editing ? [] : [
+            { label: 'Hex', value: open.hex.toUpperCase(), mono: true },
+            { label: 'RGB', value: toRgb(open.hex), mono: true },
+            { label: 'Usage', value: open.usage || <span className="text-muted-foreground">No usage note yet</span> },
+          ]}
+          actions={
+            <>
+              {editing && (
+                <Button
+                  variant="ghost"
+                  onClick={async () => {
+                    if (!(await confirm({
+                      title: `Delete "${open.name}"?`,
+                      confirmLabel: 'Delete color',
+                      destructive: true,
+                    }))) return
+                    setDetail(null)
+                    update(c => { c.colors[detail.gi].swatches.splice(detail.si, 1) })
+                  }}
+                  className="mr-auto text-muted-foreground hover:text-destructive"
+                >
+                  <Icon name="trash" size={14} /> Delete
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => copyHex(`${detail.gi}:${detail.si}`, open.hex)}
+              >
+                <Icon name="copy" size={14} />
+                {copied === `${detail.gi}:${detail.si}` ? 'Copied' : 'Copy value'}
+              </Button>
+            </>
+          }
         >
-          <Icon name="plus" size={13} /> Add color group
-        </button>
+          {editing && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="swatch-name">Name</Label>
+                <Input
+                  id="swatch-name"
+                  value={open.name}
+                  onChange={e => update(c => { c.colors[detail.gi].swatches[detail.si].name = e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="swatch-hex">Hex</Label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    aria-label="Pick a color"
+                    value={expandHex(open.hex)}
+                    onChange={e => update(c => { c.colors[detail.gi].swatches[detail.si].hex = e.target.value })}
+                    className="h-9 w-10 shrink-0 cursor-pointer rounded-md border border-border p-0.5"
+                  />
+                  <Input
+                    id="swatch-hex"
+                    value={open.hex}
+                    // Normalising on every keystroke made the field impossible
+                    // to clear — the '#' came straight back.
+                    onChange={e => update(c => { c.colors[detail.gi].swatches[detail.si].hex = e.target.value })}
+                    onBlur={e => update(c => { c.colors[detail.gi].swatches[detail.si].hex = normalizeHex(e.target.value) })}
+                    className={`font-mono ${isValidHex(open.hex) ? '' : 'border-destructive/50'}`}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="swatch-usage">Usage note</Label>
+                <Input
+                  id="swatch-usage"
+                  value={open.usage || ''}
+                  placeholder="Where is this color used?"
+                  onChange={e => update(c => { c.colors[detail.gi].swatches[detail.si].usage = e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+        </CardDetail>
       )}
 
       <GradientsBlock />

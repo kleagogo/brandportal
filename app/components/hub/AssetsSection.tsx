@@ -6,7 +6,7 @@ import { Editable } from './Editable'
 import { Icon } from './Icon'
 import { trackPortal } from '../portal/track'
 import { humanSize, localPreview, uploadAsset, uploadConfig } from './upload-client'
-import { ImageOpenTilt, OrganicShimmer, useSmokyDissolve } from '../transitions'
+import { OrganicShimmer, useSmokyDissolve } from '../transitions'
 import { filesFromDrop, filesFromInput } from './pick-files'
 import { ImportReview } from './ImportReview'
 import { useAssetImport } from './use-asset-import'
@@ -18,9 +18,6 @@ import {
   AttachmentMedia, AttachmentTitle,
 } from '@/components/ui/attachment'
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog'
-import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent,
   DropdownMenuSubTrigger, DropdownMenuTrigger,
@@ -28,12 +25,10 @@ import {
 import {
   Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 } from '@/components/ui/empty'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { HubCard } from './HubCard'
+import { SectionHeader } from './SectionHeader'
+import { CardDetail } from './CardDetail'
 
 /**
  * How much history one asset keeps.
@@ -240,119 +235,70 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
           onCancel={cancelReview}
         />
       )}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
-        <h1 className="text-[22px] font-bold tracking-tight">{label}</h1>
-        {/* Both act on this section, and neither is the thing you came to the
-            page to do — the files are. Two quiet buttons rather than one black
-            one shouting over the heading it sits beside. */}
-        <div className="flex items-center gap-2">
-          {assets.length > 0 && hasLocalFiles && allowDownload && (
-            <Button
-              nativeButton={false}
-              size="sm"
-              variant="outline"
-              render={
-                <a
-                  href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(sectionId)}`}
-                  onClick={() => trackPortal(portalId, 'download', `${label} (.zip)`)}
-                />
-              }
-            >
-              <Icon name="download" size={13} /> Download all
-            </Button>
-          )}
-          {(canEdit || sandbox) && (
-            <Button size="sm" variant="outline" onClick={() => inputRef.current?.click()} title={`Add files to ${label}`}>
-              <Icon name="upload" size={13} /> Add to {label}
-            </Button>
-          )}
-        </div>
-      </div>
-      {/* An empty section is described by the panel below it, not twice. */}
-      {(editing || assets.length > 0) && (
-        <p className="text-[14px] text-muted-foreground mb-8">
-          {editing
-            ? 'Drop files anywhere below. Click a name, note, or tag to edit it.'
-            : sectionId === 'logo'
-              ? 'The approved logo files, ready to download.'
-              : `Everything in ${label}, ready to download.`}
-        </p>
-      )}
-      {!editing && assets.length === 0 && <div className="mb-8" />}
-
-      {/* Searching and sorting only earn their space once there is enough to
-          lose track of. Below that the list is the whole answer. */}
-      {assets.length > 3 && (
-        <>
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full sm:max-w-xs">
-              <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground">
-                <Icon name="search" size={14} />
-              </span>
-              <Input
-                type="search"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder={`Search ${label.toLowerCase()}…`}
-                className="pl-8"
-                aria-label={`Search ${label}`}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              {formats.length > 1 && (
-                <Select value={format} onValueChange={v => setFormat(v ?? 'all')}>
-                  <SelectTrigger className="w-32" aria-label="Filter by format">
-                    <SelectValue>{format === 'all' ? 'All formats' : format}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All formats</SelectItem>
-                    {formats.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              )}
-
-              <Select value={sort} onValueChange={v => setSort((v ?? 'added') as AssetSort)}>
-                <SelectTrigger className="w-36" aria-label="Sort files">
-                  <SelectValue>{SORT_LABELS[sort]}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(SORT_LABELS) as AssetSort[]).map(key => (
-                    <SelectItem key={key} value={key}>{SORT_LABELS[key]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Brand files are looked at as much as read, so the grid stays
-                  the default; the list is for a section deep enough that tiles
-                  turn into scrolling. */}
-              <div className="flex overflow-hidden rounded-lg border border-border">
-                <button
-                  type="button"
-                  aria-label="Grid view"
-                  aria-pressed={view === 'grid'}
-                  onClick={() => setView('grid')}
-                  className={`flex size-8 items-center justify-center transition-colors ${
-                    view === 'grid' ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted/60'
-                  }`}
-                >
-                  <Icon name="grid" size={14} />
-                </button>
-                <button
-                  type="button"
-                  aria-label="List view"
-                  aria-pressed={view === 'list'}
-                  onClick={() => setView('list')}
-                  className={`flex size-8 items-center justify-center border-l border-border transition-colors ${
-                    view === 'list' ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted/60'
-                  }`}
-                >
-                  <Icon name="list" size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <SectionHeader
+        title={label}
+        /* Both act on this section, and neither is the thing you came to the
+           page to do — the files are. Two quiet buttons rather than one black
+           one shouting over the heading it sits beside. */
+        actions={
+          <>
+            {assets.length > 0 && hasLocalFiles && allowDownload && (
+              <Button
+                nativeButton={false}
+                size="sm"
+                variant="outline"
+                render={
+                  <a
+                    href={`/api/hubs/${encodeURIComponent(config.slug)}/pack?section=${encodeURIComponent(sectionId)}`}
+                    onClick={() => trackPortal(portalId, 'download', `${label} (.zip)`)}
+                  />
+                }
+              >
+                <Icon name="download" size={13} /> Download all
+              </Button>
+            )}
+            {(canEdit || sandbox) && (
+              <Button size="sm" variant="outline" onClick={() => inputRef.current?.click()} title={`Add files to ${label}`}>
+                <Icon name="upload" size={13} /> Add to {label}
+              </Button>
+            )}
+          </>
+        }
+        /* An empty section is described by the panel below it, not twice. */
+        description={
+          editing || assets.length > 0
+            ? editing
+              ? 'Drop files anywhere below. Click a name, note, or tag to edit it.'
+              : sectionId === 'logo'
+                ? 'The approved logo files, ready to download.'
+                : `Everything in ${label}, ready to download.`
+            : undefined
+        }
+        /* Searching and sorting only earn their space once there is enough to
+           lose track of. Below that the list is the whole answer. Counted on
+           what is stored, never on what is showing. */
+        toolbar={assets.length > 3}
+        search={{
+          value: query,
+          onChange: setQuery,
+          placeholder: `Search ${label.toLowerCase()}…`,
+          label: `Search ${label}`,
+        }}
+        filters={formats.length > 1 ? [{
+          value: format,
+          onChange: setFormat,
+          label: 'Filter by format',
+          className: 'w-32',
+          options: [{ value: 'all', label: 'All formats' }, ...formats.map(f => ({ value: f, label: f }))],
+        }] : []}
+        sort={{
+          value: sort,
+          onChange: v => setSort(v as AssetSort),
+          label: 'Sort files',
+          options: (Object.keys(SORT_LABELS) as AssetSort[]).map(k => ({ value: k, label: SORT_LABELS[k] })),
+        }}
+        view={{ value: view, onChange: setView }}
+      />
 
 
       {error && <p className="text-[13px] text-destructive mb-4">{error}</p>}
@@ -545,7 +491,7 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
   const tileClass = 'aspect-[4/3]'
   const versions = asset.versions || []
   const current = asset.approvedVersion || versions[versions.length - 1]?.label
-  const [showHistory, setShowHistory] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
   const [uploadingVersion, setUploadingVersion] = useState(false)
   const versionInput = useRef<HTMLInputElement>(null)
 
@@ -622,66 +568,32 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
       a.approvedVersion = label
       a.file = v.file
     })
-    setShowHistory(false)
   }
 
-  return (
-    <div ref={stageRef} className="t-smoky-stage asset-tile-stage">
-    <HubCard
-      ref={cardRef}
-      className={`t-smoky-card asset-tile group relative ${view === 'list' ? 'sm:flex-row sm:items-stretch' : ''}`}
-      mediaClassName={
-        view === 'list'
-          ? `aspect-[4/3] sm:aspect-auto sm:w-40 sm:shrink-0 ${isVideo(asset.file) ? 'p-0' : 'p-4'}`
-          : `${tileClass} ${isVideo(asset.file) ? 'p-0' : 'p-6'}`
-      }
-      media={
-        isImage(asset.file) && asset.ratio ? (
-          // Photography and screenshots are worth looking at full size, so the
-          // tile zooms open rather than only offering a download.
-          <ImageOpenTilt src={asset.file} alt={asset.name} />
-        ) : isVideo(asset.file) ? (
-          // A brand film is the asset. Showing a file icon and asking someone to
-          // download it to find out what it is defeats the point of the tile.
-          <video
-            src={asset.file}
-            className="w-full h-full object-cover"
-            muted
-            loop
-            playsInline
-            autoPlay
-            preload="metadata"
-          />
-        ) : isImage(asset.file) ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={asset.file}
-            alt={asset.name}
-            className={`max-h-full max-w-full ${asset.ratio ? 'w-full h-full object-cover' : 'object-contain'}`}
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-          />
-        ) : (
-          <Icon name="file" size={20} />
-        )
-      }
-      chips={
-        <>
-          {asset.platform && (
-            <Badge variant="secondary">{asset.platform}</Badge>
-          )}
-          {asset.format.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
-        </>
-      }
-      /**
-       * Everything this card does, gathered where the button is.
-       *
-       * The actions used to be spread around: delete behind a hover cross in
-       * the corner, renaming and tagging only reachable by switching the whole
-       * section into Edit mode, and no way at all to move a file that landed
-       * in the wrong place. A menu beside the download says what a card can do
-       * without the page changing mode first.
-       */
-      action={
+  /** What this asset looks like — on the tile, and again larger in the detail,
+   *  so a brand film is a film in both places and not a file icon in one. */
+  const preview = isVideo(asset.file) ? (
+    <video src={asset.file} className="w-full h-full object-cover" muted loop playsInline autoPlay preload="metadata" />
+  ) : isImage(asset.file) ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={asset.file}
+      alt={asset.name}
+      className={`max-h-full max-w-full ${asset.ratio ? 'w-full h-full object-cover' : 'object-contain'}`}
+      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+    />
+  ) : (
+    <Icon name="file" size={20} />
+  )
+
+  /**
+   * Everything this card does, built once so the tile and the opened-up view
+   * offer exactly the same set — nothing is reachable from only one of them.
+   * `withVersions` is off inside the detail, where the history is already on
+   * screen and the menu item would only lead back to itself.
+   */
+  function cardActions(withVersions: boolean) {
+    return (
         <ButtonGroup className="shrink-0">
           {allowDownload && (
             <Button
@@ -723,8 +635,8 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
                       {uploadingVersion ? 'Uploading…' : 'Upload'}
                     </DropdownMenuItem>
                   )}
-                  {versions.length > 0 && (
-                    <DropdownMenuItem onClick={() => setShowHistory(true)}>
+                  {withVersions && versions.length > 0 && (
+                    <DropdownMenuItem onClick={() => setShowDetail(true)}>
                       <Icon name="history" size={14} />
                       Versions ({versions.length})
                     </DropdownMenuItem>
@@ -762,7 +674,51 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
             </DropdownMenu>
           )}
         </ButtonGroup>
+    )
+  }
+
+  return (
+    <div ref={stageRef} className="t-smoky-stage asset-tile-stage">
+    <HubCard
+      ref={cardRef}
+      className={`t-smoky-card asset-tile group relative ${view === 'list' ? 'sm:flex-row sm:items-stretch' : ''}`}
+      mediaClassName={
+        view === 'list'
+          ? `aspect-[4/3] sm:aspect-auto sm:w-40 sm:shrink-0 ${isVideo(asset.file) ? 'p-0' : 'p-4'}`
+          : `${tileClass} ${isVideo(asset.file) ? 'p-0' : 'p-6'}`
       }
+      media={
+        // The picture is the way in. It used to zoom on its own for photos and
+        // do nothing at all for everything else, so half the library had no way
+        // to be looked at properly.
+        <button
+          type="button"
+          onClick={() => setShowDetail(true)}
+          className="flex h-full w-full items-center justify-center"
+          title={`Open ${asset.name}`}
+          aria-label={`Open ${asset.name}`}
+        >
+          {preview}
+        </button>
+      }
+      chips={
+        <>
+          {asset.platform && (
+            <Badge variant="secondary">{asset.platform}</Badge>
+          )}
+          {asset.format.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
+        </>
+      }
+      /**
+       * Everything this card does, gathered where the button is.
+       *
+       * The actions used to be spread around: delete behind a hover cross in
+       * the corner, renaming and tagging only reachable by switching the whole
+       * section into Edit mode, and no way at all to move a file that landed
+       * in the wrong place. A menu beside the download says what a card can do
+       * without the page changing mode first.
+       */
+      action={cardActions(true)}
     >
       {/* Editing one card used to look identical to not editing it, give or
           take a dotted outline on a field. A bar says which card is open and
@@ -793,22 +749,55 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
       />
     </HubCard>
 
-    {/* Versions, where you can see them. This was a popover hanging off a text
-        link inside the card, which meant the previous file was effectively
-        unreachable: too small to show a preview, and gone on the next click. */}
-    <Dialog open={showHistory} onOpenChange={setShowHistory}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>{asset.name}</DialogTitle>
-          <DialogDescription>
-            The last {KEEP_VERSIONS} uploads are kept. Uploading again adds one and drops the oldest.
-          </DialogDescription>
-        </DialogHeader>
+    {/* The card, opened up. A tile is deliberately small and every tile the
+        same size, so the third line of a usage note is cut off and the artwork
+        is a thumbnail. This is the same card with room — and the same actions,
+        so opening something is never a detour away from doing anything with
+        it. Versions used to be a dialog of their own; they are a section here,
+        because two modals deep is where people lose track of what they are
+        looking at. */}
+    <CardDetail
+      open={showDetail}
+      onOpenChange={setShowDetail}
+      title={
+        <Editable editing={editing} value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
+      }
+      description={asset.subgroup}
+      media={preview}
+      mediaClassName={isVideo(asset.file) ? 'p-0' : 'p-6'}
+      chips={
+        <>
+          {asset.platform && <Badge variant="secondary">{asset.platform}</Badge>}
+          {asset.format.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
+        </>
+      }
+      rows={[
+        {
+          label: 'Usage',
+          value: editing
+            ? <Editable editing multiline value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
+            : asset.usage || <span className="text-muted-foreground">No usage note yet</span>,
+        },
+        // Stored on every asset since the schema was written, shown nowhere.
+        { label: 'Notes', value: asset.description },
+      ]}
+      actions={cardActions(false)}
+    >
+      <TagRow
+        editing={editing}
+        tags={asset.tags || []}
+        onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
+        onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
+      />
 
-        {/* Newest first, one per row. AttachmentGroup is a horizontal
-            scroller — right for a strip of files under a message, wrong for a
-            history you read down. */}
+      {versions.length > 0 && (
         <div className="flex flex-col gap-2">
+          <p className="text-[12px] text-muted-foreground">
+            The last {KEEP_VERSIONS} uploads are kept. Uploading again adds one and drops the oldest.
+          </p>
+          {/* Newest first, one per row. AttachmentGroup is a horizontal
+              scroller — right for a strip of files under a message, wrong for
+              a history you read down. */}
           {[...versions].reverse().map(v => (
             <Attachment key={v.label} className="w-full">
               <AttachmentMedia className="overflow-hidden bg-muted">
@@ -850,8 +839,8 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
             </Attachment>
           ))}
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </CardDetail>
     {/* The shred is drawn here, over the stage, once the card is snapshotted. */}
     <canvas ref={smokeRef} className="t-smoky-canvas" aria-hidden="true" />
     </div>

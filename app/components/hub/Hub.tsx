@@ -148,9 +148,9 @@ function HubShell({ access }: { access: HubAccess }) {
     if (!activeSection) return null
     switch (activeSection.type) {
       case 'home':       return <HomeSection />
-      case 'colors':     return <ColorsSection />
-      case 'typography': return <TypographySection />
-      case 'guidelines': return <GuidelinesSection />
+      case 'colors':     return <ColorsSection label={activeSection.label} />
+      case 'typography': return <TypographySection label={activeSection.label} />
+      case 'guidelines': return <GuidelinesSection label={activeSection.label} />
       case 'subbrand':   return <SubBrandPlaceholder label={activeSection.label} />
       default:           return <AssetsSection sectionId={activeSection.id} />
     }

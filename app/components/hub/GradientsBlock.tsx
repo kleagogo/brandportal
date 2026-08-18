@@ -7,6 +7,14 @@ import { Icon } from './Icon'
 import type { GradientDef } from '@/app/types/brand'
 import { Button } from '@/components/ui/button'
 import { HubCard } from './HubCard'
+import { CardDetail } from './CardDetail'
+import { ButtonGroup } from '@/components/ui/button-group'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 /** Gradient presets and downloadable gradient backgrounds. */
 export function GradientsBlock() {
@@ -73,8 +81,11 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
   onCss: (v: string) => void
   onDelete: () => void
 }) {
-  const { editing } = useHub()
+  const { editing, canEdit, sandbox } = useHub()
   const [copied, setCopied] = useState(false)
+  const [detail, setDetail] = useState(false)
+
+  const mayEdit = canEdit || sandbox
 
   function copy() {
     navigator.clipboard.writeText(grad.css)
@@ -100,42 +111,97 @@ function GradientCard({ grad, onName, onCss, onDelete }: {
     a.click()
   }
 
-  return (
-    <HubCard
-      className="group relative"
-      media={<div className="w-full h-32" style={{ background: grad.css }} />}
-      action={
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={grad.downloadable ? download : copy}
-          className="shrink-0 text-muted-foreground"
-          title={grad.downloadable ? 'Download PNG' : 'Copy CSS'}
-        >
-          {grad.downloadable
-            ? <><Icon name="download" size={14} /> Download</>
-            : <><Icon name="copy" size={14} /> {copied ? 'Copied' : 'Copy CSS'}</>}
-        </Button>
-      }
-    >
-      {editing && (
-        <button onClick={onDelete} className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-card/80 text-foreground/90 hover:text-destructive items-center justify-center hidden group-hover:flex" title="Remove gradient">
-          <Icon name="close" size={11} />
-        </button>
-      )}
-      <p className="text-[13px] font-medium text-foreground min-w-0 truncate">
-        <Editable value={grad.name} placeholder="Gradient name" onChange={onName} />
-      </p>
-      {editing && (
-        <div className="px-3 pb-3">
-          <input
-            value={grad.css}
-            onChange={e => onCss(e.target.value)}
-            className="w-full text-[11px] font-mono px-2 py-1.5 border border-border rounded-lg outline-none focus:border-ring bg-background"
-            placeholder="linear-gradient(…)"
+  /* A gradient is a rule first and a picture second, so Copy CSS is always
+     offered; the PNG is the extra, and only when the gradient is marked as
+     one you can take away. */
+  const actions = (
+    <ButtonGroup className="shrink-0">
+      <Button variant="outline" size="sm" onClick={copy} title="Copy CSS">
+        <Icon name="copy" size={14} /> {copied ? 'Copied' : 'Copy CSS'}
+      </Button>
+      {(grad.downloadable || mayEdit) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="outline" size="icon-sm" aria-label={`Actions for ${grad.name}`}>
+                <Icon name="more" size={14} />
+              </Button>
+            }
           />
-        </div>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={copy}>
+                <Icon name="copy" size={14} /> Copy CSS
+              </DropdownMenuItem>
+              {grad.downloadable && (
+                <DropdownMenuItem onClick={download}>
+                  <Icon name="download" size={14} /> Download PNG
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuGroup>
+            {mayEdit && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                    <Icon name="trash" size={14} /> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
-    </HubCard>
+    </ButtonGroup>
+  )
+
+  return (
+    <>
+      <HubCard
+        className="group relative"
+        media={
+          <button
+            type="button"
+            onClick={() => setDetail(true)}
+            className="h-32 w-full"
+            style={{ background: grad.css }}
+            title={`Open ${grad.name}`}
+            aria-label={`Open ${grad.name}`}
+          />
+        }
+        action={actions}
+      >
+        <p className="text-[13px] font-medium text-foreground min-w-0 truncate">
+          <Editable value={grad.name} placeholder="Gradient name" onChange={onName} />
+        </p>
+      </HubCard>
+
+      <CardDetail
+        open={detail}
+        onOpenChange={setDetail}
+        title={<Editable value={grad.name} placeholder="Gradient name" onChange={onName} />}
+        media={<div className="h-28 w-full rounded-md" style={{ background: grad.css }} />}
+        mediaClassName="bg-transparent p-0"
+        rows={editing ? [] : [{ label: 'CSS', value: grad.css, mono: true }]}
+        actions={actions}
+      >
+        {editing && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="gradient-css">CSS</Label>
+            {/* The only place this is editable. It used to be a bare input
+                wedged under the name on a 3-across tile, about 90px wide for a
+                value that is routinely 120 characters. */}
+            <Textarea
+              id="gradient-css"
+              value={grad.css}
+              onChange={e => onCss(e.target.value)}
+              rows={3}
+              className="font-mono text-[12px]"
+              placeholder="linear-gradient(…)"
+            />
+          </div>
+        )}
+      </CardDetail>
+    </>
   )
 }
