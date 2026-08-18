@@ -17,6 +17,11 @@ export async function GET() {
     database: Boolean(process.env.DATABASE_URL),
     files: r2Enabled() ? 'r2' : blobEnabled() ? 'blob' : 'database',
     email: Boolean(process.env.RESEND_API_KEY),
+    // The key alone doesn't mean mail works: without a verified sender the
+    // provider rejects every send to anyone but the account owner. Reported
+    // separately so a wiped EMAIL_FROM is visible here instead of only in
+    // a 502 from /api/auth/request.
+    emailFrom: Boolean(process.env.EMAIL_FROM),
     ai: Boolean(process.env.ANTHROPIC_API_KEY),
     sessionSecret: Boolean(process.env.AUTH_SECRET),
   }
