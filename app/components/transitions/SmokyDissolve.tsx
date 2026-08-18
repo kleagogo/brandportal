@@ -645,7 +645,9 @@ export function createSmokyDissolve({ stage, card, canvas, respawn = true, onCom
           // in onComplete instead (leave respawn: false).
           card.style.visibility = "";
           card.classList.remove("is-respawning");
-          // eslint-disable-next-line no-unused-expressions
+          // Reading offsetWidth forces a reflow, so removing and re-adding the
+          // class restarts the animation instead of the browser coalescing both
+          // changes into no change at all.
           card.offsetWidth;
           card.classList.add("is-respawning");
           running = false;
