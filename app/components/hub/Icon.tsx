@@ -1,7 +1,7 @@
 'use client'
 
 import {
-  RiAddLine, RiArrowDownSLine, RiMoreLine, RiArrowRightSLine, RiArrowUpSLine, RiBrushLine, RiChat3Line,
+  RiAddLine, RiArrowDownSLine, RiMoreLine, RiArrowRightSLine, RiGridFill, RiArrowUpSLine, RiBrushLine, RiChat3Line,
   RiCheckLine, RiCloseLine, RiContrastLine, RiDeleteBinLine, RiDownloadLine,
   RiFileCopyLine, RiFileLine, RiFontSansSerif, RiHeartLine, RiHistoryLine,
   RiHome5Line, RiImageLine, RiLayoutGridLine, RiLayoutLine, RiLinkM,
@@ -51,6 +51,8 @@ const ICONS: Record<string, RemixiconComponentType> = {
   down: RiArrowDownSLine,
   menu: RiMenuLine,
   more: RiMoreLine,
+  grid: RiGridFill,
+  list: RiListUnordered,
   right: RiArrowRightSLine,
   search: RiSearchLine,
   gear: RiSettings3Line,

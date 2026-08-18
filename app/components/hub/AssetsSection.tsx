@@ -28,13 +28,10 @@ import {
 import {
   Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 } from '@/components/ui/empty'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Separator } from '@/components/ui/separator'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { HubCard } from './HubCard'
 
@@ -185,6 +182,8 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
   const [dragOver, setDragOver] = useState(false)
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<AssetSort>('added')
+  const [format, setFormat] = useState('all')
+  const [view, setView] = useState<'grid' | 'list'>('grid')
   const inputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
 
@@ -211,9 +210,12 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
 
   // Pair each asset with where it really lives before touching the list, so
   // searching and sorting only change what is shown, never what a card writes.
+  // Only the formats actually present, so the filter never offers a dead end.
+  const formats = Array.from(new Set(assets.flatMap(a => a.format))).sort()
   const needle = query.trim().toLowerCase()
   const visible = assets
     .map((asset, i) => ({ asset, i }))
+    .filter(({ asset }) => format === 'all' || asset.format.includes(format))
     .filter(({ asset }) => {
       if (!needle) return true
       const haystack = [asset.name, asset.usage || '', asset.subgroup || '', ...(asset.tags || []), ...asset.format]
@@ -266,8 +268,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
           lose track of. Below that the list is the whole answer. */}
       {assets.length > 3 && (
         <>
-          <Separator className="my-4" />
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full sm:max-w-xs">
               <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground">
                 <Icon name="search" size={14} />
@@ -281,16 +282,58 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                 aria-label={`Search ${label}`}
               />
             </div>
-            <Select value={sort} onValueChange={v => setSort(v as AssetSort)}>
-              <SelectTrigger className="w-40" aria-label="Sort files">
-                <SelectValue>{SORT_LABELS[sort]}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.keys(SORT_LABELS) as AssetSort[]).map(key => (
-                  <SelectItem key={key} value={key}>{SORT_LABELS[key]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              {formats.length > 1 && (
+                <Select value={format} onValueChange={v => setFormat(v ?? 'all')}>
+                  <SelectTrigger className="w-32" aria-label="Filter by format">
+                    <SelectValue>{format === 'all' ? 'All formats' : format}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All formats</SelectItem>
+                    {formats.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
+
+              <Select value={sort} onValueChange={v => setSort((v ?? 'added') as AssetSort)}>
+                <SelectTrigger className="w-36" aria-label="Sort files">
+                  <SelectValue>{SORT_LABELS[sort]}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(SORT_LABELS) as AssetSort[]).map(key => (
+                    <SelectItem key={key} value={key}>{SORT_LABELS[key]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Brand files are looked at as much as read, so the grid stays
+                  the default; the list is for a section deep enough that tiles
+                  turn into scrolling. */}
+              <div className="flex overflow-hidden rounded-lg border border-border">
+                <button
+                  type="button"
+                  aria-label="Grid view"
+                  aria-pressed={view === 'grid'}
+                  onClick={() => setView('grid')}
+                  className={`flex size-8 items-center justify-center transition-colors ${
+                    view === 'grid' ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted/60'
+                  }`}
+                >
+                  <Icon name="grid" size={14} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="List view"
+                  aria-pressed={view === 'list'}
+                  onClick={() => setView('list')}
+                  className={`flex size-8 items-center justify-center border-l border-border transition-colors ${
+                    view === 'list' ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted/60'
+                  }`}
+                >
+                  <Icon name="list" size={14} />
+                </button>
+              </div>
+            </div>
           </div>
         </>
       )}
@@ -343,7 +386,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
               </Empty>
             )}
 
-            {groupBySubgroup(visible).map(({ subgroup, items }) => (
+            {(needle || sort !== 'added' || view === 'list' ? flatten(visible) : groupBySubgroup(visible)).map(({ subgroup, items }) => (
               <div key={subgroup || '_'}>
                 {subgroup && (
                   // Same grey eyebrow the colour and gradient groups use, so a
@@ -351,9 +394,9 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                   // section heading above it.
                   <p className="text-[13px] font-medium text-muted-foreground mb-3">{subgroup}</p>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+                <div className={view === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch'}>
                   {items.map(({ asset, i }) => (
-                    <AssetCard key={`${asset.file}-${i}`} asset={asset} index={i} sectionId={sectionId} />
+                    <AssetCard key={`${asset.file}-${i}`} asset={asset} index={i} sectionId={sectionId} view={view} />
                   ))}
                 </div>
               </div>
@@ -437,6 +480,18 @@ function groupBySubgroup(
   return order.map(subgroup => ({ subgroup, items: map.get(subgroup)! }))
 }
 
+/**
+ * Subgroups only hold while the list is in its own order.
+ *
+ * Sorting by name inside "Logo", then again inside "Focus mark", is three
+ * sorted lists rather than one, and a search that spans them reads as results
+ * scattered under headings. Both cases want one run of files, so the headings
+ * fold away and come back when the order does.
+ */
+function flatten(items: Array<{ asset: AssetFile; i: number }>) {
+  return [{ subgroup: '', items }]
+}
+
 type AssetSort = 'added' | 'name' | 'newest'
 
 /** Base UI's Value renders the raw value unless given something to show. */
@@ -452,7 +507,13 @@ function lastTouched(asset: AssetFile): number {
   return stamps.length ? Math.max(...stamps) : 0
 }
 
-function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
+function AssetCard({ asset, index, sectionId, view = 'grid' }: {
+  asset: AssetFile
+  index: number
+  sectionId: string
+  /** A row instead of a tile. Same card, turned on its side. */
+  view?: 'grid' | 'list'
+}) {
   const { config, editing: sectionEditing, update, sandbox, canEdit, allowDownload, portalId } = useHub()
   const i = index
   const [copied, setCopied] = useState(false)
@@ -552,8 +613,12 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
     <div ref={stageRef} className="t-smoky-stage asset-tile-stage">
     <HubCard
       ref={cardRef}
-      className="t-smoky-card asset-tile group relative"
-      mediaClassName={`${tileClass} ${isVideo(asset.file) ? 'p-0' : 'p-6'}`}
+      className={`t-smoky-card asset-tile group relative ${view === 'list' ? 'sm:flex-row sm:items-stretch' : ''}`}
+      mediaClassName={
+        view === 'list'
+          ? `aspect-[4/3] sm:aspect-auto sm:w-40 sm:shrink-0 ${isVideo(asset.file) ? 'p-0' : 'p-4'}`
+          : `${tileClass} ${isVideo(asset.file) ? 'p-0' : 'p-6'}`
+      }
       media={
         isImage(asset.file) && asset.ratio ? (
           // Photography and screenshots are worth looking at full size, so the
@@ -692,60 +757,18 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
           <Button size="xs" variant="outline" onClick={() => setEditingSelf(false)}>Done</Button>
         </div>
       )}
-      {/* Opened on its own, a card is a small form and gets built like one:
-          labelled fields and real controls, rather than the in-place dashed
-          outlines that only tell you a thing is editable once you find it.
-          The section-wide mode keeps editing in place, which is what makes
-          going through a batch quick. */}
-      {editingSelf ? (
-        <FieldGroup className="gap-3">
-          <Field>
-            <FieldLabel htmlFor={`name-${sectionId}-${i}`}>Name</FieldLabel>
-            <Input
-              id={`name-${sectionId}-${i}`}
-              value={asset.name}
-              placeholder="Asset name"
-              onChange={e => update(c => { c.assets[sectionId][i].name = e.target.value })}
-            />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor={`usage-${sectionId}-${i}`}>Usage note</FieldLabel>
-            <Textarea
-              id={`usage-${sectionId}-${i}`}
-              rows={3}
-              value={asset.usage || ''}
-              placeholder="When should someone reach for this file?"
-              onChange={e => update(c => { c.assets[sectionId][i].usage = e.target.value })}
-            />
-          </Field>
-
-          <Field>
-            <FieldLabel>Tags</FieldLabel>
-            <TagRow
-              editing
-              tags={asset.tags || []}
-              onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
-              onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
-            />
-          </Field>
-        </FieldGroup>
-      ) : (
-        <>
-          <p className="text-[13px] font-medium text-foreground">
-            <Editable editing={editing} value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
-          </p>
-          <p className="text-[11px] text-muted-foreground leading-tight">
-            <Editable editing={editing} multiline value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
-          </p>
-          <TagRow
-            editing={editing}
-            tags={asset.tags || []}
-            onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
-            onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
-          />
-        </>
-      )}
+      <p className="text-[13px] font-medium text-foreground">
+        <Editable editing={editing} value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
+      </p>
+      <div className="text-[11px] text-muted-foreground leading-tight">
+        <Editable editing={editing} multiline value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
+      </div>
+      <TagRow
+        editing={editing}
+        tags={asset.tags || []}
+        onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
+        onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
+      />
       <input
         ref={versionInput}
         type="file"

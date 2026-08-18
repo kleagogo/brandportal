@@ -1,6 +1,9 @@
 'use client'
 
 import { useHub } from './HubContext'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 import type { CSSProperties } from 'react'
 
 /**
@@ -43,28 +46,41 @@ export function Editable({
     return <span className={className} style={style}>{value}</span>
   }
 
-  const editCls = `${className} bg-transparent rounded-md outline-none border border-dashed border-border hover:border-muted-foreground focus:border-ring focus:bg-card px-1 -mx-1 transition-colors placeholder:text-muted-foreground/60`
+  // A field in edit mode should look like a field. The dashed outline this
+  // used to draw was invisible until you knew to look for it, so the answer to
+  // "how do I change the name" was to try clicking the name. These are the
+  // library's own controls, sized to sit in the line they replace.
+  const shared = cn('h-auto py-0.5 text-[length:inherit] font-[inherit] leading-[inherit]', className)
 
   if (multiline) {
     return (
-      <textarea
+      <Textarea
         value={value}
         onChange={e => onChange(e.target.value)}
+        onKeyDown={e => {
+          // Enter is "done" here. Shift+Enter still breaks the line, for the
+          // rare note that wants two.
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            e.currentTarget.blur()
+          }
+        }}
         placeholder={placeholder}
         rows={Math.max(2, value.split('\n').length)}
-        className={`${editCls} w-full resize-none block`}
+        className={cn(shared, 'w-full resize-none')}
         style={style}
       />
     )
   }
 
   return (
-    <input
+    <Input
       value={value}
       onChange={e => onChange(e.target.value)}
+      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() } }}
       placeholder={placeholder}
       size={inline ? Math.max(value.length, placeholder.length, 4) : undefined}
-      className={`${editCls} ${inline ? '' : 'w-full'}`}
+      className={cn(shared, inline ? 'w-auto' : 'w-full')}
       style={style}
     />
   )
