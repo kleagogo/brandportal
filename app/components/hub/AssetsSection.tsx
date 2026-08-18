@@ -12,6 +12,12 @@ import { ImportReview } from './ImportReview'
 import { useAssetImport } from './use-asset-import'
 import type { AssetFile } from '@/app/types/brand'
 import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent,
+  DropdownMenuSubTrigger, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 } from '@/components/ui/empty'
@@ -326,8 +332,9 @@ function groupBySubgroup(assets: AssetFile[]): Array<{ subgroup: string; items: 
 }
 
 function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
-  const { config, editing, update, sandbox, allowDownload, portalId } = useHub()
+  const { config, editing, update, sandbox, canEdit, allowDownload, portalId, setEditingSection } = useHub()
   const i = index
+  const [copied, setCopied] = useState(false)
   const tileClass = asset.ratio === 'wide' || isVideo(asset.file) ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
   const versions = asset.versions || []
   const current = asset.approvedVersion || versions[versions.length - 1]?.label
@@ -370,6 +377,25 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
     } catch { /* keep the current version on failure */ } finally {
       setUploadingVersion(false)
     }
+  }
+
+  /** Somewhere else in this hub that holds files. */
+  const otherSections = config.sections.filter(sec => sec.type === 'assets' && sec.id !== sectionId)
+
+  function moveTo(targetId: string) {
+    update(c => {
+      const [moved] = c.assets[sectionId].splice(i, 1)
+      if (!c.assets[targetId]) c.assets[targetId] = []
+      c.assets[targetId].push(moved)
+    })
+  }
+
+  /** The file's own address, which is what sharing one asset means here. */
+  function copyLink() {
+    const href = asset.file.startsWith('http') ? asset.file : `${window.location.origin}${asset.file}`
+    navigator.clipboard.writeText(href)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
   }
 
   /** Make an older version the approved/current one. */
@@ -427,35 +453,92 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
           {asset.format.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
         </>
       }
-      action={allowDownload ? (
-        <Button
-          nativeButton={false}
-          variant="ghost"
-          size="sm"
-          className="shrink-0 text-muted-foreground"
-          title={asset.external ? `Open ${asset.name}` : `Download ${asset.name}`}
-          render={
-            <a
-              href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
-              {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
-              onClick={() => trackPortal(portalId, 'download', asset.name)}
-            />
-          }
-        >
-          <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={14} />
-          {asset.external || asset.file.startsWith('http') ? 'Open' : 'Download'}
-        </Button>
-      ) : undefined}
+      /**
+       * Everything this card does, gathered where the button is.
+       *
+       * The actions used to be spread around: delete behind a hover cross in
+       * the corner, renaming and tagging only reachable by switching the whole
+       * section into Edit mode, and no way at all to move a file that landed
+       * in the wrong place. A menu beside the download says what a card can do
+       * without the page changing mode first.
+       */
+      action={
+        <ButtonGroup className="shrink-0">
+          {allowDownload && (
+            <Button
+              nativeButton={false}
+              variant="outline"
+              size="sm"
+              title={asset.external ? `Open ${asset.name}` : `Download ${asset.name}`}
+              render={
+                <a
+                  href={asset.external || asset.file.startsWith('http') ? asset.file : downloadHref(asset.file)}
+                  {...(asset.external || asset.file.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { download: true })}
+                  onClick={() => trackPortal(portalId, 'download', asset.name)}
+                />
+              }
+            >
+              <Icon name={asset.external || asset.file.startsWith('http') ? 'link' : 'download'} size={14} />
+              {asset.external || asset.file.startsWith('http') ? 'Open' : 'Download'}
+            </Button>
+          )}
+
+          {(canEdit || sandbox) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={<Button variant="outline" size="icon-sm" aria-label={`Actions for ${asset.name}`}><Icon name="more" size={14} /></Button>}
+              />
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => setEditingSection(sectionId)}>
+                    <Icon name="edit" size={14} />
+                    {editing ? 'Editing' : 'Rename and edit'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={copyLink}>
+                    <Icon name="share" size={14} />
+                    {copied ? 'Link copied' : 'Copy link'}
+                  </DropdownMenuItem>
+                  {!asset.external && (
+                    <DropdownMenuItem onClick={() => versionInput.current?.click()}>
+                      <Icon name="upload" size={14} />
+                      {uploadingVersion ? 'Uploading…' : 'Upload new version'}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuGroup>
+
+                {otherSections.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <Icon name="spaces" size={14} />
+                        Move to section
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-48">
+                        {otherSections.map(sec => (
+                          <DropdownMenuItem key={sec.id} onClick={() => moveTo(sec.id)}>
+                            <Icon name={sec.icon} size={14} />
+                            {sec.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  </>
+                )}
+
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem variant="destructive" onClick={() => dissolveThenRemove()}>
+                    <Icon name="trash" size={14} />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </ButtonGroup>
+      }
     >
-      {editing && (
-        <button
-          onClick={() => dissolveThenRemove()}
-          className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-card border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 items-center justify-center hidden group-hover:flex transition-colors"
-          title="Remove asset"
-        >
-          <Icon name="close" size={11} />
-        </button>
-      )}
       {current && (
         <span className="absolute top-2 left-2 z-10 text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary text-primary-foreground">
           {current} · Approved
