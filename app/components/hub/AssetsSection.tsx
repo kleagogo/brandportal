@@ -101,12 +101,14 @@ export function downloadHref(file: string): string {
  * instead, and it accepts a drop whether or not Edit mode is switched on.
  */
 function EmptyDropzone({
-  onPickFiles, onPickFolder, dragOver, progress,
+  onPickFiles, onPickFolder, dragOver, progress, label,
 }: {
   onPickFiles: () => void
   onPickFolder: () => void
   dragOver: boolean
   progress: { done: number; total: number; name: string; percent: number } | null
+  /** The section this zone belongs to, since that is where loose files land. */
+  label: string
 }) {
   const [maxLabel, setMaxLabel] = useState('')
   const zoneRef = useRef<HTMLDivElement>(null)
@@ -152,9 +154,12 @@ function EmptyDropzone({
           <Icon name="upload" size={16} />
         </EmptyMedia>
         <EmptyTitle className="text-[15px]">Drop files here</EmptyTitle>
+        {/* This zone is not the hub-wide importer and shouldn't claim to be.
+            Loose files land here, because standing in a section is how someone
+            chooses it; a folder still gets sorted, with the plan shown first. */}
         <EmptyDescription className="text-[13px]">
-          Single files, a .zip, or a whole folder. Drop a whole brand folder and
-          it is sorted into the right sections, not piled into this one.
+          Files you drop here go into {label}. Drop a folder, or use Add files
+          above, and you’ll see where each part is going before it lands.
         </EmptyDescription>
       </EmptyHeader>
 
@@ -250,6 +255,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
       >
         {assets.length === 0 && canEdit ? (
           <EmptyDropzone
+            label={label}
             onPickFiles={() => inputRef.current?.click()}
             onPickFolder={() => folderInputRef.current?.click()}
             dragOver={dragOver}

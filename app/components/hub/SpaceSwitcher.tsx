@@ -20,6 +20,8 @@ interface Space {
   client?: string
   logoUrl: string | null
   role: 'owner' | 'editor'
+  /** The account's own brand, as opposed to a client's. */
+  studio?: boolean
 }
 
 interface DemoHub {
@@ -59,14 +61,20 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
       .catch(() => setSpaces([]))
   }, [])
 
-  const others = spaces.filter(s => s.slug !== currentSlug)
+  // The studio is the account's own brand and the hub every client space is
+  // copied from, so it sits at the top on its own rather than in a list of
+  // clients it isn't one of. The clients get a heading only when there are
+  // some: a heading over nothing is just a word.
+  const studioHub = spaces.find(s => s.studio && s.slug !== currentSlug) || null
+  const others = spaces.filter(s => !s.studio && s.slug !== currentSlug)
   // In the demo the visitor owns nothing, so `others` is empty and the menu
-  // used to open onto a bare heading. The shipped example hubs stand in, which
-  // is also the only place the one-hub-per-client shape is visible before
-  // signing up. Keyed on having no brands rather than on being signed out, so
-  // an account that hasn't built its first hub gets the same picture.
+  // opens onto a bare heading. The shipped example hubs stand in, which is the
+  // only place the one-hub-per-client shape is visible before signing up.
+  //
+  // Signed in, they come out again: an account's spaces are its own, and a
+  // demo sitting among them is somebody else's brand in your list.
   const exampleHubs = demoHubs.filter(h => h.slug !== currentSlug)
-  const showExamples = others.length === 0 && exampleHubs.length > 0
+  const showExamples = !signedIn && exampleHubs.length > 0
 
   async function pickLogo(file: File) {
     setLogoBusy(true)
@@ -182,9 +190,24 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
             sideOffset={6}
           >
             <DropdownMenuGroup>
-              <DropdownMenuLabel className="text-muted-foreground text-xs">
-                {others.length ? 'Your other brands' : showExamples ? 'Example client hubs' : 'Brands'}
-              </DropdownMenuLabel>
+              {studioHub && (
+                <DropdownMenuItem onClick={() => router.push(`/${studioHub.slug}`)} className="gap-2 p-2">
+                  <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden shrink-0">
+                    {studioHub.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={studioHub.logoUrl} alt="" className="size-full object-contain" />
+                    ) : (
+                      <span className="text-[10px] font-bold">{studioHub.name.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <span className="truncate font-medium">{studioHub.name}</span>
+                </DropdownMenuItem>
+              )}
+              {(others.length > 0 || showExamples) && (
+                <DropdownMenuLabel className="text-muted-foreground text-xs">
+                  {others.length ? 'Client spaces' : 'Example client hubs'}
+                </DropdownMenuLabel>
+              )}
               {showExamples && exampleHubs.map(h => (
                 <DropdownMenuItem key={h.slug} onClick={() => router.push(`/${h.slug}`)} className="gap-2 p-2">
                   <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden shrink-0">
@@ -212,7 +235,7 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
               </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
-            {(others.length > 0 || signedIn || showExamples) && <DropdownMenuSeparator />}
+            {(others.length > 0 || signedIn || showExamples || studioHub) && <DropdownMenuSeparator />}
             {/* Shown signed out as well. A visitor asking "can each client have
                 their own?" got no answer here, and the demo is where they ask.
                 Without an account there is nothing to create yet, so it opens
@@ -232,17 +255,6 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
                   <Icon name="spaces" size={12} />
                 </div>
                 <span className="text-muted-foreground font-medium">All spaces</span>
-              </DropdownMenuItem>
-            )}
-            {/* The demo is nobody's space, so leaving it used to strand you:
-                it vanished from this list the moment you switched away, and
-                there was no route back short of typing the address. */}
-            {signedIn && currentSlug !== 'demo' && (
-              <DropdownMenuItem onClick={() => router.push('/demo')} className="gap-2 p-2">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent shrink-0">
-                  <Icon name="sparkles" size={12} />
-                </div>
-                <span className="text-muted-foreground font-medium">Demo hub</span>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

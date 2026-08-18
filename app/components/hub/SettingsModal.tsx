@@ -5,6 +5,7 @@ import { useHub } from './HubContext'
 import { Icon } from './Icon'
 import { localPreview, uploadAsset } from './upload-client'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useConfirm } from './useConfirm'
 import { useModalTransition } from '../transitions'
 
@@ -115,36 +116,26 @@ export function SettingsModal({ onClose, studio = false }: { onClose: () => void
         <div className="mb-6">
           <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">Logo</label>
           <div className="flex items-center gap-3">
-            {/* An empty slot that says it is empty. Until now the only way to
-                set a hub's logo was a dashed square in the sidebar, visible
-                only once you had switched a section into edit mode. */}
-            <button
-              onClick={() => logoInput.current?.click()}
-              title={config.logoUrl ? 'Replace logo' : 'Add a logo'}
-              className={`flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl transition-colors ${
-                config.logoUrl
-                  ? 'border border-border bg-muted'
-                  : 'border border-dashed border-muted-foreground/40 text-muted-foreground hover:border-ring hover:text-foreground'
-              }`}
-            >
-              {logoBusy ? (
-                <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : config.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={config.logoUrl} alt="" className="max-h-full max-w-full object-contain" />
-              ) : (
-                <Icon name="upload" size={16} />
-              )}
-            </button>
+            {/* The mark itself is a picture, not a control. It was a button
+                sitting next to a button that did the same thing, so the panel
+                offered one action twice and neither looked primary. */}
+            <Avatar className="size-14 rounded-xl">
+              <AvatarImage src={config.logoUrl || undefined} alt="" className="object-contain p-1" />
+              <AvatarFallback className="rounded-xl border border-dashed border-muted-foreground/40 bg-transparent text-muted-foreground">
+                <Icon name="logo" size={16} />
+              </AvatarFallback>
+            </Avatar>
             <div className="min-w-0">
-              <Button size="sm" variant="outline" onClick={() => logoInput.current?.click()}>
-                {config.logoUrl ? 'Replace' : 'Upload a logo'}
-              </Button>
-              {config.logoUrl && (
-                <Button size="sm" variant="ghost" onClick={() => update(c => { c.logoUrl = '' })}>
-                  Remove
+              <div className="flex items-center gap-1.5">
+                <Button size="sm" variant="outline" disabled={logoBusy} onClick={() => logoInput.current?.click()}>
+                  {logoBusy ? 'Uploading…' : config.logoUrl ? 'Replace' : 'Upload a logo'}
                 </Button>
-              )}
+                {config.logoUrl && (
+                  <Button size="sm" variant="ghost" onClick={() => update(c => { c.logoUrl = '' })}>
+                    Remove
+                  </Button>
+                )}
+              </div>
               <p className="mt-1.5 text-[11.5px] text-muted-foreground/60">
                 Shown in the sidebar and on every share link. A square mark works best.
               </p>
