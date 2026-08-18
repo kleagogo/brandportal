@@ -218,7 +218,7 @@ function HubShell({ access }: { access: HubAccess }) {
           demo={Boolean(access.demo)}
         />
       )}
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} studio={Boolean(access.studio)} />}
       {searchOpen && <SearchOverlay onNavigate={setActive} onClose={() => setSearchOpen(false)} />}
       {importOpen && <ImportModal onClose={() => setImportOpen(false)} />}
       {welcome && (

@@ -8,8 +8,16 @@ import { Button } from '@/components/ui/button'
 import { useConfirm } from './useConfirm'
 import { useModalTransition } from '../transitions'
 
-/** Owner-only hub settings: address and deletion. */
-export function SettingsModal({ onClose }: { onClose: () => void }) {
+/**
+ * Owner-only hub settings.
+ *
+ * A studio hub and a client space are not the same object wearing different
+ * labels. The studio is the agency's own brand and the account's root: it has
+ * no client to be named after, nobody to be handed to, and deleting it would
+ * take the thing every client space is copied from. It gets its own identity
+ * fields instead.
+ */
+export function SettingsModal({ onClose, studio = false }: { onClose: () => void; studio?: boolean }) {
   const { config, sandbox, update } = useHub()
   const logoInput = useRef<HTMLInputElement>(null)
   const [logoBusy, setLogoBusy] = useState(false)
@@ -151,6 +159,31 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           />
         </div>
 
+        {studio ? (
+          <>
+            <div className="mb-6">
+              <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">Studio name</label>
+              <input
+                value={config.name}
+                onChange={e => update(c => { c.name = e.target.value })}
+                placeholder="e.g. Studio North"
+                className="w-full px-3 py-2.5 text-[13px] rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
+              />
+              <p className="text-[11.5px] text-muted-foreground/60 mt-1.5">Your agency, as it appears in the sidebar and on share links.</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">Subheader</label>
+              <input
+                value={config.tagline}
+                onChange={e => update(c => { c.tagline = e.target.value })}
+                placeholder="e.g. Brand and identity, from the harbour up"
+                className="w-full px-3 py-2.5 text-[13px] rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
+              />
+              <p className="text-[11.5px] text-muted-foreground/60 mt-1.5">One line under the name. Left empty, nothing shows.</p>
+            </div>
+          </>
+        ) : (
         <div className="mb-6">
           <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">Client name</label>
           <div className="flex gap-2">
@@ -167,6 +200,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           </div>
           <p className="text-[11.5px] text-muted-foreground/60 mt-1.5">Shown on your client-spaces dashboard.</p>
         </div>
+        )}
 
         <form onSubmit={rename} className="mb-6">
           <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">Hub address</label>
@@ -196,7 +230,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             sandbox cannot honestly offer: they are irreversible, they belong to
             an owner, and the demo has none. The rest of this panel is safe to
             try, so the demo shows it. */}
-        {!sandbox && (
+        {!sandbox && !studio && (
           <>
             <TransferSection slug={config.slug} name={config.name} />
 
