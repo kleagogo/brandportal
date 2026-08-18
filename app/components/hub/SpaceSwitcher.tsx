@@ -22,6 +22,13 @@ interface Space {
   role: 'owner' | 'editor'
 }
 
+interface DemoHub {
+  slug: string
+  name: string
+  tagline: string
+  logoUrl: string | null
+}
+
 /**
  * The sidebar header, as shadcn's switcher: the hub you're in, and a dropdown
  * onto the others.
@@ -35,6 +42,7 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
   const { config, editing, update, sandbox } = useHub()
   const router = useRouter()
   const [spaces, setSpaces] = useState<Space[]>([])
+  const [demoHubs, setDemoHubs] = useState<DemoHub[]>([])
   const [signedIn, setSignedIn] = useState(false)
   const [newSpaceOpen, setNewSpaceOpen] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -43,11 +51,22 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
   useEffect(() => {
     fetch('/api/me')
       .then(r => r.json())
-      .then(d => { setSignedIn(Boolean(d.user)); setSpaces(d.user ? d.hubs : []) })
+      .then(d => {
+        setSignedIn(Boolean(d.user))
+        setSpaces(d.user ? d.hubs : [])
+        setDemoHubs(d.demoHubs || [])
+      })
       .catch(() => setSpaces([]))
   }, [])
 
   const others = spaces.filter(s => s.slug !== currentSlug)
+  // In the demo the visitor owns nothing, so `others` is empty and the menu
+  // used to open onto a bare heading. The shipped example hubs stand in, which
+  // is also the only place the one-hub-per-client shape is visible before
+  // signing up. Keyed on having no brands rather than on being signed out, so
+  // an account that hasn't built its first hub gets the same picture.
+  const exampleHubs = demoHubs.filter(h => h.slug !== currentSlug)
+  const showExamples = others.length === 0 && exampleHubs.length > 0
 
   async function pickLogo(file: File) {
     setLogoBusy(true)
@@ -164,8 +183,21 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-muted-foreground text-xs">
-                {others.length ? 'Your other brands' : 'Brands'}
+                {others.length ? 'Your other brands' : showExamples ? 'Example client hubs' : 'Brands'}
               </DropdownMenuLabel>
+              {showExamples && exampleHubs.map(h => (
+                <DropdownMenuItem key={h.slug} onClick={() => router.push(`/${h.slug}`)} className="gap-2 p-2">
+                  <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden shrink-0">
+                    {h.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={h.logoUrl} alt="" className="size-full object-contain" />
+                    ) : (
+                      <span className="text-[10px] font-bold">{h.name.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <span className="truncate">{h.name}</span>
+                </DropdownMenuItem>
+              ))}
               {others.map(s => (
               <DropdownMenuItem key={s.slug} onClick={() => router.push(`/${s.slug}`)} className="gap-2 p-2">
                 <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden shrink-0">
@@ -180,15 +212,20 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
               </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
-            {(others.length > 0 || signedIn) && <DropdownMenuSeparator />}
-            {signedIn && (
-              <DropdownMenuItem onClick={() => setNewSpaceOpen(true)} className="gap-2 p-2">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent shrink-0">
-                  <Icon name="plus" size={12} />
-                </div>
-                <span className="font-medium">New client hub</span>
-              </DropdownMenuItem>
-            )}
+            {(others.length > 0 || signedIn || showExamples) && <DropdownMenuSeparator />}
+            {/* Shown signed out as well. A visitor asking "can each client have
+                their own?" got no answer here, and the demo is where they ask.
+                Without an account there is nothing to create yet, so it opens
+                sign-in and comes back. */}
+            <DropdownMenuItem
+              onClick={() => (signedIn ? setNewSpaceOpen(true) : router.push(`/login?redirect=/${currentSlug}`))}
+              className="gap-2 p-2"
+            >
+              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent shrink-0">
+                <Icon name="plus" size={12} />
+              </div>
+              <span className="font-medium">New client hub</span>
+            </DropdownMenuItem>
             {signedIn && (
               <DropdownMenuItem onClick={() => router.push('/dashboard')} className="gap-2 p-2">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent shrink-0">

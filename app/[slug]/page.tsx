@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { PRIVATE_PAGE, PUBLIC_HUB_SLUGS } from '@/lib/seo'
+import { PRIVATE_PAGE } from '@/lib/seo'
+import { isShippedDemoHub } from '@/lib/demo-hubs'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { canEditHub, getHub, getMeta, isExpired, isHubOwner, isSandboxHub } from '@/lib/store'
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // someone deciding whether this is for them, and so the one hub worth
   // indexing. Its copy is written for a searcher, not for the client whose
   // brand it holds.
-  if (PUBLIC_HUB_SLUGS.has(slug)) {
+  if (isShippedDemoHub(slug, hub)) {
     const title = 'Brand hub demo: see a working brand hub'
     const description =
       'A live brand hub: logos, colours, fonts and guidelines in one place your clients can actually use. No signup, nothing to install.'

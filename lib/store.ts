@@ -7,7 +7,7 @@
 
 import crypto from 'crypto'
 import { cookies } from 'next/headers'
-import seed from '@/brand.config'
+import { getDemoHub, DEMO_SLUGS } from './demo-hubs'
 import type { BrandConfig, SharePortal } from '@/app/types/brand'
 import type { User } from './users'
 import { getStorage, storageConfigured } from './db'
@@ -23,9 +23,9 @@ const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'sign
 export async function getHub(slug: string): Promise<BrandConfig | null> {
   const hub = storageConfigured() ? await getStorage().getJSON<BrandConfig>('hubs', slug) : null
   if (hub) return hub
-  // The seed hub exists even before its record is first written — and before
-  // there's a database at all, so the demo works on a fresh deployment.
-  return slug === seed.slug ? seed : null
+  // The shipped hubs exist even before their records are first written — and
+  // before there's a database at all, so the demo works on a fresh deployment.
+  return getDemoHub(slug)
 }
 
 export async function saveHub(config: BrandConfig): Promise<BrandConfig> {
@@ -43,7 +43,7 @@ export async function createHub(
   const base = slugify(config.slug || config.name) || 'brand'
   let slug = base
   let n = 2
-  while (RESERVED_SLUGS.has(slug) || slug === seed.slug || (await getStorage().getJSON('hubs', slug))) {
+  while (RESERVED_SLUGS.has(slug) || DEMO_SLUGS.has(slug) || (await getStorage().getJSON('hubs', slug))) {
     slug = `${base}-${n++}`
   }
   const hub = await saveHub({ ...config, slug })
@@ -164,7 +164,7 @@ export async function renameHub(oldSlug: string, wanted: string): Promise<{ slug
   const next = slugify(wanted)
   if (!next) return { error: 'That address isn’t valid. Use letters and numbers.' }
   if (next === oldSlug) return { slug: oldSlug }
-  if (RESERVED_SLUGS.has(next) || next === seed.slug || (await getStorage().getJSON('hubs', next))) {
+  if (RESERVED_SLUGS.has(next) || DEMO_SLUGS.has(next) || (await getStorage().getJSON('hubs', next))) {
     return { error: 'That address is already taken' }
   }
   const hub = await getHub(oldSlug)

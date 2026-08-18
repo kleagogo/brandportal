@@ -22,15 +22,6 @@ export const SITE_URL = (process.env.SITE_URL || 'https://app.pitho.io').replace
 /** The marketing site, which is a separate build on the apex domain. */
 export const MARKETING_URL = 'https://pitho.io'
 
-/**
- * Hubs that are marketing, not client work.
- *
- * Matched by exact slug rather than by `meta.demo`, which is also true for any
- * hub with no meta record — including pre-accounts hubs holding real brands.
- * Getting that wrong would publish someone's client to Google.
- */
-export const PUBLIC_HUB_SLUGS = new Set(['demo'])
-
 /** Keeps a page out of every search index, and out of link previews. */
 export const PRIVATE_PAGE: Metadata = {
   robots: {
