@@ -155,7 +155,10 @@ function HubShell({ access }: { access: HubAccess }) {
 
       <WelcomeToast />
 
-      <SidebarProvider className="flex-1 min-h-0 items-stretch">
+      {/* `relative` is what lets the sidebar anchor to this box rather than to
+          the viewport, so anything above it — the sandbox notice — keeps its
+          full width instead of being painted over. */}
+      <SidebarProvider className="relative flex-1 min-h-0 items-stretch">
         <HubSidebar
           dark={dark}
           onToggleTheme={toggleTheme}
@@ -290,7 +293,11 @@ function HubSidebar({
   ] as const
 
   return (
-    <Sidebar collapsible="icon">
+    // Upstream pins the rail to the viewport (`fixed inset-y-0 h-svh`), which
+    // ignores anything stacked above it. Anchoring to the provider instead
+    // makes it start below the notice and end at the window's foot. Desktop
+    // only: the mobile rail is a Sheet, which never reaches this class.
+    <Sidebar collapsible="icon" className="absolute h-full">
       <SidebarHeader>
         <SpaceSwitcher currentSlug={config.slug} kindLabel={kindLabel} />
       </SidebarHeader>

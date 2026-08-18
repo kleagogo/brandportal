@@ -119,3 +119,123 @@ function htmlBody(subject: string, lead: string, action: string, url: string): s
 function textBody(subject: string, lead: string, url: string): string {
   return `${subject}\n\n${lead}\n\n${url}\n\nThis link works once and expires. If you didn't request it, ignore this email.\n\nPitho`
 }
+
+/** What a readiness probe can say about outgoing mail. */
+export interface EmailReadiness {
+  /** A key is present, so sends will be attempted. */
+  configured: boolean
+  /** The sender domain in use — public information, it rides on every email. */
+  senderDomain: string | null
+  /** Resend accepts this sender for arbitrary recipients. */
+  canReachAnyone: boolean
+  /** Plain-language reason when mail can't reach ordinary users. */
+  problem: string | null
+}
+
+let cached: { at: number; result: EmailReadiness } | null = null
+const READINESS_TTL = 60_000
+
+/**
+ * Ask Resend whether this deployment can actually deliver to a stranger.
+ *
+ * `Boolean(RESEND_API_KEY)` only proves a key was pasted in. It stays true
+ * while every send 403s, which is the failure people actually hit: the
+ * default sender and unverified domains can only mail the account's own
+ * address, so the owner signs in fine and nobody else can. Returns no key
+ * and no domain list — just whether strangers can be reached, and why not.
+ */
+export async function emailReadiness(): Promise<EmailReadiness> {
+  const key = process.env.RESEND_API_KEY
+  const from = process.env.EMAIL_FROM
+
+  // /api/health is public, so an uncached probe would let anyone spend this
+  // deployment's Resend rate limit. Config changes need a redeploy anyway,
+  // so a minute-old answer is as current as it needs to be.
+  if (cached && Date.now() - cached.at < READINESS_TTL) return cached.result
+  const remember = (result: EmailReadiness): EmailReadiness => {
+    cached = { at: Date.now(), result }
+    return result
+  }
+
+  if (!key) {
+    return remember({
+      configured: false,
+      senderDomain: null,
+      canReachAnyone: false,
+      problem: devLinksAllowed()
+        ? 'No RESEND_API_KEY. Sign-in links are shown in the browser (dev mode).'
+        : 'No RESEND_API_KEY, so no sign-in email can be sent.',
+    })
+  }
+
+  // "Pitho <hello@example.com>" or a bare address.
+  const domain = (from?.match(/@([^>\s]+)/)?.[1] || '').toLowerCase() || null
+
+  if (!from || domain === 'resend.dev') {
+    return remember({
+      configured: true,
+      senderDomain: domain ?? 'resend.dev',
+      canReachAnyone: false,
+      problem:
+        'EMAIL_FROM is unset, so sends fall back to Resend’s shared onboarding@resend.dev sender. ' +
+        'That address only delivers to the address that owns the Resend account — everyone else is rejected. ' +
+        'Verify a domain in Resend and set EMAIL_FROM to an address on it.',
+    })
+  }
+
+  try {
+    const res = await fetch('https://api.resend.com/domains', {
+      headers: { Authorization: `Bearer ${key}` },
+    })
+
+    if (res.status === 401 || res.status === 403) {
+      return remember({
+        configured: true,
+        senderDomain: domain,
+        canReachAnyone: false,
+        problem: 'Resend rejected the API key (401/403). Issue a new key and redeploy.',
+      })
+    }
+
+    if (!res.ok) {
+      // Resend is unreachable or erroring; the sender itself may still be fine.
+      return remember({
+        configured: true,
+        senderDomain: domain,
+        canReachAnyone: false,
+        problem: `Could not check the sender with Resend (HTTP ${res.status}). Try again shortly.`,
+      })
+    }
+
+    const body = (await res.json()) as { data?: Array<{ name?: string; status?: string }> }
+    const match = body.data?.find(d => d.name?.toLowerCase() === domain)
+
+    if (!match) {
+      return remember({
+        configured: true,
+        senderDomain: domain,
+        canReachAnyone: false,
+        problem: `EMAIL_FROM uses ${domain}, which isn’t a domain on this Resend account. Add and verify it, or set EMAIL_FROM to a domain that is.`,
+      })
+    }
+
+    if (match.status !== 'verified') {
+      return remember({
+        configured: true,
+        senderDomain: domain,
+        canReachAnyone: false,
+        problem: `${domain} is on the Resend account but its status is "${match.status}", not "verified". Finish its DNS records — until then only your own address receives mail.`,
+      })
+    }
+
+    return remember({ configured: true, senderDomain: domain, canReachAnyone: true, problem: null })
+  } catch (err) {
+    console.error('[email] Readiness check failed:', err)
+    return remember({
+      configured: true,
+      senderDomain: domain,
+      canReachAnyone: false,
+      problem: 'Could not reach Resend to check the sender.',
+    })
+  }
+}
