@@ -16,7 +16,7 @@ const config: BrandConfig = {
   slug: 'demo',
   name: 'Pitho',
   tagline: 'One clean brand hub for every client.',
-  logoUrl: '/brand/pitho-wordmark.svg',
+  logoUrl: '/brand/pitho-logo.svg',
   website: 'https://pitho.io',
 
   // ─── Colors ─────────────────────────────────────────────────────────────────
@@ -125,6 +125,7 @@ const config: BrandConfig = {
     { id: 'typography',   label: 'Typography',        type: 'typography', icon: 'type',        group: 'assets' },
     { id: 'screenshots',  label: 'Screenshots',       type: 'assets',     icon: 'screenshots', group: 'assets' },
     { id: 'artwork',      label: 'Artwork',           type: 'assets',     icon: 'artwork',     group: 'assets' },
+    { id: 'video',        label: 'Video',             type: 'assets',     icon: 'video',       group: 'assets' },
     { id: 'guidelines',   label: 'Guidelines',        type: 'guidelines', icon: 'guidelines',  group: 'assets' },
     { id: 'templates',    label: 'Templates',         type: 'assets',     icon: 'templates',   group: 'resources' },
     { id: 'inspiration',  label: 'Inspiration',       type: 'assets',     icon: 'sparkles',    group: 'resources' },
@@ -133,8 +134,12 @@ const config: BrandConfig = {
   // ─── Asset library ───────────────────────────────────────────────────────────
   assets: {
     logo: [
-      { name: 'Wordmark · Ink',     file: '/brand/pitho-wordmark.svg',         format: ['SVG'], usage: 'Default. On white and light surfaces', subgroup: 'Wordmark', tags: ['logo', 'wordmark'] },
-      { name: 'Wordmark · Reverse', file: '/brand/pitho-wordmark-reverse.svg', format: ['SVG'], usage: 'On Ink, photography and dark panels',  subgroup: 'Wordmark', tags: ['logo', 'wordmark', 'reverse'] },
+      { name: 'Logo · Ink',       file: '/brand/pitho-logo.svg',            format: ['SVG'], usage: 'Default. Focus mark and wordmark, on light surfaces', subgroup: 'Logo', tags: ['logo', 'lockup'] },
+      { name: 'Logo · Reverse',   file: '/brand/pitho-logo-reverse.svg',    format: ['SVG'], usage: 'On Ink, photography and dark panels',                subgroup: 'Logo', tags: ['logo', 'lockup', 'reverse'] },
+      { name: 'Focus mark · Ink',     file: '/brand/pitho-mark.svg',         format: ['SVG'], usage: 'App icon, avatar, favicon. Where the word will not fit', subgroup: 'Focus mark', tags: ['mark', 'icon'] },
+      { name: 'Focus mark · Reverse', file: '/brand/pitho-mark-reverse.svg', format: ['SVG'], usage: 'The mark alone on dark surfaces',                       subgroup: 'Focus mark', tags: ['mark', 'icon', 'reverse'] },
+      { name: 'Wordmark · Ink',     file: '/brand/pitho-wordmark.svg',         format: ['SVG'], usage: 'Without the mark, where the lockup is too wide', subgroup: 'Wordmark', tags: ['wordmark'] },
+      { name: 'Wordmark · Reverse', file: '/brand/pitho-wordmark-reverse.svg', format: ['SVG'], usage: 'Wordmark alone on dark surfaces',               subgroup: 'Wordmark', tags: ['wordmark', 'reverse'] },
     ],
     screenshots: [],
     artwork: [
@@ -142,6 +147,9 @@ const config: BrandConfig = {
       { name: 'Signal arc',  file: '/brand/art-signal-arc.svg', format: ['SVG'], usage: 'Accent background. Use once per page', ratio: 'wide', tags: ['background', 'accent'] },
       { name: 'Grid',        file: '/brand/art-grid.svg',       format: ['SVG'], usage: 'Subtle texture behind dark sections', ratio: 'wide', tags: ['pattern', 'texture'] },
       { name: 'Stack',       file: '/brand/art-stack.svg',      format: ['SVG'], usage: 'Motif for versioning and handover', ratio: 'wide', tags: ['motif', 'diagram'] },
+    ],
+    video: [
+      { name: 'Brand film', file: '/brand/pitho-hero.mp4', format: ['MP4'], usage: 'The hero film from the site. Muted, loops, no sound design', ratio: 'wide', subgroup: 'Hero', tags: ['video', 'hero'] },
     ],
     templates: [],
     inspiration: [],
@@ -161,13 +169,13 @@ const config: BrandConfig = {
     },
     usage: {
       dos: [
-        'Set the wordmark in Onest Regular with the tracking at -4%',
+        'Set the wordmark in Onest Regular with the tracking at -4%, six pixels from the mark',
         'Use Ink for primary buttons so the product matches the site',
         'Keep clear space around the wordmark equal to the height of its P',
         'Let Signal appear once on a screen, never in body text',
       ],
       donts: [
-        'Do not add a symbol or a container to the wordmark. The word is the logo',
+        'Do not redraw the focus mark or change its proportions. It is four brackets and a dot',
         'Do not set the wordmark in any face other than Onest',
         'Do not set headlines in Inter. Onest carries every headline',
         'Do not put Signal on white. It is an accent for dark surfaces only',

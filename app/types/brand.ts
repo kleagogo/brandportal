@@ -59,7 +59,7 @@ export interface TypographyGroup {
 }
 
 export type SectionType = 'assets' | 'colors' | 'typography' | 'guidelines' | 'link' | 'tokens' | 'home' | 'gradients' | 'subbrand'
-export type SectionIcon = 'home' | 'logo' | 'colors' | 'type' | 'screenshots' | 'artwork' | 'guidelines' | 'link' | 'heart' | 'mail' | 'person' | 'templates' | 'sparkles' | 'file'
+export type SectionIcon = 'home' | 'logo' | 'colors' | 'type' | 'screenshots' | 'artwork' | 'video' | 'guidelines' | 'link' | 'heart' | 'mail' | 'person' | 'templates' | 'sparkles' | 'file'
 export type SectionGroup = 'main' | 'assets' | 'subbrands' | 'tools' | 'resources'
 
 export interface SectionConfig {

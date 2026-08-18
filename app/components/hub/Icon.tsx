@@ -7,7 +7,7 @@ import {
   RiHome5Line, RiImageLine, RiLayoutGridLine, RiLayoutLine, RiLinkM,
   RiListUnordered, RiMailLine, RiMenuLine, RiMoonLine, RiPencilLine,
   RiSearchLine, RiSendPlaneLine, RiSettings3Line, RiShareLine, RiSparklingLine,
-  RiStackLine, RiSunLine, RiUploadLine, RiUserLine,
+  RiStackLine, RiSunLine, RiUploadLine, RiUserLine, RiVideoLine,
   type RemixiconComponentType,
 } from '@remixicon/react'
 
@@ -27,6 +27,7 @@ const ICONS: Record<string, RemixiconComponentType> = {
   type: RiFontSansSerif,
   screenshots: RiImageLine,
   artwork: RiBrushLine,
+  video: RiVideoLine,
   guidelines: RiListUnordered,
   templates: RiLayoutLine,
   sparkles: RiSparklingLine,

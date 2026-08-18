@@ -30,6 +30,10 @@ function isImage(file: string): boolean {
   return /\.(svg|png|jpg|jpeg|webp|gif|ico)(\?|$)/i.test(file)
 }
 
+function isVideo(file: string): boolean {
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(file)
+}
+
 /** Metadata tags on an asset: chips in view mode, editable in edit mode. */
 function TagRow({ tags, onAdd, onRemove }: { tags: string[]; onAdd: (t: string) => void; onRemove: (t: string) => void }) {
   const { editing } = useHub()
@@ -437,7 +441,12 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
           <div className="space-y-8">
             {groupBySubgroup(assets).map(({ subgroup, items }) => (
               <div key={subgroup || '_'}>
-                {subgroup && <p className="text-[15px] font-semibold text-foreground mb-3">{subgroup}</p>}
+                {subgroup && (
+                  // Same grey eyebrow the colour and gradient groups use, so a
+                  // subgroup reads as a label rather than competing with the
+                  // section heading above it.
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">{subgroup}</p>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {items.map(({ asset, i }) => (
                     <AssetCard key={`${asset.file}-${i}`} asset={asset} index={i} sectionId={sectionId} />
@@ -517,7 +526,7 @@ function groupBySubgroup(assets: AssetFile[]): Array<{ subgroup: string; items: 
 function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
   const { config, editing, update, sandbox, allowDownload, portalId } = useHub()
   const i = index
-  const tileClass = asset.ratio === 'wide' ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
+  const tileClass = asset.ratio === 'wide' || isVideo(asset.file) ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
   const versions = asset.versions || []
   const current = asset.approvedVersion || versions[versions.length - 1]?.label
   const [showHistory, setShowHistory] = useState(false)
@@ -578,12 +587,24 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
     <HubCard
       ref={cardRef}
       className="t-smoky-card asset-tile group relative"
-      mediaClassName={`${tileClass} p-6`}
+      mediaClassName={`${tileClass} ${isVideo(asset.file) ? 'p-0' : 'p-6'}`}
       media={
         isImage(asset.file) && asset.ratio ? (
           // Photography and screenshots are worth looking at full size, so the
           // tile zooms open rather than only offering a download.
           <ImageOpenTilt src={asset.file} alt={asset.name} />
+        ) : isVideo(asset.file) ? (
+          // A brand film is the asset. Showing a file icon and asking someone to
+          // download it to find out what it is defeats the point of the tile.
+          <video
+            src={asset.file}
+            className="w-full h-full object-cover"
+            muted
+            loop
+            playsInline
+            autoPlay
+            preload="metadata"
+          />
         ) : isImage(asset.file) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
