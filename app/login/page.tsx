@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Wordmark } from '@/app/components/Wordmark'
+import { Logo } from '@/app/components/Logo'
 
 /**
  * One page for signing up and signing in, because one link does both.
@@ -51,7 +51,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <nav className="border-b border-border bg-card px-5 sm:px-8 h-14 flex items-center">
-        <Wordmark />
+        <Logo />
       </nav>
 
       <main className="flex-1 flex items-center justify-center px-6 py-12">
