@@ -72,11 +72,13 @@ export function ImportReview({
       : { kind: 'new', label: bucket.label }
   }
 
-  function describe(destination: Destination): string {
-    if (destination.kind === 'skip') return 'Don’t add these'
-    if (destination.kind === 'new') return `New section · ${destination.label}`
+  /** Just the name — the badge beside it carries the "new" part. */
+  function nameOf(destination: Destination): string {
+    if (destination.kind === 'skip') return 'Not being added'
+    if (destination.kind === 'new') return destination.label
     return sections.find(s => s.id === destination.sectionId)?.label || 'Section'
   }
+
 
   const matched = buckets.filter(b => b.sectionId !== null)
   const proposed = buckets.filter(b => b.sectionId === null)
@@ -164,7 +166,11 @@ export function ImportReview({
                         <span className="flex h-[1.5em] shrink-0 items-center text-[13px] text-muted-foreground"><Icon name={bucket.icon} size={14} /></span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2">
-                            <span className="text-[13px] font-medium truncate">“{bucket.folder}”</span>
+                            {/* The name of the section being made, not the
+                                folder it came from. Renaming used to change
+                                only the caption underneath, so the row still
+                                announced a section nobody was going to get. */}
+                            <span className="text-[13px] font-medium truncate">{nameOf(destination)}</span>
                             {/* Says plainly that agreeing here adds a menu item,
                                 which is the one consequence that outlasts the
                                 upload. */}
@@ -173,7 +179,7 @@ export function ImportReview({
                             )}
                           </span>
                           <span className="block text-[11.5px] text-muted-foreground/60 truncate">
-                            {bucket.items.length} file{bucket.items.length === 1 ? '' : 's'} · {describe(destination)}
+                            {bucket.items.length} file{bucket.items.length === 1 ? '' : 's'} · from “{bucket.folder}”
                           </span>
                         </span>
                       </button>
