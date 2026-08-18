@@ -26,8 +26,15 @@ import {
   DropdownMenuSubTrigger, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+  Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 } from '@/components/ui/empty'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Separator } from '@/components/ui/separator'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { HubCard } from './HubCard'
 
@@ -176,6 +183,8 @@ function EmptyDropzone({
 export function AssetsSection({ sectionId }: { sectionId: string }) {
   const { config, editing, canEdit, allowDownload, portalId } = useHub()
   const [dragOver, setDragOver] = useState(false)
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState<AssetSort>('added')
   const inputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
 
@@ -199,6 +208,24 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
   const label = config.sections.find(s => s.id === sectionId)?.label || 'Assets'
 
   const hasLocalFiles = assets.some(a => a.file.startsWith('/'))
+
+  // Pair each asset with where it really lives before touching the list, so
+  // searching and sorting only change what is shown, never what a card writes.
+  const needle = query.trim().toLowerCase()
+  const visible = assets
+    .map((asset, i) => ({ asset, i }))
+    .filter(({ asset }) => {
+      if (!needle) return true
+      const haystack = [asset.name, asset.usage || '', asset.subgroup || '', ...(asset.tags || []), ...asset.format]
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(needle)
+    })
+    .sort((a, b) => {
+      if (sort === 'name') return a.asset.name.localeCompare(b.asset.name)
+      if (sort === 'newest') return lastTouched(b.asset) - lastTouched(a.asset)
+      return a.i - b.i
+    })
 
   return (
     <div>
@@ -235,6 +262,40 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
       )}
       {!editing && assets.length === 0 && <div className="mb-8" />}
 
+      {/* Searching and sorting only earn their space once there is enough to
+          lose track of. Below that the list is the whole answer. */}
+      {assets.length > 3 && (
+        <>
+          <Separator className="my-4" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:max-w-xs">
+              <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground">
+                <Icon name="search" size={14} />
+              </span>
+              <Input
+                type="search"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={`Search ${label.toLowerCase()}…`}
+                className="pl-8"
+                aria-label={`Search ${label}`}
+              />
+            </div>
+            <Select value={sort} onValueChange={v => setSort(v as AssetSort)}>
+              <SelectTrigger className="w-40" aria-label="Sort files">
+                <SelectValue>{SORT_LABELS[sort]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(SORT_LABELS) as AssetSort[]).map(key => (
+                  <SelectItem key={key} value={key}>{SORT_LABELS[key]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      )}
+
+
       {error && <p className="text-[13px] text-destructive mb-4">{error}</p>}
       {notice && <p className="text-[13px] text-muted-foreground mb-4">{notice}</p>}
 
@@ -265,7 +326,24 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
           </div>
         ) : (
           <div className="space-y-8">
-            {groupBySubgroup(assets).map(({ subgroup, items }) => (
+            {/* A search that matches nothing left an empty page with no reason
+                given, which reads as the files having gone. */}
+            {visible.length === 0 && (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon"><Icon name="search" size={16} /></EmptyMedia>
+                  <EmptyTitle className="text-[15px]">No files match “{query}”</EmptyTitle>
+                  <EmptyDescription className="text-[13px]">
+                    Searching names, notes, tags and formats in {label}.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent className="flex-row flex-wrap justify-center">
+                  <Button variant="outline" onClick={() => setQuery('')}>Clear search</Button>
+                </EmptyContent>
+              </Empty>
+            )}
+
+            {groupBySubgroup(visible).map(({ subgroup, items }) => (
               <div key={subgroup || '_'}>
                 {subgroup && (
                   // Same grey eyebrow the colour and gradient groups use, so a
@@ -338,15 +416,40 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
 }
 
 /** Group assets by their `subgroup`, preserving order and original indices. */
-function groupBySubgroup(assets: AssetFile[]): Array<{ subgroup: string; items: Array<{ asset: AssetFile; i: number }> }> {
+/**
+ * Group for display, over pairs that already carry their real index.
+ *
+ * A card writes back through `c.assets[sectionId][i]`, so the index has to be
+ * the asset's position in the stored list, not its position in whatever the
+ * filter left on screen. Taking pairs rather than an array is what stops a
+ * search box turning "rename this" into "rename a different one".
+ */
+function groupBySubgroup(
+  items: Array<{ asset: AssetFile; i: number }>
+): Array<{ subgroup: string; items: Array<{ asset: AssetFile; i: number }> }> {
   const order: string[] = []
   const map = new Map<string, Array<{ asset: AssetFile; i: number }>>()
-  assets.forEach((asset, i) => {
-    const key = asset.subgroup || ''
+  for (const pair of items) {
+    const key = pair.asset.subgroup || ''
     if (!map.has(key)) { map.set(key, []); order.push(key) }
-    map.get(key)!.push({ asset, i })
-  })
+    map.get(key)!.push(pair)
+  }
   return order.map(subgroup => ({ subgroup, items: map.get(subgroup)! }))
+}
+
+type AssetSort = 'added' | 'name' | 'newest'
+
+/** Base UI's Value renders the raw value unless given something to show. */
+const SORT_LABELS: Record<AssetSort, string> = {
+  added: 'Order added',
+  name: 'Name',
+  newest: 'Recently updated',
+}
+
+/** Latest upload time on an asset, for sorting. 0 when it has no history. */
+function lastTouched(asset: AssetFile): number {
+  const stamps = (asset.versions || []).map(v => (v.uploadedAt ? Date.parse(v.uploadedAt) : 0))
+  return stamps.length ? Math.max(...stamps) : 0
 }
 
 function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: number; sectionId: string }) {
@@ -584,23 +687,65 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
           take a dotted outline on a field. A bar says which card is open and
           how to close it. */}
       {editingSelf && (
-        <div className="-mx-3 -mt-3 mb-1 flex items-center justify-between gap-2 border-b bg-muted px-3 py-1.5">
+        <div className="-mx-3 -mt-3 mb-2 flex items-center justify-between gap-2 border-b bg-muted px-3 py-1.5">
           <span className="text-muted-foreground">Editing this file</span>
           <Button size="xs" variant="outline" onClick={() => setEditingSelf(false)}>Done</Button>
         </div>
       )}
-      <p className="text-[13px] font-medium text-foreground">
-          <Editable editing={editing} value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
-      </p>
-      <p className="text-[11px] text-muted-foreground leading-tight">
-        <Editable editing={editing} multiline value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
-      </p>
-      <TagRow
-          editing={editing}
-          tags={asset.tags || []}
-        onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
-        onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
-      />
+      {/* Opened on its own, a card is a small form and gets built like one:
+          labelled fields and real controls, rather than the in-place dashed
+          outlines that only tell you a thing is editable once you find it.
+          The section-wide mode keeps editing in place, which is what makes
+          going through a batch quick. */}
+      {editingSelf ? (
+        <FieldGroup className="gap-3">
+          <Field>
+            <FieldLabel htmlFor={`name-${sectionId}-${i}`}>Name</FieldLabel>
+            <Input
+              id={`name-${sectionId}-${i}`}
+              value={asset.name}
+              placeholder="Asset name"
+              onChange={e => update(c => { c.assets[sectionId][i].name = e.target.value })}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor={`usage-${sectionId}-${i}`}>Usage note</FieldLabel>
+            <Textarea
+              id={`usage-${sectionId}-${i}`}
+              rows={3}
+              value={asset.usage || ''}
+              placeholder="When should someone reach for this file?"
+              onChange={e => update(c => { c.assets[sectionId][i].usage = e.target.value })}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel>Tags</FieldLabel>
+            <TagRow
+              editing
+              tags={asset.tags || []}
+              onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
+              onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
+            />
+          </Field>
+        </FieldGroup>
+      ) : (
+        <>
+          <p className="text-[13px] font-medium text-foreground">
+            <Editable editing={editing} value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-tight">
+            <Editable editing={editing} multiline value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
+          </p>
+          <TagRow
+            editing={editing}
+            tags={asset.tags || []}
+            onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
+            onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
+          />
+        </>
+      )}
       <input
         ref={versionInput}
         type="file"
