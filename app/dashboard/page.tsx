@@ -31,7 +31,7 @@ function assetCount(assets: Record<string, unknown[]>): number {
   return Object.values(assets || {}).reduce((n, list) => n + (Array.isArray(list) ? list.length : 0), 0)
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
   const user = await getSessionUser()
   if (!user) redirect('/login')
 
@@ -48,6 +48,15 @@ export default async function DashboardPage() {
     const hub = await createHub(blankHubConfig('Our studio', { kind: 'studio' }), user.id, { studio: true })
     redirect(`/${hub.slug}?new=1`)
   }
+
+  // One hub is not a choice. With only the studio hub and no client spaces,
+  // this page is a card and an empty box — everything it offers is already in
+  // the sidebar switcher, including making a client space. So signing in lands
+  // in the brand rather than in a list of one. `?all=1` is the way back, which
+  // is what "All spaces" links to.
+  const { all } = await searchParams
+  const onlyStudio = hubs.length === 1 && hubs[0].role === 'owner' && hubs[0].meta.studio
+  if (onlyStudio && all !== '1') redirect(`/${hubs[0].hub.slug}`)
 
   const limits = limitsFor(user)
   const labels = labelsFor(user.accountType)

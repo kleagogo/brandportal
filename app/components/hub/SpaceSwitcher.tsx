@@ -227,7 +227,7 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
               <span className="font-medium">New client hub</span>
             </DropdownMenuItem>
             {signedIn && (
-              <DropdownMenuItem onClick={() => router.push('/dashboard')} className="gap-2 p-2">
+              <DropdownMenuItem onClick={() => router.push('/dashboard?all=1')} className="gap-2 p-2">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent shrink-0">
                   <Icon name="spaces" size={12} />
                 </div>
