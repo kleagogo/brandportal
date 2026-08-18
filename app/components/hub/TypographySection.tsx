@@ -190,24 +190,24 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
               <Button size="sm" variant="outline" onClick={() => setPicker(true)}>
                 <Icon name="plus" size={13} /> Add typeface
               </Button>
-              {editing && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => update(c => { c.typography.push({ group: 'New group', fonts: [] }) })}
-                >
-                  <Icon name="plus" size={13} /> Add group
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setEditingSection(active)
+                  update(c => { c.typography.push({ group: 'New group', fonts: [] }) })
+                }}
+              >
+                <Icon name="plus" size={13} /> Add group
+              </Button>
             </>
           )
         }
-        edit={mayEdit ? { editing, onToggle: () => setEditingSection(editing ? null : active) } : undefined}
         toolbar={total > 3}
         search={{
           value: query,
           onChange: setQuery,
-          placeholder: 'Search typefaces…',
+          placeholder: 'Search…',
           label: 'Search typefaces',
         }}
         filters={[
@@ -265,7 +265,9 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
             <Editable inline value={g.group} placeholder="Group name" onChange={v => update(c => { c.typography[gi].group = v })} />
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Room for a family's whole weight run — at full page width,
+              three-up is already wider than the old capped two-up. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map(({ font, fi }) => {
               const key = `${gi}:${fi}`
               return (
@@ -567,7 +569,8 @@ function TypeDetail({
   onCopy: () => void
   onDelete: () => void
 }) {
-  const { config, editing, update, allowDownload } = useHub()
+  const { config, editing, update, allowDownload, canEdit, sandbox, active, setEditingSection } = useHub()
+  const mayEdit = canEdit || sandbox
   const font = config.typography[at.gi]?.fonts[at.fi]
   if (!font) return null
   const key = `${at.gi}:${at.fi}`
@@ -597,17 +600,44 @@ function TypeDetail({
         },
         { label: 'CSS', value: cssFor(font), mono: true },
       ]}
+      /* The same pair the card wears, exactly — opening a card must never
+         change what it can do. The menu keeps Edit and Delete; the weight
+         chips appear once Edit is on. */
       actions={
-        <>
-          {editing && (
-            <Button variant="ghost" onClick={onDelete} className="mr-auto text-muted-foreground hover:text-destructive">
-              <Icon name="trash" size={14} /> Delete
-            </Button>
-          )}
+        <ButtonGroup className="shrink-0">
           <Button variant="outline" onClick={onCopy}>
             <Icon name="copy" size={14} /> {copiedKey === key ? 'Copied' : 'Copy CSS'}
           </Button>
-        </>
+          {mayEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="outline" size="icon" aria-label={`Actions for ${font.name}`}>
+                    <Icon name="more" size={14} />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuGroup>
+                  {!editing && (
+                    <DropdownMenuItem onClick={() => setEditingSection(active)}>
+                      <Icon name="edit" size={14} /> Edit typeface
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={onCopy}>
+                    <Icon name="copy" size={14} /> Copy CSS
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                    <Icon name="trash" size={14} /> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </ButtonGroup>
       }
     >
       {editing && (
@@ -693,6 +723,30 @@ function TypeDetail({
             />
           </div>
         </div>
+      )}
+
+      {/* Every weight, shown as itself — adding eight weights to Manrope
+          should show eight Manropes, not a row of numbers. Read mode only:
+          the edit form has its own Weights block, the toggles, and two
+          sections wearing the same label is one too many. */}
+      {!editing && (
+      <div className="flex flex-col gap-1.5">
+        <Label>Weights</Label>
+        {font.weights.length === 0 && (
+          <p className="text-[13px] text-muted-foreground">No weights picked yet.</p>
+        )}
+        {font.weights.map(w => (
+          <div key={w} className="flex items-baseline gap-3 rounded-lg border border-border bg-background px-3 py-2">
+            <span className="w-8 shrink-0 font-mono text-[11px] text-muted-foreground">{w}</span>
+            <span
+              className="truncate text-[17px] leading-snug text-foreground"
+              style={{ ...face, fontWeight: Number(w) || 400 }}
+            >
+              The quick brown fox jumps over the lazy dog
+            </span>
+          </div>
+        ))}
+      </div>
       )}
 
       {font.downloads && font.downloads.length > 0 && allowDownload && (

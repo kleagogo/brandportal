@@ -217,7 +217,10 @@ function HubShell({ access }: { access: HubAccess }) {
             )}
           </header>
           <main className="flex-1 min-h-0 overflow-y-auto">
-            <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8">
+            {/* The full pane, at the bar's own margins — the header buttons
+                are the marker, so the content runs edge to edge with the same
+                px-4 they sit inside, not a centred column with a width cap. */}
+            <div className="px-4 py-8">
               {renderContent()}
             </div>
           </main>

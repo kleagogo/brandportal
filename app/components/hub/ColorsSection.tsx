@@ -117,7 +117,7 @@ export function ColorsSection({ label = 'Colors' }: { label?: string }) {
             : 'Click a swatch to open it, or copy its hex straight from the card.'
         }
         actions={
-          editing && (
+          mayEdit && (
             <Button
               size="sm"
               variant="outline"
@@ -127,12 +127,11 @@ export function ColorsSection({ label = 'Colors' }: { label?: string }) {
             </Button>
           )
         }
-        edit={mayEdit ? { editing, onToggle: () => setEditingSection(editing ? null : active) } : undefined}
         toolbar={total > 3}
         search={{
           value: query,
           onChange: setQuery,
-          placeholder: 'Search colors…',
+          placeholder: 'Search…',
           label: 'Search colors',
         }}
         filters={config.colors.length > 1 ? [{
@@ -237,7 +236,9 @@ export function ColorsSection({ label = 'Colors' }: { label?: string }) {
                           />
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuGroup>
-                              <DropdownMenuItem onClick={() => setDetail({ gi, si })}>
+                              {/* Edit is the card's own action now — there is
+                                  no section-wide switch to find first. */}
+                              <DropdownMenuItem onClick={() => { setEditingSection(active); setDetail({ gi, si }) }}>
                                 <Icon name="edit" size={14} /> Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => copyHex(key, swatch.hex)}>
@@ -268,10 +269,11 @@ export function ColorsSection({ label = 'Colors' }: { label?: string }) {
               )
             })}
 
-            {editing && (
+            {mayEdit && (
               <button
                 onClick={() => {
                   const si = config.colors[gi].swatches.length
+                  setEditingSection(active)
                   update(c => { c.colors[gi].swatches.push({ name: 'New color', hex: '#888888', usage: '' }) })
                   setDetail({ gi, si })
                 }}

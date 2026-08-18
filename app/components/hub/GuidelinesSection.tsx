@@ -65,7 +65,7 @@ export function GuidelinesSection({ label = 'Guidelines' }: { label?: string }) 
         title={label}
         description="How to represent our brand correctly."
         actions={
-          editing && !voice && !usage && (
+          mayEdit && !voice && !usage && (
             <Button
               size="sm"
               variant="outline"
@@ -78,12 +78,11 @@ export function GuidelinesSection({ label = 'Guidelines' }: { label?: string }) 
             </Button>
           )
         }
-        edit={mayEdit ? { editing, onToggle: () => setEditingSection(editing ? null : active) } : undefined}
         toolbar={total > 3}
         search={{
           value: query,
           onChange: setQuery,
-          placeholder: 'Search guidelines…',
+          placeholder: 'Search…',
           label: 'Search guidelines',
         }}
         filters={[{
@@ -165,6 +164,9 @@ export function GuidelinesSection({ label = 'Guidelines' }: { label?: string }) 
                         />
                         <DropdownMenuContent align="end" className="w-44">
                           <DropdownMenuGroup>
+                            <DropdownMenuItem onClick={() => setEditingSection(active)}>
+                              <Icon name="edit" size={14} /> Edit
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => copyPrinciple(i, p.name, p.description)}>
                               <Icon name="copy" size={14} /> Copy text
                             </DropdownMenuItem>

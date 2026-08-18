@@ -70,9 +70,12 @@ export function HubCard({
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         {children}
         {(chips || action) && (
-          <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+          /* items-end, not center: when the chips wrap to several rows the
+             action stays put in the bottom corner instead of floating up the
+             card — it is part of the card's anatomy, not of the chip flow. */
+          <div className="mt-auto flex items-end justify-between gap-2 pt-2">
             <div className="flex items-center gap-1 flex-wrap min-w-0">{chips}</div>
-            {action}
+            <div className="shrink-0">{action}</div>
           </div>
         )}
       </div>
