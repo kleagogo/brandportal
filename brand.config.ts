@@ -138,7 +138,18 @@ const config: BrandConfig = {
     logo: [
       { name: 'Logo · Ink',       file: '/brand/pitho-logo.svg',            format: ['SVG'], usage: 'Default. Focus mark and wordmark, on light surfaces', subgroup: 'Logo', tags: ['logo', 'lockup'] },
       { name: 'Logo · Reverse',   file: '/brand/pitho-logo-reverse.svg',    format: ['SVG'], usage: 'On Ink, photography and dark panels',                subgroup: 'Logo', tags: ['logo', 'lockup', 'reverse'] },
-      { name: 'App icon',             file: '/brand/pitho-icon.svg',         format: ['SVG'], usage: 'The standard mark: white on Ink, rounded. Avatars, favicons, app tiles', subgroup: 'Focus mark', tags: ['mark', 'icon'] },
+      {
+        name: 'App icon', file: '/brand/pitho-icon.svg', format: ['SVG'],
+        usage: 'The standard mark: white on Ink, rounded. Avatars, favicons, app tiles',
+        subgroup: 'Focus mark', tags: ['mark', 'icon'],
+        // A real history, so the demo shows what replacing a file does rather
+        // than leaving versions as a feature nobody can find.
+        approvedVersion: 'v2',
+        versions: [
+          { label: 'v1', file: '/brand/pitho-mark.svg', format: 'SVG', uploadedAt: '2026-07-02T10:00:00.000Z', note: 'Bare mark, no ground' },
+          { label: 'v2', file: '/brand/pitho-icon.svg', format: 'SVG', uploadedAt: '2026-08-16T09:30:00.000Z', note: 'On Ink, rounded' },
+        ],
+      },
       { name: 'Focus mark · Ink',     file: '/brand/pitho-mark.svg',         format: ['SVG'], usage: 'The bare mark, where you supply your own ground', subgroup: 'Focus mark', tags: ['mark', 'icon'] },
       { name: 'Focus mark · Reverse', file: '/brand/pitho-mark-reverse.svg', format: ['SVG'], usage: 'The mark alone on dark surfaces',                       subgroup: 'Focus mark', tags: ['mark', 'icon', 'reverse'] },
       { name: 'Wordmark · Ink',     file: '/brand/pitho-wordmark.svg',         format: ['SVG'], usage: 'Without the mark, where the lockup is too wide', subgroup: 'Wordmark', tags: ['wordmark'] },

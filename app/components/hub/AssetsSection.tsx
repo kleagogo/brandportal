@@ -15,8 +15,11 @@ import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import {
   Attachment, AttachmentActions, AttachmentContent, AttachmentDescription,
-  AttachmentGroup, AttachmentTitle,
+  AttachmentMedia, AttachmentTitle,
 } from '@/components/ui/attachment'
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent,
@@ -27,6 +30,15 @@ import {
 } from '@/components/ui/empty'
 import { Badge } from '@/components/ui/badge'
 import { HubCard } from './HubCard'
+
+/**
+ * How much history one asset keeps.
+ *
+ * Unbounded, every replacement of a logo lived forever in a hub meant to hold
+ * the approved file. Three is the useful window: what's live, what it replaced,
+ * and the one before that to fall back to. Older ones drop off the end.
+ */
+const KEEP_VERSIONS = 3
 
 function isImage(file: string): boolean {
   return /\.(svg|png|jpg|jpeg|webp|gif|ico)(\?|$)/i.test(file)
@@ -258,7 +270,7 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
                   // section heading above it.
                   <p className="text-[13px] font-medium text-muted-foreground mb-3">{subgroup}</p>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
                   {items.map(({ asset, i }) => (
                     <AssetCard key={`${asset.file}-${i}`} asset={asset} index={i} sectionId={sectionId} />
                   ))}
@@ -343,7 +355,11 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
   // the section-wide mode still opens all of them, for going through a batch.
   const [editingSelf, setEditingSelf] = useState(false)
   const editing = sectionEditing || editingSelf
-  const tileClass = asset.ratio === 'wide' || isVideo(asset.file) ? 'aspect-video' : asset.ratio === 'portrait' ? 'aspect-[3/4]' : 'h-36'
+  // One shape for every tile. Three different ones — 16:9, 3:4 and a fixed
+  // 144px — meant a row of logos, a screenshot and a video were three heights,
+  // and the cards under them never lined up. 4:3 is roomy enough for a wide
+  // screenshot without cropping a portrait to nothing.
+  const tileClass = 'aspect-[4/3]'
   const versions = asset.versions || []
   const current = asset.approvedVersion || versions[versions.length - 1]?.label
   const [showHistory, setShowHistory] = useState(false)
@@ -377,7 +393,8 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         }
         const label = `v${list.length + 1}`
         list.push({ label, file: data.url, format: data.format, uploadedAt: new Date().toISOString() })
-        a.versions = list
+        // Labels keep counting up; only the window slides.
+        a.versions = list.slice(-KEEP_VERSIONS)
         a.approvedVersion = label
         a.file = data.url
         if (!a.format.includes(data.format)) a.format = [data.format, ...a.format]
@@ -505,9 +522,9 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
               />
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => setEditingSelf(v => !v)}>
-                    <Icon name={editingSelf ? 'check' : 'edit'} size={14} />
-                    {editingSelf ? 'Done editing' : 'Rename and edit'}
+                  <DropdownMenuItem onClick={() => setEditingSelf(true)}>
+                    <Icon name="edit" size={14} />
+                    Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={copyLink}>
                     <Icon name="share" size={14} />
@@ -516,7 +533,13 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
                   {!asset.external && (
                     <DropdownMenuItem onClick={() => versionInput.current?.click()}>
                       <Icon name="upload" size={14} />
-                      {uploadingVersion ? 'Uploading…' : 'Upload new version'}
+                      {uploadingVersion ? 'Uploading…' : 'Upload'}
+                    </DropdownMenuItem>
+                  )}
+                  {versions.length > 0 && (
+                    <DropdownMenuItem onClick={() => setShowHistory(true)}>
+                      <Icon name="history" size={14} />
+                      Versions ({versions.length})
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuGroup>
@@ -554,9 +577,6 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         </ButtonGroup>
       }
     >
-      {current && (
-        <Badge className="absolute top-2 left-2 z-10">{current} · Approved</Badge>
-      )}
       {/* Editing one card used to look identical to not editing it, give or
           take a dotted outline on a field. A bar says which card is open and
           how to close it. */}
@@ -578,81 +598,73 @@ function AssetCard({ asset, index, sectionId }: { asset: AssetFile; index: numbe
         onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
         onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
       />
-        {/* Versions — history for everyone, uploading for editors.
-            Shown whenever an asset has any history at all, not only once
-            there are two: "v1" is the answer to "which one is this?", and
-            hiding it until a second upload made the whole feature invisible. */}
-        {(versions.length > 0 || editing) && (
-          <div className="mt-2 pt-2 border-t border-dashed border-border relative">
-            <div className="flex items-center gap-3">
-              {versions.length > 0 && (
-                <button
-                  onClick={() => setShowHistory(h => !h)}
-                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                >
-                  <Icon name="history" size={11} />
-                  {versions.length === 1 ? '1 version' : `${versions.length} versions`}
-                </button>
-              )}
-              {editing && !asset.external && (
-                <button
-                  onClick={() => versionInput.current?.click()}
-                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 ml-auto"
-                >
-                  <Icon name="upload" size={11} /> {uploadingVersion ? 'Uploading…' : 'New version'}
-                </button>
-              )}
-            </div>
-
-            {showHistory && (
-              <>
-                <div className="fixed inset-0 z-20" onMouseDown={() => setShowHistory(false)} />
-                <AttachmentGroup className="absolute left-0 right-0 bottom-7 z-30 rounded-xl border bg-popover p-1 shadow-xl">
-                  {[...versions].reverse().map(v => (
-                    <Attachment key={v.label}>
-                      <AttachmentContent>
-                        <AttachmentTitle>
-                          {v.label}
-                          {v.label === current && <Badge variant="secondary">Current</Badge>}
-                        </AttachmentTitle>
-                        <AttachmentDescription>
-                          {v.uploadedAt && new Date(v.uploadedAt).getFullYear() > 1971
-                            ? new Date(v.uploadedAt).toLocaleDateString()
-                            : 'original'}
-                          {v.uploadedBy ? ` · ${v.uploadedBy}` : ''}
-                        </AttachmentDescription>
-                      </AttachmentContent>
-                      <AttachmentActions>
-                        {v.label !== current && editing && (
-                          <Button size="xs" variant="outline" onClick={() => approve(v.label)}>Make current</Button>
-                        )}
-                        {allowDownload && (
-                          <Button
-                            nativeButton={false}
-                            size="icon-xs"
-                            variant="ghost"
-                            aria-label={`Download ${v.label}`}
-                            render={<a href={downloadHref(v.file)} download />}
-                          >
-                            <Icon name="download" size={11} />
-                          </Button>
-                        )}
-                      </AttachmentActions>
-                    </Attachment>
-                  ))}
-                </AttachmentGroup>
-              </>
-            )}
-
-            <input
-              ref={versionInput}
-              type="file"
-              className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) uploadVersion(f); e.target.value = '' }}
-            />
-          </div>
-        )}
+      <input
+        ref={versionInput}
+        type="file"
+        className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) uploadVersion(f); e.target.value = '' }}
+      />
     </HubCard>
+
+    {/* Versions, where you can see them. This was a popover hanging off a text
+        link inside the card, which meant the previous file was effectively
+        unreachable: too small to show a preview, and gone on the next click. */}
+    <Dialog open={showHistory} onOpenChange={setShowHistory}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>{asset.name}</DialogTitle>
+          <DialogDescription>
+            The last {KEEP_VERSIONS} uploads are kept. Uploading again adds one and drops the oldest.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Newest first, one per row. AttachmentGroup is a horizontal
+            scroller — right for a strip of files under a message, wrong for a
+            history you read down. */}
+        <div className="flex flex-col gap-2">
+          {[...versions].reverse().map(v => (
+            <Attachment key={v.label} className="w-full">
+              <AttachmentMedia className="overflow-hidden bg-muted">
+                {isImage(v.file) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={v.file} alt="" className="size-full object-contain" />
+                ) : (
+                  <Icon name="file" size={14} />
+                )}
+              </AttachmentMedia>
+              <AttachmentContent>
+                <AttachmentTitle>
+                  {v.label}
+                  {v.label === current && <Badge variant="secondary">Current</Badge>}
+                </AttachmentTitle>
+                <AttachmentDescription>
+                  {v.uploadedAt && new Date(v.uploadedAt).getFullYear() > 1971
+                    ? new Date(v.uploadedAt).toLocaleDateString()
+                    : 'original'}
+                  {v.uploadedBy ? ` · ${v.uploadedBy}` : ''}
+                </AttachmentDescription>
+              </AttachmentContent>
+              <AttachmentActions>
+                {v.label !== current && (canEdit || sandbox) && (
+                  <Button size="xs" variant="outline" onClick={() => approve(v.label)}>Make current</Button>
+                )}
+                {allowDownload && (
+                  <Button
+                    nativeButton={false}
+                    size="icon-xs"
+                    variant="ghost"
+                    aria-label={`Download ${v.label}`}
+                    render={<a href={downloadHref(v.file)} download />}
+                  >
+                    <Icon name="download" size={11} />
+                  </Button>
+                )}
+              </AttachmentActions>
+            </Attachment>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
     {/* The shred is drawn here, over the stage, once the card is snapshotted. */}
     <canvas ref={smokeRef} className="t-smoky-canvas" aria-hidden="true" />
     </div>

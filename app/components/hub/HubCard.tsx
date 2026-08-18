@@ -52,7 +52,9 @@ export function HubCard({
       ref={ref}
       size="sm"
       // The ring darkens on hover so a card reads as a thing you can act on.
-      className={cn('gap-0 py-0 transition-[box-shadow] hover:ring-muted-foreground', className)}
+      // `h-full` so every card in a row is the height of the tallest, and the
+      // body below flexes, which is what keeps the footers on one line.
+      className={cn('h-full gap-0 py-0 transition-[box-shadow] hover:ring-muted-foreground', className)}
       {...rest}
     >
       {header && (
@@ -65,10 +67,10 @@ export function HubCard({
           {media}
         </div>
       )}
-      <div className="flex flex-col gap-1.5 p-3">
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
         {children}
         {(chips || action) && (
-          <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="mt-auto flex items-center justify-between gap-2 pt-2">
             <div className="flex items-center gap-1 flex-wrap min-w-0">{chips}</div>
             {action}
           </div>
