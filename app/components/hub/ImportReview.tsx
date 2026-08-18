@@ -128,10 +128,10 @@ export function ImportReview({
               {matched.map(bucket => (
                 <div key={bucket.key} className="rounded-xl bg-muted px-3 py-2">
                   <button onClick={() => toggle(bucket.key)} className="flex w-full items-start gap-2.5 text-left">
-                    <span className={`mt-0.5 text-muted-foreground/50 shrink-0 transition-transform ${expanded[bucket.key] ? '' : '-rotate-90'}`}>
+                    <span className={`flex h-[1.5em] shrink-0 items-center text-[13px] text-muted-foreground/50 transition-transform ${expanded[bucket.key] ? '' : '-rotate-90'}`}>
                       <Icon name="down" size={14} />
                     </span>
-                    <span className="mt-0.5 text-muted-foreground shrink-0"><Icon name={bucket.icon} size={14} /></span>
+                    <span className="flex h-[1.5em] shrink-0 items-center text-[13px] text-muted-foreground"><Icon name={bucket.icon} size={14} /></span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[13px] font-medium truncate">{bucket.label}</span>
                       <span className="block text-[11.5px] text-muted-foreground/60 truncate">
@@ -158,10 +158,10 @@ export function ImportReview({
                   <div key={bucket.key} className="rounded-xl border border-border px-3 py-2">
                     <div className="flex items-start gap-2.5">
                       <button onClick={() => toggle(bucket.key)} className="flex min-w-0 flex-1 items-start gap-2.5 text-left">
-                        <span className={`mt-0.5 text-muted-foreground/50 shrink-0 transition-transform ${expanded[bucket.key] ? '' : '-rotate-90'}`}>
+                        <span className={`flex h-[1.5em] shrink-0 items-center text-[13px] text-muted-foreground/50 transition-transform ${expanded[bucket.key] ? '' : '-rotate-90'}`}>
                           <Icon name="down" size={14} />
                         </span>
-                        <span className="mt-0.5 text-muted-foreground shrink-0"><Icon name={bucket.icon} size={14} /></span>
+                        <span className="flex h-[1.5em] shrink-0 items-center text-[13px] text-muted-foreground"><Icon name={bucket.icon} size={14} /></span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2">
                             <span className="text-[13px] font-medium truncate">“{bucket.folder}”</span>
