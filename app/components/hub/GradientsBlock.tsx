@@ -28,6 +28,14 @@ export function GradientsBlock() {
           a per-group tile lands wherever a group ends, which is nowhere a
           reader can see now that the headings are gone. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {editing && groups.length > 0 && (
+          <button
+            onClick={() => update(c => { c.gradients![0].gradients.push({ name: 'New gradient', css: 'linear-gradient(90deg, #6366f1 0%, #ec4899 100%)', downloadable: true }) })}
+            className="min-h-[160px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
+          >
+            <Icon name="plus" size={16} />
+          </button>
+        )}
         {groups.flatMap((group, gi) =>
           group.gradients.map((grad, i) => (
             <GradientCard
@@ -38,14 +46,6 @@ export function GradientsBlock() {
               onDelete={() => update(c => { c.gradients![gi].gradients.splice(i, 1) })}
             />
           ))
-        )}
-        {editing && groups.length > 0 && (
-          <button
-            onClick={() => update(c => { c.gradients![0].gradients.push({ name: 'New gradient', css: 'linear-gradient(90deg, #6366f1 0%, #ec4899 100%)', downloadable: true }) })}
-            className="min-h-[160px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
-          >
-            <Icon name="plus" size={16} />
-          </button>
         )}
       </div>
 
