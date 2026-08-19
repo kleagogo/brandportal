@@ -80,6 +80,7 @@ export default async function HubPage({ params }: { params: Promise<{ slug: stri
       isOwner={isOwner}
       demo={Boolean(meta.demo)}
       signedIn={Boolean(user)}
+      email={user?.email}
       studio={Boolean(meta.studio)}
     />
   )

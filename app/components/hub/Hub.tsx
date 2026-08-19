@@ -38,6 +38,10 @@ import {
   SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuAction,
   SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger,
 } from '@/components/ui/sidebar'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 function SubBrandPlaceholder({ label }: { label: string }) {
   return (
@@ -60,6 +64,8 @@ export interface HubAccess {
   isOwner?: boolean
   demo?: boolean
   signedIn?: boolean
+  /** The signed-in account's email, for the sidebar's account menu. */
+  email?: string
   /** The account's own hub, as opposed to a client space. */
   studio?: boolean
   /**
@@ -351,6 +357,15 @@ function WelcomeToast() {
  * identity, the section groups, and the reorder/rename/delete controls that only
  * appear in edit mode.
  */
+/** The logout route is a POST, so it needs a form rather than a link. */
+function signOut() {
+  const form = document.createElement('form')
+  form.method = 'POST'
+  form.action = '/api/auth/logout'
+  document.body.appendChild(form)
+  form.submit()
+}
+
 function HubSidebar({
   dark, onToggleTheme, onShareSection, onSettings, access,
 }: {
@@ -458,6 +473,52 @@ function HubSidebar({
                 <Icon name="gear" size={14} />
                 <span>Hub settings</span>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+          {/* The account, reachable from where people actually are.
+              Account settings and Sign out used to be linked from one place —
+              the dashboard's avatar menu — and the dashboard redirects into
+              your hub when it's the only one you own. So an owner with a single
+              hub could not sign out, change their email, or delete their
+              account without knowing a URL. */}
+          {access.signedIn && (
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <SidebarMenuButton tooltip={access.email || 'Account'}>
+                      <Icon name="person" size={14} />
+                      <span className="truncate">{access.email || 'Account'}</span>
+                    </SidebarMenuButton>
+                  }
+                />
+                <DropdownMenuContent side="top" align="start" className="w-56">
+                  {access.email && (
+                    <>
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel className="truncate font-normal text-muted-foreground">
+                          {access.email}
+                        </DropdownMenuLabel>
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem render={<Link href="/dashboard?all=1" />}>
+                      <Icon name="spaces" size={14} /> Your hubs
+                    </DropdownMenuItem>
+                    <DropdownMenuItem render={<Link href="/settings" />}>
+                      <Icon name="gear" size={14} /> Account settings
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={signOut}>
+                      <Icon name="link" size={14} /> Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </SidebarMenuItem>
           )}
           {!access.canEdit && !access.signedIn && (
