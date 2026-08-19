@@ -27,7 +27,11 @@
     "UPLOAD_MAX_MB": "500",
     // Who sees the admin controls (free-plan grants). Emails aren't secrets,
     // and living here means a deploy can't wipe it.
-    "ADMIN_EMAILS": "hermionegogou@gmail.com,hermione@pitho.io"
+    "ADMIN_EMAILS": "hermionegogou@gmail.com,hermione@pitho.io",
+    // Polar product ids — public identifiers, not secrets. The access token
+    // and webhook secret are real secrets and live in Cloudflare Secrets.
+    "POLAR_PRODUCT_FOUNDING": "8aaf30ad-32f2-4e2e-a6b9-5d4758a17488",
+    "POLAR_PRODUCT_STUDIO": "c20e3bda-cb7b-40b2-a71e-cdab43db3732"
   },
   // Uploaded assets. Binding the bucket means no S3 API token to issue,
   // store, or rotate — see lib/r2.ts for what the binding can and can't do.
