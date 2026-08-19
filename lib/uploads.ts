@@ -25,10 +25,17 @@ export function serverUploadLimit(): number {
   return Math.min(maxUploadBytes(), 24 * 1024 * 1024)
 }
 
-/** Largest file overall. Raise with UPLOAD_MAX_MB (blob storage only). */
+/**
+ * Largest file overall, streamed.
+ *
+ * 100MB because that is what Cloudflare accepts as a request body on the free
+ * plan; the paid plan takes 500MB. Defaulting to the higher number would put
+ * us straight back to advertising a size the platform refuses. Raise it with
+ * UPLOAD_MAX_MB once the account is on a plan that can carry it.
+ */
 export function maxUploadBytes(): number {
   const mb = Number(process.env.UPLOAD_MAX_MB)
-  return (Number.isFinite(mb) && mb > 0 ? mb : 500) * 1024 * 1024
+  return (Number.isFinite(mb) && mb > 0 ? mb : 100) * 1024 * 1024
 }
 
 /** Is client-direct blob upload configured? */
