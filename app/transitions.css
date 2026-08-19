@@ -1684,7 +1684,9 @@ html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1.5px;
+  /* Hairline. The button is small, and a thicker ring reads as a loading bar
+     wrapped round it rather than a light passing over an edge. */
+  padding: 1px;
   background: conic-gradient(
     from var(--t-angle),
     transparent 0deg,

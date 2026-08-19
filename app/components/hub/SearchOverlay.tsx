@@ -206,9 +206,10 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
          genuinely visible through it rather than behind a tinted sheet. Sits
          low, and the height caps so there is always 64px of air underneath. */
       className="top-[46%] flex max-h-[calc(54vh-64px)] flex-col overflow-hidden rounded-2xl! p-0 shadow-2xl supports-backdrop-filter:bg-popover/85 supports-backdrop-filter:backdrop-blur-xl sm:max-w-[560px]"
-      /* No blur, barely a tint — you are searching what is behind this, and
-         the results are worth watching as you type. */
-      overlayClassName="bg-foreground/10 supports-backdrop-filter:backdrop-blur-none"
+      /* Blurred, but lightly: a hub full of tiles reads as noise through clear
+         glass, and the palette has to win. Still far lighter than the default
+         scrim, so what you are searching stays sensed behind it. */
+      overlayClassName="bg-foreground/15 supports-backdrop-filter:backdrop-blur-sm"
     >
       {/* shouldFilter off in Ask: the list there is an answer, not a filter. */}
       <Command shouldFilter={mode === 'search'} className="flex min-h-0 flex-1 flex-col bg-transparent">
