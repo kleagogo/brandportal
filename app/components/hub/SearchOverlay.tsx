@@ -51,7 +51,24 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
   const [thinking, setThinking] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { inputRef.current?.focus() }, [mode])
+  /**
+   * The field takes the caret, not the mode pill.
+   *
+   * The pill is the first focusable thing inside the panel, so the dialog's
+   * focus manager handed it the caret on open and every keystroke went to a
+   * button — the palette looked alive and typed nothing. The frame delay puts
+   * this after that manager runs, and the pill is out of the tab order so it
+   * cannot take it back.
+   */
+  useEffect(() => {
+    const focus = () => {
+      const el = inputRef.current
+        || document.querySelector<HTMLInputElement>('[data-slot=command-input]')
+      el?.focus()
+    }
+    const frame = requestAnimationFrame(focus)
+    return () => cancelAnimationFrame(frame)
+  }, [mode])
 
   const index = useMemo<Hit[]>(() => {
     const hits: Hit[] = []
@@ -160,20 +177,20 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
       /* Glass, and sitting lower than a dialog would: the palette is a thing
          laid over the hub rather than a page of its own, so the panel is
          translucent and the hub stays legible through it. */
-      className="top-[22%] border border-border/60 bg-card/80 shadow-2xl backdrop-blur-2xl supports-backdrop-filter:bg-card/70 sm:max-w-[560px]"
+      className="top-[20%] rounded-2xl! bg-card/85 p-0 shadow-2xl ring-1 ring-foreground/10 supports-backdrop-filter:bg-card/60 supports-backdrop-filter:backdrop-blur-2xl sm:max-w-[560px]"
       /* No blur, barely a tint — you are searching what is behind this, and
          the results are worth watching as you type. */
       overlayClassName="bg-foreground/10 supports-backdrop-filter:backdrop-blur-none"
     >
       {/* shouldFilter off in Ask: the list there is an answer, not a filter. */}
       <Command shouldFilter={mode === 'search'} className="bg-transparent">
-        <div className="flex items-center gap-2 border-b border-border/60 p-2">
+        <div className="flex items-center gap-2 border-b border-border/60 p-2 [&_[data-slot=command-input-wrapper]]:min-w-0 [&_[data-slot=command-input-wrapper]]:flex-1 [&_[data-slot=command-input-wrapper]]:p-0">
           <Button
             size="sm"
             variant="outline"
+            tabIndex={-1}
             className="shrink-0"
             onClick={() => setMode(m => (m === 'search' ? 'ask' : 'search'))}
-            title="Tab to switch"
           >
             <Icon name="sparkles" size={13} />
             {mode === 'search' ? 'Search' : 'Ask AI'}
@@ -184,7 +201,6 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
             onValueChange={setQ}
             onKeyDown={onKeyDown}
             placeholder={mode === 'search' ? 'Search commands…' : 'Ask anything about your brand…'}
-            className="flex-1"
           />
         </div>
 
