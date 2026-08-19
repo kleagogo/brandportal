@@ -9,6 +9,19 @@ import { ColorsSection } from './ColorsSection'
 import { TypographySection } from './TypographySection'
 import { AssetsSection } from './AssetsSection'
 import { GuidelinesSection } from './GuidelinesSection'
+import { DocSection } from './DocSection'
+
+/**
+ * What each prose section is for, shown while it is still empty. A blank page
+ * under a heading tells nobody what to put on it.
+ */
+const DOC_PROMPTS: Record<string, string> = {
+  'brand-story': 'Where the brand came from, who it is for, and what it is trying to change.',
+  'brand-personality': 'The handful of traits the brand acts on — and the ones it deliberately is not.',
+  'visual-identity': 'How the parts fit together: the mark, the palette, the type, and the feel they add up to.',
+  'brand-voice': 'How the brand sounds when it writes. Tone, rhythm, the words it reaches for and avoids.',
+  'photography': 'What a photograph has to do to belong to this brand — subject, light, colour, crop.',
+}
 import { ShareModal } from './ShareModal'
 import { SettingsModal } from './SettingsModal'
 import { HomeSection } from './HomeSection'
@@ -157,6 +170,13 @@ function HubShell({ access }: { access: HubAccess }) {
       case 'colors':     return <ColorsSection label={activeSection.label} />
       case 'typography': return <TypographySection label={activeSection.label} />
       case 'guidelines': return <GuidelinesSection label={activeSection.label} />
+      case 'doc':        return (
+        <DocSection
+          sectionId={activeSection.id}
+          label={activeSection.label}
+          placeholder={DOC_PROMPTS[activeSection.id] || 'Write this part of the brand.'}
+        />
+      )
       case 'subbrand':   return <SubBrandPlaceholder label={activeSection.label} />
       default:           return <AssetsSection sectionId={activeSection.id} />
     }

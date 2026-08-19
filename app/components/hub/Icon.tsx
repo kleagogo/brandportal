@@ -8,6 +8,7 @@ import {
   RiListUnordered, RiMailLine, RiMenuLine, RiMoonLine, RiPencilLine,
   RiSearchLine, RiSendPlaneLine, RiSettings3Line, RiShareLine, RiSparklingLine,
   RiStackLine, RiSunLine, RiUploadLine, RiUserLine, RiVideoLine,
+  RiBookOpenLine, RiFingerprintLine, RiEyeLine, RiCameraLine, RiQuillPenLine,
   type RemixiconComponentType,
 } from '@remixicon/react'
 
@@ -36,6 +37,11 @@ const ICONS: Record<string, RemixiconComponentType> = {
   person: RiUserLine,
   file: RiFileLine,
   link: RiLinkM,
+  book: RiBookOpenLine,
+  fingerprint: RiFingerprintLine,
+  eye: RiEyeLine,
+  camera: RiCameraLine,
+  quill: RiQuillPenLine,
 
   // Controls
   download: RiDownloadLine,

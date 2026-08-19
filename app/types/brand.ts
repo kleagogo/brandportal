@@ -65,8 +65,8 @@ export interface TypographyGroup {
   fonts: FontConfig[]
 }
 
-export type SectionType = 'assets' | 'colors' | 'typography' | 'guidelines' | 'link' | 'tokens' | 'home' | 'gradients' | 'subbrand'
-export type SectionIcon = 'home' | 'logo' | 'colors' | 'type' | 'screenshots' | 'artwork' | 'video' | 'guidelines' | 'link' | 'heart' | 'mail' | 'person' | 'templates' | 'sparkles' | 'file'
+export type SectionType = 'assets' | 'colors' | 'typography' | 'guidelines' | 'link' | 'tokens' | 'home' | 'gradients' | 'subbrand' | 'doc'
+export type SectionIcon = 'home' | 'logo' | 'colors' | 'type' | 'screenshots' | 'artwork' | 'video' | 'guidelines' | 'link' | 'heart' | 'mail' | 'person' | 'templates' | 'sparkles' | 'file' | 'book' | 'fingerprint' | 'eye' | 'camera' | 'chat'
 export type SectionGroup = 'main' | 'assets' | 'subbrands' | 'tools' | 'resources'
 
 export interface SectionConfig {
@@ -194,5 +194,12 @@ export interface BrandConfig {
     }
   }
   agent: AgentConfig
+  /**
+   * Prose for `doc` sections, keyed by section id.
+   *
+   * Keyed, unlike `guidelines`, which is one object shared by the whole hub —
+   * five sections of that type would all render the same words.
+   */
+  docs?: { [sectionId: string]: { body: string } }
   updatedAt?: string
 }

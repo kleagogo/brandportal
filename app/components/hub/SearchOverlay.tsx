@@ -47,9 +47,33 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
   // readable while the next question is being typed.
   const [asked, setAsked] = useState('')
   const [answer, setAnswer] = useState('')
+  // How much of the answer has been written out so far.
+  const [shown, setShown] = useState(0)
   const [sources, setSources] = useState<string[]>([])
   const [thinking, setThinking] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  /**
+   * The answer writes itself out rather than appearing whole.
+   *
+   * The endpoint returns the reply in one piece, so the pacing is here: a few
+   * characters a frame, which reads as the thing thinking rather than as a
+   * page that flickered. Anyone who has asked for less motion gets it whole.
+   */
+  useEffect(() => {
+    if (!answer) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const id = setTimeout(() => setShown(answer.length), 0)
+      return () => clearTimeout(id)
+    }
+    const id = setInterval(() => {
+      setShown(n => {
+        if (n >= answer.length) { clearInterval(id); return n }
+        return Math.min(n + 3, answer.length)
+      })
+    }, 16)
+    return () => clearInterval(id)
+  }, [answer])
 
   /**
    * The field takes the caret, not the mode pill.
@@ -126,6 +150,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
     if (!text || thinking) return
     setAsked(text)
     setAnswer('')
+    setShown(0)
     setSources([])
     setThinking(true)
     try {
@@ -177,7 +202,10 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
       /* Glass, and sitting lower than a dialog would: the palette is a thing
          laid over the hub rather than a page of its own, so the panel is
          translucent and the hub stays legible through it. */
-      className="top-[20%] rounded-2xl! bg-card/85 p-0 shadow-2xl ring-1 ring-foreground/10 supports-backdrop-filter:bg-card/60 supports-backdrop-filter:backdrop-blur-2xl sm:max-w-[560px]"
+      /* Glass: a thin wash of card colour over a heavy blur, so the hub is
+         genuinely visible through it rather than behind a tinted sheet. Sits
+         low, and the height caps so there is always 64px of air underneath. */
+      className="top-[24%] max-h-[calc(100vh-24vh-64px)] rounded-2xl! bg-card/60 p-0 shadow-2xl ring-1 ring-foreground/10 supports-backdrop-filter:bg-card/40 supports-backdrop-filter:backdrop-blur-3xl sm:max-w-[560px]"
       /* No blur, barely a tint — you are searching what is behind this, and
          the results are worth watching as you type. */
       overlayClassName="bg-foreground/10 supports-backdrop-filter:backdrop-blur-none"
@@ -185,14 +213,17 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
       {/* shouldFilter off in Ask: the list there is an answer, not a filter. */}
       <Command shouldFilter={mode === 'search'} className="bg-transparent">
         <div className="flex items-center gap-2 border-b border-border/60 p-2 [&_[data-slot=command-input-wrapper]]:min-w-0 [&_[data-slot=command-input-wrapper]]:flex-1 [&_[data-slot=command-input-wrapper]]:p-0">
+          {/* Held down, not offered: the button is the mode you are in, so it
+              stays looking pressed and carries that mode's own icon. */}
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             tabIndex={-1}
-            className="shrink-0"
+            aria-pressed
+            className="shrink-0 ring-1 ring-border"
             onClick={() => setMode(m => (m === 'search' ? 'ask' : 'search'))}
           >
-            <Icon name="sparkles" size={13} />
+            <Icon name={mode === 'search' ? 'search' : 'sparkles'} size={13} />
             {mode === 'search' ? 'Search' : 'Ask AI'}
           </Button>
           <CommandInput
@@ -204,7 +235,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
           />
         </div>
 
-        <CommandList className="max-h-[46vh]">
+        <CommandList className="max-h-[46vh] [&_[data-slot=command-item]]:data-selected:bg-foreground/[0.07] [&_[data-slot=command-item]]:data-selected:ring-1 [&_[data-slot=command-item]]:data-selected:ring-border">
           {mode === 'search' ? (
             <>
               <CommandEmpty>No matches for “{q.trim()}”</CommandEmpty>
@@ -278,11 +309,25 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
                   </div>
 
                   {thinking ? (
-                    <p className="text-[13px] text-muted-foreground">Reading your brand…</p>
+                    <span className="flex items-center gap-1 px-0.5 py-1" aria-label="Thinking">
+                      {[0, 1, 2].map(i => (
+                        <span
+                          key={i}
+                          className="size-1.5 animate-pulse rounded-full bg-muted-foreground/60"
+                          style={{ animationDelay: `${i * 160}ms`, animationDuration: '900ms' }}
+                        />
+                      ))}
+                    </span>
                   ) : (
                     <>
-                      <p className="text-[14px] leading-relaxed">{answer}</p>
-                      {sources.length > 0 && (
+                      <p className="text-[14px] leading-relaxed">
+                        {answer.slice(0, shown)}
+                        {shown < answer.length && (
+                          // The block the words come out of.
+                          <span className="ml-px inline-block h-[1.05em] w-[0.45em] translate-y-[0.15em] bg-foreground/70" />
+                        )}
+                      </p>
+                      {sources.length > 0 && shown >= answer.length && (
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="text-[12px] text-muted-foreground">Sources</span>
                           {sources.map(s => (
@@ -295,6 +340,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
                           ))}
                         </div>
                       )}
+                      {shown >= answer.length && (
                       <div className="flex flex-col gap-1 border-t pt-3">
                         <p className="px-1 pb-0.5 text-muted-foreground">Related questions</p>
                         {SUGGESTED.filter(s => s !== asked).map(s => (
@@ -309,6 +355,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
                           </button>
                         ))}
                       </div>
+                      )}
                     </>
                   )}
                 </div>

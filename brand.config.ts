@@ -122,6 +122,12 @@ const config: BrandConfig = {
   // Types: 'home' | 'assets' | 'colors' | 'typography' | 'guidelines' | 'subbrand' | 'link'
   // Groups: 'main' | 'assets' | 'subbrands' | 'tools' | 'resources'
   sections: [
+    { id: 'brand-story',       label: 'Brand Story',            type: 'doc', icon: 'book',        group: 'main' },
+    { id: 'brand-personality', label: 'Brand Personality',      type: 'doc', icon: 'fingerprint', group: 'main' },
+    { id: 'visual-identity',   label: 'Visual Identity',        type: 'doc', icon: 'eye',         group: 'main' },
+    { id: 'brand-voice',       label: 'Brand Voice',            type: 'doc', icon: 'chat',        group: 'main' },
+    { id: 'photography',       label: 'Photography Guidelines', type: 'doc', icon: 'camera',      group: 'main' },
+
     { id: 'logo',         label: 'Logo',              type: 'assets',     icon: 'logo',        group: 'assets' },
     { id: 'colors',       label: 'Colors & Gradients', type: 'colors',    icon: 'colors',      group: 'assets' },
     { id: 'typography',   label: 'Typography',        type: 'typography', icon: 'type',        group: 'assets' },
@@ -132,6 +138,26 @@ const config: BrandConfig = {
     { id: 'templates',    label: 'Templates',         type: 'assets',     icon: 'templates',   group: 'resources' },
     { id: 'inspiration',  label: 'Inspiration',       type: 'assets',     icon: 'sparkles',    group: 'resources' },
   ],
+
+  // The written half of the book. Pitho's own, so the demo shows what belongs
+  // in each of these rather than five empty pages.
+  docs: {
+    'brand-story': {
+      body: `Brand files scatter. A logo lives in a Drive folder, the hex sits in a Figma comment, and the one person who knows which version is current is on holiday.\n\nPitho is the address you send instead. One link per client, always current, and nobody has to ask.`,
+    },
+    'brand-personality': {
+      body: `Precise. We name the real thing — a file, a version, a hex — and we do not round it off.\n\nCalm. The work is already stressful. Pitho is the part that is not.\n\nUseful before clever. A feature that saves a message is worth more than one that photographs well.\n\nWhat we are not: playful for its own sake, breathless about AI, or loud.`,
+    },
+    'visual-identity': {
+      body: `The focus mark is four brackets and a dot — the act of bringing something into focus, which is the whole product in one shape.\n\nInk carries almost everything. Signal appears once on a screen, never in body text. Surfaces do the quiet work of separating panels without drawing a line.\n\nOnest sets the wordmark and headlines with the tracking pulled in. Inter does everything else.`,
+    },
+    'brand-voice': {
+      body: `Short, precise, friendly. Write to one person who is busy.\n\nSay what a thing does, not what it enables. "One link per client" beats "a unified brand experience platform".\n\nNo em dashes in the product. A period, a comma, a colon, or a middot for metadata like PNG · V2.\n\nNever claim a feature exists before it does.`,
+    },
+    'photography': {
+      body: `Real work, photographed plainly: a studio wall, a printed proof, a screen mid-edit. No stock handshakes, no laptops on beaches.\n\nNatural light, one source. Let shadows sit where they fall.\n\nColour stays close to Ink and the surfaces. Signal may appear as an object in frame, never as a filter over one.\n\nCrop tight enough that the subject is obvious at a glance.`,
+    },
+  },
 
   // ─── Asset library ───────────────────────────────────────────────────────────
   assets: {
