@@ -31,11 +31,11 @@ export type HubKind = 'client' | 'studio'
 const BRAND_SECTIONS: SectionConfig[] = [
   // The written half of a brand book, before the files: what the brand is,
   // how it behaves, how it sounds. Each is prose under its own id.
-  { id: 'brand-story',       label: 'Brand Story',            type: 'doc', icon: 'book',        group: 'main' },
-  { id: 'brand-personality', label: 'Brand Personality',      type: 'doc', icon: 'fingerprint', group: 'main' },
-  { id: 'visual-identity',   label: 'Visual Identity',        type: 'doc', icon: 'eye',         group: 'main' },
-  { id: 'brand-voice',       label: 'Brand Voice',            type: 'doc', icon: 'chat',        group: 'main' },
-  { id: 'photography',       label: 'Photography Guidelines', type: 'doc', icon: 'camera',      group: 'main' },
+  { id: 'brand-story',       label: 'Brand Story',            type: 'doc', icon: 'book',        group: 'assets' },
+  { id: 'brand-personality', label: 'Brand Personality',      type: 'doc', icon: 'fingerprint', group: 'assets' },
+  { id: 'visual-identity',   label: 'Visual Identity',        type: 'doc', icon: 'eye',         group: 'assets' },
+  { id: 'brand-voice',       label: 'Brand Voice',            type: 'doc', icon: 'chat',        group: 'assets' },
+  { id: 'photography',       label: 'Photography Guidelines', type: 'doc', icon: 'camera',      group: 'assets' },
 
   { id: 'logo',        label: 'Logo',               type: 'assets',     icon: 'logo',        group: 'assets' },
   { id: 'colors',      label: 'Colors & Gradients', type: 'colors',     icon: 'colors',      group: 'assets' },

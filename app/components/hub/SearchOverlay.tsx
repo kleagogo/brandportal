@@ -205,14 +205,14 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
       /* Glass: a thin wash of card colour over a heavy blur, so the hub is
          genuinely visible through it rather than behind a tinted sheet. Sits
          low, and the height caps so there is always 64px of air underneath. */
-      className="top-[34%] max-h-[calc(66vh-64px)] rounded-2xl! bg-card/60 p-0 shadow-2xl ring-1 ring-foreground/10 supports-backdrop-filter:bg-card/40 supports-backdrop-filter:backdrop-blur-3xl sm:max-w-[560px]"
+      className="top-[46%] flex max-h-[calc(54vh-64px)] flex-col overflow-hidden rounded-2xl! bg-card/60 p-0 shadow-2xl ring-1 ring-foreground/10 supports-backdrop-filter:bg-card/40 supports-backdrop-filter:backdrop-blur-3xl sm:max-w-[560px]"
       /* No blur, barely a tint — you are searching what is behind this, and
          the results are worth watching as you type. */
       overlayClassName="bg-foreground/10 supports-backdrop-filter:backdrop-blur-none"
     >
       {/* shouldFilter off in Ask: the list there is an answer, not a filter. */}
-      <Command shouldFilter={mode === 'search'} className="bg-transparent">
-        <div className="flex items-center gap-2 border-b border-border/60 p-2 [&_[data-slot=command-input-wrapper]]:min-w-0 [&_[data-slot=command-input-wrapper]]:flex-1 [&_[data-slot=command-input-wrapper]]:p-0">
+      <Command shouldFilter={mode === 'search'} className="flex min-h-0 flex-1 flex-col bg-transparent">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border/60 p-2 [&_[data-slot=command-input-wrapper]]:min-w-0 [&_[data-slot=command-input-wrapper]]:flex-1 [&_[data-slot=command-input-wrapper]]:p-0">
           {/* Held down, not offered: the button is the mode you are in, so it
               stays looking pressed and carries that mode's own icon. */}
           <Button
@@ -235,7 +235,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
           />
         </div>
 
-        <CommandList className="max-h-[46vh] [&_[data-slot=command-item]]:data-selected:bg-foreground/[0.07] [&_[data-slot=command-item]]:data-selected:ring-1 [&_[data-slot=command-item]]:data-selected:ring-border">
+        <CommandList className="min-h-0 flex-1 [&_[data-slot=command-item]]:data-selected:bg-foreground/[0.07] [&_[data-slot=command-item]]:data-selected:ring-1 [&_[data-slot=command-item]]:data-selected:ring-border">
           {mode === 'search' ? (
             <>
               <CommandEmpty>No matches for “{q.trim()}”</CommandEmpty>
@@ -366,7 +366,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
         </CommandList>
 
         {/* Each half names the other one, so the switch is never hidden. */}
-        <div className="flex items-center justify-between gap-3 border-t border-border/60 px-3 py-2">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 px-3 py-2">
           <span className="flex items-center gap-2 text-muted-foreground">
             <kbd className="rounded-md bg-muted px-1.5 py-0.5 font-medium text-foreground">Tab</kbd>
             {mode === 'search' ? 'Ask AI' : 'Search commands'}
