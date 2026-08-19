@@ -351,14 +351,12 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
               </Empty>
             )}
 
-            {(needle || sort !== 'added' || view === 'list' ? flatten(visible) : groupBySubgroup(visible)).map(({ subgroup, items }) => (
+            {/* One flat grid. The subgroup is still on every asset — it is
+                the folder the file came from, it still searches, and it still
+                shows on the opened card — but a page of headings invented from
+                folder names read as structure nobody had chosen. */}
+            {flatten(visible).map(({ subgroup, items }) => (
               <div key={subgroup || '_'}>
-                {subgroup && (
-                  // Same grey eyebrow the colour and gradient groups use, so a
-                  // subgroup reads as a label rather than competing with the
-                  // section heading above it.
-                  <p className="text-[13px] font-medium text-muted-foreground mb-3">{subgroup}</p>
-                )}
                 <div className={view === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch'}>
                   {items.map(({ asset, i }) => (
                     <AssetCard key={`${asset.file}-${i}`} asset={asset} index={i} sectionId={sectionId} view={view} />
@@ -423,35 +421,13 @@ export function AssetsSection({ sectionId }: { sectionId: string }) {
   )
 }
 
-/** Group assets by their `subgroup`, preserving order and original indices. */
 /**
- * Group for display, over pairs that already carry their real index.
+ * One run of files, over pairs that already carry their real index.
  *
  * A card writes back through `c.assets[sectionId][i]`, so the index has to be
  * the asset's position in the stored list, not its position in whatever the
- * filter left on screen. Taking pairs rather than an array is what stops a
- * search box turning "rename this" into "rename a different one".
- */
-function groupBySubgroup(
-  items: Array<{ asset: AssetFile; i: number }>
-): Array<{ subgroup: string; items: Array<{ asset: AssetFile; i: number }> }> {
-  const order: string[] = []
-  const map = new Map<string, Array<{ asset: AssetFile; i: number }>>()
-  for (const pair of items) {
-    const key = pair.asset.subgroup || ''
-    if (!map.has(key)) { map.set(key, []); order.push(key) }
-    map.get(key)!.push(pair)
-  }
-  return order.map(subgroup => ({ subgroup, items: map.get(subgroup)! }))
-}
-
-/**
- * Subgroups only hold while the list is in its own order.
- *
- * Sorting by name inside "Logo", then again inside "Focus mark", is three
- * sorted lists rather than one, and a search that spans them reads as results
- * scattered under headings. Both cases want one run of files, so the headings
- * fold away and come back when the order does.
+ * filter left on screen — which is what stops a search box turning "rename
+ * this" into "rename a different one".
  */
 function flatten(items: Array<{ asset: AssetFile; i: number }>) {
   return [{ subgroup: '', items }]

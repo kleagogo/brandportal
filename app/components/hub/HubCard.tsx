@@ -67,7 +67,11 @@ export function HubCard({
           {media}
         </div>
       )}
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
+      {/* A floor under the body, so a card with a one-line note is the same
+          height as one with three. Every tile in a section then matches, and
+          the space is there to grow into rather than the card shrinking to
+          whatever it happens to hold. */}
+      <div className="flex min-h-[104px] flex-1 flex-col gap-1.5 p-3">
         {children}
         {(chips || action) && (
           /* items-end, not center: when the chips wrap to several rows the

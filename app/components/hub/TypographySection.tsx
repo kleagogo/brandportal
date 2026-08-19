@@ -140,7 +140,6 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
   const groups = config.typography
     .map((g, gi) => ({
       gi,
-      group: g,
       items: g.fonts
         .map((font, fi) => ({ font, fi }))
         .filter(() => group === 'all' || g.group === group)
@@ -259,11 +258,8 @@ export function TypographySection({ label = 'Typography' }: { label?: string }) 
         <p className="text-[13px] text-muted-foreground">No typefaces match that.</p>
       )}
 
-      {groups.map(({ gi, group: g, items }) => (
-        <div key={gi} className="mb-10">
-          <p className="text-[13px] font-medium text-muted-foreground mb-4">
-            <Editable inline value={g.group} placeholder="Group name" onChange={v => update(c => { c.typography[gi].group = v })} />
-          </p>
+      {groups.map(({ gi, items }) => (
+        <div key={gi} className="mb-6">
 
           {/* Room for a family's whole weight run — at full page width,
               three-up is already wider than the old capped two-up. */}

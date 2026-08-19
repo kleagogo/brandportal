@@ -25,21 +25,7 @@ export function GradientsBlock() {
   return (
     <div className="mt-4">
       {groups.map((group, gi) => (
-        <div key={gi} className="mb-10">
-          <div className="flex items-center gap-2 mb-4 group/head">
-            <p className="text-[13px] font-medium text-muted-foreground">
-              <Editable inline value={group.group} placeholder="Group name" onChange={v => update(c => { c.gradients![gi].group = v })} />
-            </p>
-            {editing && (
-              <button
-                onClick={() => update(c => { c.gradients!.splice(gi, 1) })}
-                className="opacity-0 group-hover/head:opacity-100 text-muted-foreground/60 hover:text-destructive transition-all"
-                title="Delete group"
-              >
-                <Icon name="trash" size={13} />
-              </button>
-            )}
-          </div>
+        <div key={gi} className="mb-6">
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {group.gradients.map((grad, i) => (

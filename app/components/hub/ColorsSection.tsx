@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useHub } from './HubContext'
 import { EmptyState } from './EmptyState'
-import { Editable } from './Editable'
 import { useConfirm } from './useConfirm'
 import { Icon } from './Icon'
 import { GradientsBlock } from './GradientsBlock'
@@ -166,36 +165,11 @@ export function ColorsSection({ label = 'Colors' }: { label?: string }) {
         <p className="text-[13px] text-muted-foreground">No colors match that.</p>
       )}
 
-      {groups.map(({ gi, group: g, items }) => (
-        <div key={gi} className="mb-10">
-          <div className="flex items-center gap-2 mb-4 group/head">
-            <p className="text-[13px] font-medium text-muted-foreground">
-              <Editable
-                inline
-                value={g.group}
-                placeholder="Group name"
-                onChange={v => update(c => { c.colors[gi].group = v })}
-              />
-            </p>
-            {editing && (
-              <button
-                onClick={async () => {
-                  if (g.swatches.length > 0 && !(await confirm({
-                    title: `Delete the "${g.group}" group?`,
-                    description: `Its ${g.swatches.length} colors go with it.`,
-                    confirmLabel: 'Delete group',
-                    destructive: true,
-                  }))) return
-                  update(c => { c.colors.splice(gi, 1) })
-                }}
-                className="opacity-0 group-hover/head:opacity-100 text-muted-foreground/60 hover:text-destructive transition-all"
-                title="Delete group"
-              >
-                <Icon name="trash" size={13} />
-              </button>
-            )}
-          </div>
-
+      {/* No heading rows. Groups are still stored, still what the filter above
+          narrows by — but printed down the page they read as structure nobody
+          chose. */}
+      {groups.map(({ gi, items }) => (
+        <div key={gi} className="mb-6">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {items.map(({ swatch, si }) => {
               const key = `${gi}:${si}`
@@ -263,7 +237,7 @@ export function ColorsSection({ label = 'Colors' }: { label?: string }) {
                   <p className="text-[13px] font-semibold text-foreground truncate">{swatch.name}</p>
                   <p className="text-[12px] font-mono text-muted-foreground">{swatch.hex.toUpperCase()}</p>
                   {swatch.usage && (
-                    <p className="text-[11px] text-muted-foreground/60 leading-tight">{swatch.usage}</p>
+                    <p className="line-clamp-2 text-[11px] text-muted-foreground/60 leading-tight">{swatch.usage}</p>
                   )}
                 </HubCard>
               )
