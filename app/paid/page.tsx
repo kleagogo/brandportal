@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Logo } from '@/app/components/Logo'
 
 export const metadata: Metadata = {
-  title: 'Payment received · Pitho',
+  title: 'Payment received',
   robots: { index: false, follow: false },
 }
 
