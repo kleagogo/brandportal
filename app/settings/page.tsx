@@ -2,9 +2,11 @@ import { PRIVATE_PAGE } from '@/lib/seo'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSessionUser } from '@/lib/auth'
-import { listHubsForUser } from '@/lib/store'
+import { countOwnedHubs, listHubsForUser } from '@/lib/store'
+import { limitsFor } from '@/lib/limits'
+import { isAdmin } from '@/lib/admin'
 import { AccountMenu } from '@/app/dashboard/parts'
-import { ChangeEmail, LeaveHubButton, DeleteAccount, TeamMembers } from './parts'
+import { ChangeEmail, LeaveHubButton, DeleteAccount, TeamMembers, SubscriptionSection, AdminGrant } from './parts'
 import { Logo } from '@/app/components/Logo'
 
 export const dynamic = 'force-dynamic'
@@ -16,6 +18,9 @@ export default async function SettingsPage() {
   if (!user) redirect('/login')
 
   const hubs = await listHubsForUser(user)
+  // What the plan limit actually counts: owned client spaces, not hubs
+  // someone else owns and merely lets you edit.
+  const ownedSpaces = await countOwnedHubs(user.id)
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,12 +41,35 @@ export default async function SettingsPage() {
           <div className="flex items-center justify-between gap-4 mb-1">
             <p className="text-[13px] font-medium text-foreground">Email</p>
             <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-              {user.plan === 'pro' ? 'Pro' : 'Free plan'}
+              {user.plan === 'studio' ? 'Studio' : user.plan === 'pro' ? 'Founding' : 'Free plan'}
             </span>
           </div>
           <p className="text-[14px] text-muted-foreground mb-4">{user.email}</p>
           <ChangeEmail />
         </section>
+
+        {/* Subscription */}
+        <section className="bg-card border border-border rounded-2xl p-6 mb-4">
+          <p className="text-[13px] font-medium text-foreground mb-1">Subscription</p>
+          <p className="text-[12.5px] text-muted-foreground mb-4">
+            {`${ownedSpaces} of ${limitsFor(user).hubs} client spaces used · 15 GB per hub`}
+          </p>
+          <SubscriptionSection
+            plan={user.plan === 'pro' || user.plan === 'studio' ? user.plan : 'free'}
+            status={user.subscriptionStatus}
+            endsAt={user.subscriptionEndsAt}
+          />
+        </section>
+
+        {isAdmin(user) && (
+          <section className="bg-card border border-dashed border-border rounded-2xl p-6 mb-4">
+            <p className="text-[13px] font-medium text-foreground mb-1">Founder tools</p>
+            <p className="text-[12.5px] text-muted-foreground mb-4">
+              Put any account on a plan without a checkout. Only you can see this.
+            </p>
+            <AdminGrant />
+          </section>
+        )}
 
         {/* Team */}
         <section className="bg-card border border-border rounded-2xl p-6 mb-4">

@@ -246,3 +246,159 @@ export function TeamMembers() {
     </>
   )
 }
+
+/**
+ * The subscription, from the customer's side: what you're on, what it
+ * includes, the way up, and the way out. Checkout and management are Polar's
+ * hosted pages — these buttons only mint the way in.
+ */
+export function SubscriptionSection({ plan, status, endsAt }: {
+  plan: 'free' | 'pro' | 'studio'
+  status?: string
+  endsAt?: string
+}) {
+  const [busy, setBusy] = useState('')
+  const [error, setError] = useState('')
+
+  async function go(path: string, body?: Record<string, string>) {
+    setBusy(path + (body?.plan || ''))
+    setError('')
+    try {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'That didn’t work')
+      window.location.href = data.url
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'That didn’t work')
+      setBusy('')
+    }
+  }
+
+  const label = plan === 'studio' ? 'Studio · $49/month' : plan === 'pro' ? 'Founding · $19/month' : 'Free'
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3 mb-1">
+        <p className="text-[14px] font-medium text-foreground">{label}</p>
+        {status === 'granted' && (
+          <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">On the house</span>
+        )}
+      </div>
+      {/* Only states that ask something of the person. A finished
+          subscription explains nothing — the plan already says Free. */}
+      {plan !== 'free' && status === 'past_due' && (
+        <p className="text-[12.5px] text-muted-foreground mb-2">
+          Your last payment didn’t go through — update your card under Manage subscription.
+        </p>
+      )}
+      {plan !== 'free' && status === 'canceling' && endsAt && (
+        <p className="text-[12.5px] text-muted-foreground mb-2">
+          Your plan ends {new Date(endsAt).toLocaleDateString()}. Changed your mind? Resume it under Manage subscription.
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-2 mt-3">
+        {plan === 'free' && (
+          <>
+            <button
+              onClick={() => go('/api/billing/checkout', { plan: 'pro' })}
+              disabled={Boolean(busy)}
+              className="text-[13px] font-semibold bg-primary text-primary-foreground px-3.5 py-2 rounded-xl hover:opacity-85 transition-opacity disabled:opacity-50"
+            >
+              {busy.endsWith('pro') ? 'Opening…' : 'Upgrade — $19/month'}
+            </button>
+            <button
+              onClick={() => go('/api/billing/checkout', { plan: 'studio' })}
+              disabled={Boolean(busy)}
+              className="text-[13px] font-semibold border-[1.5px] border-border px-3.5 py-2 rounded-xl hover:border-ring transition-colors disabled:opacity-50"
+            >
+              {busy.endsWith('studio') ? 'Opening…' : 'Studio — $49/month'}
+            </button>
+          </>
+        )}
+        {/* Paying customers change plan inside the portal — a fresh checkout
+            for someone with a live subscription dead-ends on Polar's page
+            after they've typed a card number. */}
+        {plan !== 'free' && status !== 'granted' && (
+          <button
+            onClick={() => go('/api/billing/portal')}
+            disabled={Boolean(busy)}
+            className="text-[13px] font-semibold border-[1.5px] border-border px-3.5 py-2 rounded-xl hover:border-ring transition-colors disabled:opacity-50"
+          >
+            {busy === '/api/billing/portal' ? 'Opening…' : 'Manage subscription'}
+          </button>
+        )}
+      </div>
+      {plan === 'pro' && status !== 'granted' && (
+        <p className="text-[12px] text-muted-foreground/70 mt-2">
+          Studio ($49/month) is a switch inside Manage subscription.
+        </p>
+      )}
+      {error && <p className="text-[12.5px] text-destructive mt-2">{error}</p>}
+    </>
+  )
+}
+
+/** Founder-only: put an account on a plan by hand. Customers never see it. */
+export function AdminGrant() {
+  const [email, setEmail] = useState('')
+  const [plan, setPlan] = useState<'pro' | 'studio' | 'free'>('pro')
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState('')
+
+  async function grant(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim() || busy) return
+    setBusy(true)
+    setNote('')
+    try {
+      const res = await fetch('/api/admin/grant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), plan }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Couldn’t set that')
+      setNote(`${data.email} is now on ${data.plan === 'free' ? 'Free' : data.plan === 'pro' ? 'Founding' : 'Studio'}.`)
+      setEmail('')
+    } catch (err) {
+      setNote(err instanceof Error ? err.message : 'Couldn’t set that')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={grant} className="flex flex-wrap gap-2 items-center">
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="their@email.com"
+        className="flex-1 min-w-[180px] text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
+      />
+      <select
+        value={plan}
+        onChange={e => setPlan(e.target.value as 'pro' | 'studio' | 'free')}
+        className="text-[13px] px-2 py-2 rounded-xl border-[1.5px] border-border bg-card outline-none"
+        aria-label="Plan to grant"
+      >
+        <option value="pro">Founding (free of charge)</option>
+        <option value="studio">Studio (free of charge)</option>
+        <option value="free">Back to Free</option>
+      </select>
+      <button
+        type="submit"
+        disabled={busy}
+        className="text-[13px] font-semibold border-[1.5px] border-foreground px-3.5 py-2 rounded-xl hover:bg-foreground hover:text-background transition-colors disabled:opacity-50"
+      >
+        {busy ? 'Setting…' : 'Set plan'}
+      </button>
+      {note && <p className="w-full text-[12.5px] text-muted-foreground">{note}</p>}
+    </form>
+  )
+}

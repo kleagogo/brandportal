@@ -24,7 +24,10 @@
     // 500MB is what Cloudflare accepts as a request body on the Paid plan.
     // Deliverable brand film sits under it; a ProRes master never will, and
     // belongs somewhere built for masters rather than in a brand hub.
-    "UPLOAD_MAX_MB": "500"
+    "UPLOAD_MAX_MB": "500",
+    // Who sees the admin controls (free-plan grants). Emails aren't secrets,
+    // and living here means a deploy can't wipe it.
+    "ADMIN_EMAILS": "hermionegogou@gmail.com,hermione@pitho.io"
   },
   // Uploaded assets. Binding the bucket means no S3 API token to issue,
   // store, or rotate — see lib/r2.ts for what the binding can and can't do.

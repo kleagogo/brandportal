@@ -41,7 +41,7 @@ export async function POST(
   }
   const limits = limitsFor(user!)
   if (meta.editors.length + pending.length >= limits.editorsPerHub) {
-    return NextResponse.json({ error: `Your plan allows ${limits.editorsPerHub} editors per hub. Pro raises the limit.` }, { status: 403 })
+    return NextResponse.json({ error: `Your plan allows ${limits.editorsPerHub} editors per hub. Studio raises the limit.` }, { status: 403 })
   }
 
   const hub = await getHub(slug)

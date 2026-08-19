@@ -17,11 +17,9 @@ export interface User {
   id: string
   email: string
   createdAt: string
-  /** Billing plan; absent means 'free'. Set by the Stripe webhook. */
-  plan?: 'free' | 'pro'
-  /** Stripe customer, so one person stays one record across upgrades. */
-  stripeCustomerId?: string
-  /** Stripe's own word for the subscription: active, past_due, canceled… */
+  /** Billing plan; absent means 'free'. Set by the billing webhook. */
+  plan?: 'free' | 'pro' | 'studio'
+  /** The provider's own word for the subscription: active, past_due, canceled… */
   subscriptionStatus?: string
   /** When the current period ends — what "cancels on" means to a person. */
   subscriptionEndsAt?: string
@@ -97,7 +95,7 @@ export async function ensureUser(email: string): Promise<User> {
 /** Record what Stripe told us about this account's subscription. */
 export async function setBilling(
   id: string,
-  patch: Partial<Pick<User, 'plan' | 'stripeCustomerId' | 'subscriptionStatus' | 'subscriptionEndsAt'>>
+  patch: Partial<Pick<User, 'plan' | 'subscriptionStatus' | 'subscriptionEndsAt'>>
 ): Promise<User | null> {
   const users = await readUsers()
   const user = users[id]
@@ -105,10 +103,4 @@ export async function setBilling(
   users[id] = { ...user, ...patch }
   await writeUsers(users)
   return users[id]
-}
-
-/** Find an account by its Stripe customer — the id webhooks arrive with. */
-export async function getUserByCustomerId(customerId: string): Promise<User | null> {
-  const users = await readUsers()
-  return Object.values(users).find(u => u.stripeCustomerId === customerId) || null
 }

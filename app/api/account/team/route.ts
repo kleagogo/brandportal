@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   const limit = limitsFor(user).editorsPerHub
   if (!members.includes(email) && members.length >= limit) {
     return NextResponse.json({
-      error: `Your plan allows ${limit} teammates. Pro raises the limit.`,
+      error: `Your plan allows ${limit} teammates. Studio raises the limit.`,
     }, { status: 403 })
   }
 
