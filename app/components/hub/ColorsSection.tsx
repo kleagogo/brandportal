@@ -168,10 +168,13 @@ export function ColorsSection({ label = 'Colors' }: { label?: string }) {
       {/* No heading rows. Groups are still stored, still what the filter above
           narrows by — but printed down the page they read as structure nobody
           chose. */}
-      {groups.map(({ gi, items }) => (
-        <div key={gi} className="mb-6">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {items.map(({ swatch, si }) => {
+      {/* One grid across every group. Each group used to draw its own, which
+          was invisible while the headings were there to explain it — and once
+          they went, a dashed add tile turned up wherever a group happened to
+          end, mid-row and attached to nothing. */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {groups.flatMap(({ gi, items }) =>
+          items.map(({ swatch, si }) => {
               const key = `${gi}:${si}`
               return (
                 <HubCard
@@ -241,25 +244,27 @@ export function ColorsSection({ label = 'Colors' }: { label?: string }) {
                   )}
                 </HubCard>
               )
-            })}
+            })
+        )}
 
-            {mayEdit && (
-              <button
-                onClick={() => {
-                  const si = config.colors[gi].swatches.length
-                  setEditingSection(active)
-                  update(c => { c.colors[gi].swatches.push({ name: 'New color', hex: '#888888', usage: '' }) })
-                  setDetail({ gi, si })
-                }}
-                className="min-h-[132px] rounded-2xl border-2 border-dashed border-border text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
-                title="Add color"
-              >
-                <Icon name="plus" size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
+        {/* One tile, after everything, adding to the first group — the only
+            group a viewer can see, now that the headings are gone. */}
+        {mayEdit && groups.length > 0 && (
+          <button
+            onClick={() => {
+              const gi = groups[0].gi
+              const si = config.colors[gi].swatches.length
+              setEditingSection(active)
+              update(c => { c.colors[gi].swatches.push({ name: 'New color', hex: '#888888', usage: '' }) })
+              setDetail({ gi, si })
+            }}
+            className="min-h-[132px] rounded-2xl border-2 border-dashed border-border text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
+            title="Add color"
+          >
+            <Icon name="plus" size={16} />
+          </button>
+        )}
+      </div>
 
       {/* One colour, with room. This replaced a popover pinned inside the card,
           which `Card`'s own overflow clipped — so the usage field and Delete

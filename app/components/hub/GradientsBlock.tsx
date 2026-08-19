@@ -24,30 +24,30 @@ export function GradientsBlock() {
 
   return (
     <div className="mt-4">
-      {groups.map((group, gi) => (
-        <div key={gi} className="mb-6">
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {group.gradients.map((grad, i) => (
-              <GradientCard
-                key={i}
-                grad={grad}
-                onName={v => update(c => { c.gradients![gi].gradients[i].name = v })}
-                onCss={v => update(c => { c.gradients![gi].gradients[i].css = v })}
-                onDelete={() => update(c => { c.gradients![gi].gradients.splice(i, 1) })}
-              />
-            ))}
-            {editing && (
-              <button
-                onClick={() => update(c => { c.gradients![gi].gradients.push({ name: 'New gradient', css: 'linear-gradient(90deg, #6366f1 0%, #ec4899 100%)', downloadable: true }) })}
-                className="min-h-[160px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
-              >
-                <Icon name="plus" size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
+      {/* One grid and one add tile, for the same reason as the swatches above:
+          a per-group tile lands wherever a group ends, which is nowhere a
+          reader can see now that the headings are gone. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {groups.flatMap((group, gi) =>
+          group.gradients.map((grad, i) => (
+            <GradientCard
+              key={`${gi}:${i}`}
+              grad={grad}
+              onName={v => update(c => { c.gradients![gi].gradients[i].name = v })}
+              onCss={v => update(c => { c.gradients![gi].gradients[i].css = v })}
+              onDelete={() => update(c => { c.gradients![gi].gradients.splice(i, 1) })}
+            />
+          ))
+        )}
+        {editing && groups.length > 0 && (
+          <button
+            onClick={() => update(c => { c.gradients![0].gradients.push({ name: 'New gradient', css: 'linear-gradient(90deg, #6366f1 0%, #ec4899 100%)', downloadable: true }) })}
+            className="min-h-[160px] border-2 border-dashed border-border rounded-xl text-muted-foreground/60 hover:border-ring hover:text-foreground transition-colors flex items-center justify-center"
+          >
+            <Icon name="plus" size={16} />
+          </button>
+        )}
+      </div>
 
       {editing && (
         <button
