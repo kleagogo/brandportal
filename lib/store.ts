@@ -14,6 +14,7 @@ import { getStorage, storageConfigured } from './db'
 import { assetKey } from './uploads'
 import { pinCookieName, pinCookieValue } from './auth'
 import { deletePortalStats } from './analytics'
+import { migrateHub } from './migrate-hub'
 
 /** Slugs that can never be hub addresses — they collide with app routes. */
 const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'signup', 'settings', 'dashboard', 'pricing', 'brand', 's', '_next'])
@@ -22,7 +23,9 @@ const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'sign
 
 export async function getHub(slug: string): Promise<BrandConfig | null> {
   const hub = storageConfigured() ? await getStorage().getJSON<BrandConfig>('hubs', slug) : null
-  if (hub) return hub
+  // Older hubs get the sections added since they were created. In memory only:
+  // the next save persists it, so reading a hub never writes to it.
+  if (hub) return migrateHub(hub)
   // The shipped hubs exist even before their records are first written — and
   // before there's a database at all, so the demo works on a fresh deployment.
   return getDemoHub(slug)

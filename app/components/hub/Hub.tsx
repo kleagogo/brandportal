@@ -34,7 +34,7 @@ import { customFontFaceCss } from './font-files'
 import { Button } from '@/components/ui/button'
 import { IconSwap, TextSwap } from '../transitions'
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuAction,
   SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger,
 } from '@/components/ui/sidebar'
@@ -360,12 +360,31 @@ function HubSidebar({
   onSettings: () => void
   access: HubAccess
 }) {
-  const { config, active, setActive } = useHub()
+  const { config, active, setActive, update, setEditingSection } = useHub()
 
   // One vocabulary everywhere: the account's own hub is the main account, the
   // rest are client spaces. The demo said one thing and a real account another
   // for the same idea.
   const kindLabel = access.demo ? 'Demo hub' : access.studio ? 'Main account' : 'Client space'
+
+  /**
+   * A new section, named where you'll be looking.
+   *
+   * It lands selected and with its label in edit, because "New section" is
+   * never what anyone wanted it called — the rename is the second half of the
+   * same gesture, not a thing to go hunting for afterwards.
+   */
+  function addSection(group: 'assets' | 'resources') {
+    const taken = new Set(config.sections.map(s => s.id))
+    let id = 'section'
+    for (let n = 2; taken.has(id); n++) id = `section-${n}`
+    update(c => {
+      c.sections.push({ id, label: 'New section', type: 'assets', icon: 'file', group })
+      if (!c.assets[id]) c.assets[id] = []
+    })
+    setActive(id)
+    setEditingSection(id)
+  }
 
   const GROUPS = [
     ['main', ''],
@@ -386,10 +405,25 @@ function HubSidebar({
           const items = config.sections
             .map((section, i) => ({ section, i }))
             .filter(({ section }) => (section.group || 'assets') === groupKey)
-          if (items.length === 0) return null
+          // Sub-brands and tools are wired to their own things; a bare section
+          // dropped into them would have nothing to do.
+          const canAdd = access.canEdit && (groupKey === 'assets' || groupKey === 'resources')
+          if (items.length === 0 && !canAdd) return null
           return (
             <SidebarGroup key={groupKey}>
               {groupLabel && <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>}
+              {/* Adding a section had no door of its own — the only way to get
+                  one was to drop a folder the importer couldn't place. */}
+              {canAdd && groupLabel && (
+                <SidebarGroupAction
+                  title={`Add a section to ${groupLabel}`}
+                  onClick={() => addSection(groupKey)}
+                  className="[&>svg]:size-3"
+                >
+                  <Icon name="plus" size={12} />
+                  <span className="sr-only">Add a section to {groupLabel}</span>
+                </SidebarGroupAction>
+              )}
               <SidebarGroupContent>
                 <SidebarMenu>
                   {items.map(({ section, i }) => (

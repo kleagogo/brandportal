@@ -201,6 +201,13 @@ export interface BrandConfig {
   /** Bytes this hub may store, when it differs from the plan default. */
   quotaBytes?: number
   /**
+   * Which layout migrations this hub has already been through.
+   *
+   * Recorded so a section added by one of them and then deleted by its owner
+   * stays deleted, instead of reappearing on the next read.
+   */
+  schemaVersion?: number
+  /**
    * Prose for `doc` sections, keyed by section id.
    *
    * Keyed, unlike `guidelines`, which is one object shared by the whole hub —
