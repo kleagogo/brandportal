@@ -205,7 +205,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
       /* Glass: a thin wash of card colour over a heavy blur, so the hub is
          genuinely visible through it rather than behind a tinted sheet. Sits
          low, and the height caps so there is always 64px of air underneath. */
-      className="top-[46%] flex max-h-[calc(54vh-64px)] flex-col overflow-hidden rounded-2xl! bg-card/60 p-0 shadow-2xl ring-1 ring-foreground/10 supports-backdrop-filter:bg-card/40 supports-backdrop-filter:backdrop-blur-3xl sm:max-w-[560px]"
+      className="top-[46%] flex max-h-[calc(54vh-64px)] flex-col overflow-hidden rounded-2xl! p-0 shadow-2xl supports-backdrop-filter:bg-popover/85 supports-backdrop-filter:backdrop-blur-xl sm:max-w-[560px]"
       /* No blur, barely a tint — you are searching what is behind this, and
          the results are worth watching as you type. */
       overlayClassName="bg-foreground/10 supports-backdrop-filter:backdrop-blur-none"
@@ -220,7 +220,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
             variant="secondary"
             tabIndex={-1}
             aria-pressed
-            className="shrink-0 ring-1 ring-border"
+            className="shrink-0"
             onClick={() => setMode(m => (m === 'search' ? 'ask' : 'search'))}
           >
             <Icon name={mode === 'search' ? 'search' : 'sparkles'} size={13} />
@@ -235,7 +235,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
           />
         </div>
 
-        <CommandList className="min-h-0 flex-1 [&_[data-slot=command-item]]:data-selected:bg-foreground/[0.07] [&_[data-slot=command-item]]:data-selected:ring-1 [&_[data-slot=command-item]]:data-selected:ring-border">
+        <CommandList className="min-h-0 flex-1">
           {mode === 'search' ? (
             <>
               <CommandEmpty>No matches for “{q.trim()}”</CommandEmpty>
@@ -368,12 +368,12 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
         {/* Each half names the other one, so the switch is never hidden. */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 px-3 py-2">
           <span className="flex items-center gap-2 text-muted-foreground">
-            <kbd className="rounded-md bg-muted px-1.5 py-0.5 font-medium text-foreground">Tab</kbd>
+            <kbd className="rounded-md bg-foreground/10 px-1.5 py-0.5 font-medium text-foreground">Tab</kbd>
             {mode === 'search' ? 'Ask AI' : 'Search commands'}
           </span>
           <span className="flex items-center gap-2 text-muted-foreground">
             {mode === 'search' ? 'Run' : 'Ask'}
-            <kbd className="rounded-md bg-muted px-1.5 py-0.5 font-medium text-foreground">↵</kbd>
+            <kbd className="rounded-md bg-foreground/10 px-1.5 py-0.5 font-medium text-foreground">↵</kbd>
           </span>
         </div>
       </Command>

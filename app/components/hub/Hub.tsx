@@ -111,6 +111,18 @@ function HubShell({ access }: { access: HubAccess }) {
     })
   }
 
+  /**
+   * The theme class also goes on <html>, not only on the wrapper below.
+   *
+   * Every dialog portals to document.body, which sits outside that wrapper —
+   * so in dark mode the hub went dark and each modal opened white, palette
+   * included. The class has to be somewhere both trees can see.
+   */
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    return () => document.documentElement.classList.remove('dark')
+  }, [dark])
+
   // ⌘K or ⌘Space opens search from anywhere in the hub. (macOS usually keeps
   // ⌘Space for Spotlight; when the browser does receive it, it works here too.)
   useEffect(() => {
