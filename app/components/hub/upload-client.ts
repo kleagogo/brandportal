@@ -11,6 +11,8 @@ import { upload } from '@vercel/blob/client'
  */
 
 export interface UploadResult {
+  /** Bytes stored, counted against the hub's allowance. */
+  bytes?: number
   url: string
   format: string
   size: number

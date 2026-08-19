@@ -3,6 +3,7 @@ import { canEditHub, getHub, getMeta } from '@/lib/store'
 import { getSessionUser } from '@/lib/auth'
 import { ALLOWED_EXT, MIME, extensionOf, humanSize, maxUploadBytes, storageName } from '@/lib/uploads'
 import { r2PutStream, r2StreamUploads } from '@/lib/r2'
+import { quotaState } from '@/lib/quota'
 
 /**
  * Upload without holding the file.
@@ -54,6 +55,13 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 })
   }
 
+  const quota = quotaState(hub)
+  if (declared > quota.remaining) {
+    return NextResponse.json({
+      error: `${humanSize(declared)} won’t fit — this hub has ${humanSize(quota.remaining)} left of ${humanSize(quota.quota)}.`,
+    }, { status: 507 })
+  }
+
   const filename = storageName(originalName)
   try {
     await r2PutStream(filename, req.body, MIME[ext])
@@ -66,5 +74,6 @@ export async function PUT(req: NextRequest) {
     originalName,
     format: ext.toUpperCase(),
     size: declared,
+    bytes: declared,
   })
 }

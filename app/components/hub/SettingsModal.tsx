@@ -14,6 +14,9 @@ import {
   Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator,
 } from '@/components/ui/field'
 import { useConfirm } from './useConfirm'
+import { Progress } from '@/components/ui/progress'
+import { quotaState } from '@/lib/quota'
+import { humanSize } from './upload-client'
 
 /**
  * Owner-only hub settings.
@@ -38,6 +41,7 @@ export function SettingsModal({ onClose, studio = false }: { onClose: () => void
   const [clientSaved, setClientSaved] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const storage = quotaState(config)
 
   useEffect(() => {
     fetch(`/api/hubs/${encodeURIComponent(config.slug)}/settings`)
@@ -119,6 +123,17 @@ export function SettingsModal({ onClose, studio = false }: { onClose: () => void
         </DialogHeader>
 
         <FieldGroup className="gap-6">
+          {/* Somewhere to look before the upload that doesn't fit, rather than
+              after it. */}
+          <Field>
+            <FieldLabel>Storage</FieldLabel>
+            <Progress value={storage.percent} />
+            <FieldDescription>
+              {humanSize(storage.used)} of {humanSize(storage.quota)} used
+              {storage.percent >= 80 ? ' — running low. Ask us for more room any time.' : ''}
+            </FieldDescription>
+          </Field>
+
           <Field>
             <FieldLabel htmlFor="hub-logo">Logo</FieldLabel>
             <div className="flex items-center gap-3">

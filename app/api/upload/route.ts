@@ -5,6 +5,7 @@ import { getStorage } from '@/lib/db'
 import { describeAsset } from '@/lib/vision'
 import { ALLOWED_EXT, blobEnabled, extensionOf, humanSize, serverUploadLimit, storageName } from '@/lib/uploads'
 import { r2DirectUploads } from '@/lib/r2'
+import { quotaState } from '@/lib/quota'
 
 /**
  * Direct upload — the file is posted here and stored by the driver.
@@ -38,6 +39,15 @@ export async function POST(req: NextRequest) {
     }, { status: 413 })
   }
 
+  // Refused before the bytes are stored, and named in the units the hub shows,
+  // so "why did this fail" and "what do I delete" have the same answer.
+  const quota = quotaState(hub)
+  if (file.size > quota.remaining) {
+    return NextResponse.json({
+      error: `${humanSize(file.size)} won’t fit — this hub has ${humanSize(quota.remaining)} left of ${humanSize(quota.quota)}.`,
+    }, { status: 507 })
+  }
+
   const ext = extensionOf(file.name)
   if (!ALLOWED_EXT.has(ext)) {
     return NextResponse.json({ error: `File type .${ext || '?'} is not supported` }, { status: 415 })
@@ -55,6 +65,7 @@ export async function POST(req: NextRequest) {
     originalName: file.name,
     format: ext.toUpperCase(),
     size: file.size,
+    bytes: file.size,
     ...(suggestion ? { suggestion } : {}),
   })
 }

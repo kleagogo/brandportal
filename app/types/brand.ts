@@ -90,6 +90,8 @@ export interface AssetVersion {
   label: string
   file: string
   format: string
+  /** Bytes stored, for the hub's usage total. */
+  bytes?: number
   /** ISO timestamp. */
   uploadedAt: string
   /** Who uploaded it (email), when known. */
@@ -101,6 +103,8 @@ export interface AssetFile {
   name: string
   file: string
   format: string[]
+  /** Bytes stored. Absent on files uploaded before usage was tracked. */
+  bytes?: number
   usage?: string
   tags?: string[]
   /** Version history, oldest first. The live `file` is the approved one. */
@@ -194,6 +198,8 @@ export interface BrandConfig {
     }
   }
   agent: AgentConfig
+  /** Bytes this hub may store, when it differs from the plan default. */
+  quotaBytes?: number
   /**
    * Prose for `doc` sections, keyed by section id.
    *

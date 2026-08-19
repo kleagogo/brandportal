@@ -210,6 +210,7 @@ export function useAssetImport({
             name: data.suggestion?.name || item.file.name.replace(/\.[^.]*$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()),
             file: data.url,
             format: [data.format],
+            bytes: data.bytes ?? item.file.size,
             usage: data.suggestion?.usage || '',
             tags: data.suggestion?.tags || [],
             ...(item.path ? { subgroup: item.path } : {}),

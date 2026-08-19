@@ -500,7 +500,7 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
           list.push({ label: 'v1', file: a.file, format: a.format[0] || 'FILE', uploadedAt: new Date(0).toISOString() })
         }
         const label = `v${list.length + 1}`
-        list.push({ label, file: data.url, format: data.format, uploadedAt: new Date().toISOString() })
+        list.push({ label, file: data.url, format: data.format, bytes: data.bytes ?? file.size, uploadedAt: new Date().toISOString() })
         // Labels keep counting up; only the window slides.
         a.versions = list.slice(-KEEP_VERSIONS)
         a.approvedVersion = label
