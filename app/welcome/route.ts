@@ -48,9 +48,9 @@ export async function GET(req: NextRequest) {
   const user = claim ? await getUserById(claim.userId) : null
   if (!claim || !user) {
     // The payment is real but we can't tie it to an account yet. The webhook
-    // still creates it and mails them, so send them to a page that opens with
-    // "payment received" rather than a blank sign-up form.
-    return NextResponse.redirect(new URL('/login?paid=1', origin))
+    // still creates it and mails them the way in, so say exactly that instead
+    // of handing them a sign-up form for an account they've already bought.
+    return NextResponse.redirect(new URL('/paid', origin))
   }
 
   await redeemClaim(id, claim)
