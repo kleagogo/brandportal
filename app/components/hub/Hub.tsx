@@ -273,9 +273,7 @@ function HubShell({ access }: { access: HubAccess }) {
         <ShareModal
           section={shareSection || undefined}
           onClose={() => setShareSection(null)}
-          isOwner={Boolean(access.isOwner)}
           canEdit={Boolean(access.canEdit)}
-          demo={Boolean(access.demo)}
         />
       )}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} studio={Boolean(access.studio)} />}

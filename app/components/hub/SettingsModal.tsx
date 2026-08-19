@@ -14,6 +14,7 @@ import {
   Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator,
 } from '@/components/ui/field'
 import { useConfirm } from './useConfirm'
+import { AccessSection } from './AccessSection'
 import { Progress } from '@/components/ui/progress'
 import { quotaState } from '@/lib/quota'
 import { humanSize } from './upload-client'
@@ -208,6 +209,17 @@ export function SettingsModal({ onClose, studio = false }: { onClose: () => void
               </div>
               <FieldDescription>Shown on your client-spaces dashboard.</FieldDescription>
             </Field>
+          )}
+
+          {/* Who gets in, and who can change things. These were inside the
+              Share dialog, where nobody looking for a password would think to
+              press. */}
+          {!sandbox && (
+            <>
+              <FieldSeparator />
+              <AccessSection onError={setError} />
+              <FieldSeparator />
+            </>
           )}
 
           <form onSubmit={rename}>
