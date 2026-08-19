@@ -205,7 +205,7 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
       /* Glass: a thin wash of card colour over a heavy blur, so the hub is
          genuinely visible through it rather than behind a tinted sheet. Sits
          low, and the height caps so there is always 64px of air underneath. */
-      className="top-[24%] max-h-[calc(100vh-24vh-64px)] rounded-2xl! bg-card/60 p-0 shadow-2xl ring-1 ring-foreground/10 supports-backdrop-filter:bg-card/40 supports-backdrop-filter:backdrop-blur-3xl sm:max-w-[560px]"
+      className="top-[34%] max-h-[calc(66vh-64px)] rounded-2xl! bg-card/60 p-0 shadow-2xl ring-1 ring-foreground/10 supports-backdrop-filter:bg-card/40 supports-backdrop-filter:backdrop-blur-3xl sm:max-w-[560px]"
       /* No blur, barely a tint — you are searching what is behind this, and
          the results are worth watching as you type. */
       overlayClassName="bg-foreground/10 supports-backdrop-filter:backdrop-blur-none"
