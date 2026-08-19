@@ -18,7 +18,11 @@
   // on the next push, which is how sign-in email broke on 2026-08-18.
   // Secrets are stored separately by Cloudflare and survive a deploy.
   "vars": {
-    "EMAIL_FROM": "Pitho <hello@pitho.io>"
+    "EMAIL_FROM": "Pitho <hello@pitho.io>",
+    // 500MB is what Cloudflare accepts as a request body on the Paid plan.
+    // Deliverable brand film sits under it; a ProRes master never will, and
+    // belongs somewhere built for masters rather than in a brand hub.
+    "UPLOAD_MAX_MB": "500"
   },
   // Uploaded assets. Binding the bucket means no S3 API token to issue,
   // store, or rotate — see lib/r2.ts for what the binding can and can't do.
