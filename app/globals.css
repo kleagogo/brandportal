@@ -173,3 +173,72 @@
     @apply font-sans;
   }
 }
+/* ─── Payment celebration ──────────────────────────────────────────────────
+   The success check on /paid: a green disc that pops in, with the check
+   drawing itself while the green is still arriving so it reads as one
+   gesture rather than two steps. Confetti tokens are read live by the JS. */
+:root {
+  --confetti-count: 90;
+  --confetti-gravity: 1300;
+  --confetti-size: 8px;
+  --confetti-sway: 16;
+  --confetti-bounce: 0.3;
+  --confetti-hold: 1800ms;
+  --confetti-fade: 700ms;
+  --check-green: #35ba00;
+}
+
+.pitho-check {
+  position: relative;
+  width: 44px;
+  height: 44px;
+}
+.pitho-check-disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--check-green);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 350ms cubic-bezier(0.34, 1.35, 0.64, 1),
+    transform 350ms cubic-bezier(0.34, 1.96, 0.94, 1);
+}
+.pitho-check[data-state='done'] .pitho-check-disc {
+  opacity: 1;
+  transform: scale(1);
+}
+.pitho-check svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pitho-check-mark {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: var(--mark-len, 20);
+  stroke-dashoffset: var(--mark-len, 20);
+  /* Starts before the disc has finished arriving — one gesture, not two. */
+  transition: stroke-dashoffset 600ms cubic-bezier(0.22, 1, 0.36, 1) 230ms;
+}
+.pitho-check[data-state='done'] .pitho-check-mark {
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pitho-check-disc,
+  .pitho-check-mark {
+    transition: none !important;
+  }
+  .pitho-check .pitho-check-disc {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .pitho-check .pitho-check-mark {
+    stroke-dashoffset: 0;
+  }
+}
