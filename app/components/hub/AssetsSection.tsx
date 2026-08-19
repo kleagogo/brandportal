@@ -26,6 +26,9 @@ import {
   Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 } from '@/components/ui/empty'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { HubCard } from './HubCard'
 import { SectionHeader } from './SectionHeader'
 import { CardDetail } from './CardDetail'
@@ -759,9 +762,11 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
     <CardDetail
       open={showDetail}
       onOpenChange={setShowDetail}
-      title={
-        <Editable editing={editing} value={asset.name} placeholder="Asset name" onChange={v => update(c => { c.assets[sectionId][i].name = v })} />
-      }
+      /* The title stays a title. An input in the header slot ran under the
+         close button and gave the dialog two competing focus targets; the
+         name is edited in its own labelled field below, like every other
+         field in the app. */
+      title={asset.name || 'Untitled file'}
       description={asset.subgroup}
       media={preview}
       mediaClassName={isVideo(asset.file) ? 'p-0' : 'p-6'}
@@ -771,24 +776,51 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
           {asset.format.map(f => <Badge key={f} variant="secondary">{f}</Badge>)}
         </>
       }
-      rows={[
-        {
-          label: 'Usage',
-          value: editing
-            ? <Editable editing multiline value={asset.usage || ''} placeholder="Add a usage note" onChange={v => update(c => { c.assets[sectionId][i].usage = v })} />
-            : asset.usage || <span className="text-muted-foreground">No usage note yet</span>,
-        },
+      /* Read mode is facts; edit mode is fields. Mixing an input into the
+         fact list is what made this dialog look unlike the rest of the app. */
+      rows={editing ? [] : [
+        { label: 'Usage', value: asset.usage || <span className="text-muted-foreground">No usage note yet</span> },
         // Stored on every asset since the schema was written, shown nowhere.
         { label: 'Notes', value: asset.description },
       ]}
       actions={cardActions(false)}
     >
-      <TagRow
-        editing={editing}
-        tags={asset.tags || []}
-        onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
-        onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
-      />
+      {editing && (
+        <FieldGroup className="gap-4">
+          <Field>
+            <FieldLabel htmlFor="asset-name">Name</FieldLabel>
+            <Input
+              id="asset-name"
+              value={asset.name}
+              placeholder="Asset name"
+              onChange={e => update(c => { c.assets[sectionId][i].name = e.target.value })}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="asset-usage">Usage note</FieldLabel>
+            <Textarea
+              id="asset-usage"
+              rows={2}
+              value={asset.usage || ''}
+              placeholder="Where is this file used?"
+              onChange={e => update(c => { c.assets[sectionId][i].usage = e.target.value })}
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Tags</FieldLabel>
+            <TagRow
+              editing
+              tags={asset.tags || []}
+              onAdd={t => update(c => { const a = c.assets[sectionId][i]; a.tags = [...(a.tags || []), t] })}
+              onRemove={t => update(c => { const a = c.assets[sectionId][i]; a.tags = (a.tags || []).filter(x => x !== t) })}
+            />
+          </Field>
+        </FieldGroup>
+      )}
+
+      {!editing && (asset.tags || []).length > 0 && (
+        <TagRow editing={false} tags={asset.tags || []} onAdd={() => {}} onRemove={() => {}} />
+      )}
 
       {versions.length > 0 && (
         <div className="flex flex-col gap-2">

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import { Field, FieldContent, FieldGroup, FieldLabel } from '@/components/ui/field'
 
 /** One labelled fact about the thing. Blank values are dropped by CardDetail. */
 export interface DetailRow {
@@ -80,17 +81,24 @@ export function CardDetail({
 
         {chips && <div className="flex flex-wrap items-center gap-1">{chips}</div>}
 
+        {/* The horizontal Field variant gives its label flex-auto, which pushes
+            the value out to the right edge; the label is a fixed gutter here,
+            so it is pinned back to its own width. */}
         {filled.length > 0 && (
-          <dl className="flex flex-col gap-2.5">
+          <FieldGroup className="gap-3">
             {filled.map(row => (
-              <div key={row.label} className="grid grid-cols-[88px_1fr] items-baseline gap-3">
-                <dt className="text-[12px] text-muted-foreground">{row.label}</dt>
-                <dd className={cn('min-w-0 text-[13px] break-words', row.mono && 'font-mono text-[12px]')}>
+              <Field
+                key={row.label}
+                orientation="horizontal"
+                className="items-baseline gap-3 [&>[data-slot=field-label]]:flex-none"
+              >
+                <FieldLabel className="w-20 shrink-0 text-muted-foreground">{row.label}</FieldLabel>
+                <FieldContent className={cn('min-w-0 break-words', row.mono && 'font-mono')}>
                   {row.value}
-                </dd>
-              </div>
+                </FieldContent>
+              </Field>
             ))}
-          </dl>
+          </FieldGroup>
         )}
 
         {children}
