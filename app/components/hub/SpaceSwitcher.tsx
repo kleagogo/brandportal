@@ -83,6 +83,16 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
   const demoRoot = demoHubs[0] || null
   const demoClients = demoHubs.slice(1)
 
+  /**
+   * In the demo, the subtitle says which kind of hub you're standing in
+   * rather than repeating that it's a demo — the banner overhead already
+   * says that, and "Demo hub" under both made the agency and its client look
+   * like the same kind of thing.
+   */
+  const label = inDemo
+    ? (demoRoot && currentSlug === demoRoot.slug ? 'Main account' : 'Client space')
+    : kindLabel
+
   const rootHub = inDemo
     ? (demoRoot && demoRoot.slug !== currentSlug ? demoRoot : null)
     : studioHub
@@ -131,7 +141,7 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
       </div>
       <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
         <span className="truncate font-medium">{config.name}</span>
-        <span className="truncate text-xs text-muted-foreground">{kindLabel}</span>
+        <span className="truncate text-xs text-muted-foreground">{label}</span>
       </div>
     </>
   )
@@ -177,7 +187,7 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
               <span className="text-[13px] font-semibold">
                 <Editable value={config.name} placeholder="Brand name" onChange={v => update(c => { c.name = v })} />
               </span>
-              <span className="text-[11px] text-muted-foreground">{config.logoUrl ? kindLabel : 'Click the box to add a logo'}</span>
+              <span className="text-[11px] text-muted-foreground">{config.logoUrl ? label : 'Click the box to add a logo'}</span>
             </div>
           </SidebarMenuButton>
         </SidebarMenuItem>
