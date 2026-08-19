@@ -52,7 +52,7 @@ export function Celebration() {
               </Button>
             </div>
             <p className="text-[12.5px] text-muted-foreground/70 leading-relaxed mt-3">
-              Nothing after a minute, request a fresh link.
+              If nothing after a minute, request a fresh link.
             </p>
           </CardContent>
         </Card>
