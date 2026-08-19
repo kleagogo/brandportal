@@ -1656,3 +1656,71 @@ html[data-theme="dark"] .t-shimmer-tile { background: #222226; }
   background-color: var(--sidebar-accent);
   color: var(--sidebar-accent-foreground);
 }
+
+/* ── moving border ─────────────────────────────────────────────────────────── */
+
+/* A light travelling around the edge, for the one control that does something
+   qualitatively different from the rest of the palette. Built from a rotating
+   conic gradient masked down to the border ring rather than an animated SVG
+   path — no library, one element, and it follows whatever radius it lands on.
+   The registered property is what makes the angle animatable at all; a plain
+   custom property would jump from 0 to 360 instead of sweeping. */
+@property --t-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes t-border-travel {
+  to { --t-angle: 360deg; }
+}
+
+.t-moving-border {
+  position: relative;
+}
+
+.t-moving-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--t-angle),
+    transparent 0deg,
+    var(--t-spark-1) 35deg,
+    var(--t-spark-2) 70deg,
+    var(--t-spark-3) 105deg,
+    transparent 150deg,
+    transparent 360deg
+  );
+  /* Paint the padding box, then punch the content box out of it, so only the
+     ring survives. */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: t-border-travel 3s linear infinite;
+  pointer-events: none;
+}
+
+/* The same three colours the border carries, cycling through the mark itself
+   so the button reads as one thing rather than a plain icon in a lit frame. */
+@keyframes t-spark-cycle {
+  0%,  100% { color: var(--t-spark-1); }
+  33%       { color: var(--t-spark-2); }
+  66%       { color: var(--t-spark-3); }
+}
+
+.t-spark {
+  --t-spark-1: oklch(0.62 0.19 300);
+  --t-spark-2: oklch(0.70 0.14 205);
+  --t-spark-3: oklch(0.76 0.15 70);
+  animation: t-spark-cycle 4.5s ease-in-out infinite;
+}
+
+.t-moving-border {
+  --t-spark-1: oklch(0.62 0.19 300);
+  --t-spark-2: oklch(0.70 0.14 205);
+  --t-spark-3: oklch(0.76 0.15 70);
+}

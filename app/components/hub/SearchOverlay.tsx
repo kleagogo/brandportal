@@ -220,10 +220,14 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
             variant="secondary"
             tabIndex={-1}
             aria-pressed
-            className="shrink-0"
+            /* The travelling border marks out the half that does something
+               different in kind — Search reads the hub, Ask reasons about it. */
+            className={`shrink-0 ${mode === 'ask' ? 't-moving-border' : ''}`}
             onClick={() => setMode(m => (m === 'search' ? 'ask' : 'search'))}
           >
-            <Icon name={mode === 'search' ? 'search' : 'sparkles'} size={13} />
+            <span className={mode === 'ask' ? 't-spark' : undefined}>
+              <Icon name={mode === 'search' ? 'search' : 'sparkles'} size={13} />
+            </span>
             {mode === 'search' ? 'Search' : 'Ask AI'}
           </Button>
           <CommandInput

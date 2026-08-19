@@ -29,13 +29,6 @@ export type HubKind = 'client' | 'studio'
  * anyone saw in a hub was a chat box rather than the brand.
  */
 const BRAND_SECTIONS: SectionConfig[] = [
-  // The written half of a brand book, before the files: what the brand is,
-  // how it behaves, how it sounds. Each is prose under its own id.
-  { id: 'brand-story',       label: 'Brand Story',            type: 'doc', icon: 'book',        group: 'assets' },
-  { id: 'brand-personality', label: 'Brand Personality',      type: 'doc', icon: 'fingerprint', group: 'assets' },
-  { id: 'visual-identity',   label: 'Visual Identity',        type: 'doc', icon: 'eye',         group: 'assets' },
-  { id: 'brand-voice',       label: 'Brand Voice',            type: 'doc', icon: 'chat',        group: 'assets' },
-  { id: 'photography',       label: 'Photography Guidelines', type: 'doc', icon: 'camera',      group: 'assets' },
 
   { id: 'logo',        label: 'Logo',               type: 'assets',     icon: 'logo',        group: 'assets' },
   { id: 'colors',      label: 'Colors & Gradients', type: 'colors',     icon: 'colors',      group: 'assets' },
@@ -43,6 +36,11 @@ const BRAND_SECTIONS: SectionConfig[] = [
   { id: 'screenshots', label: 'Screenshots',        type: 'assets',     icon: 'screenshots', group: 'assets' },
   { id: 'artwork',     label: 'Artwork',            type: 'assets',     icon: 'artwork',     group: 'assets' },
   { id: 'guidelines',  label: 'Guidelines',         type: 'guidelines', icon: 'guidelines',  group: 'assets' },
+  { id: 'brand-story',       label: 'Brand Story',            type: 'doc', icon: 'book',        group: 'assets' },
+  { id: 'brand-personality', label: 'Brand Personality',      type: 'doc', icon: 'fingerprint', group: 'assets' },
+  { id: 'visual-identity',   label: 'Visual Identity',        type: 'doc', icon: 'eye',         group: 'assets' },
+  { id: 'brand-voice',       label: 'Brand Voice',            type: 'doc', icon: 'chat',        group: 'assets' },
+  { id: 'photography',       label: 'Photography Guidelines', type: 'doc', icon: 'camera',      group: 'assets' },
   { id: 'templates',   label: 'Templates',          type: 'assets',     icon: 'templates',   group: 'resources' },
   { id: 'inspiration', label: 'Inspiration',        type: 'assets',     icon: 'sparkles',    group: 'resources' },
 ]
