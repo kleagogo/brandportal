@@ -25,9 +25,11 @@ export async function GET(req: NextRequest) {
 
   const checkout = await getCheckout(id)
   if (!checkout || !checkoutSucceeded(checkout) || !checkout.customer_email) {
-    // Not a payment we can vouch for. The webhook is still the backstop, so
-    // send them somewhere they can get in rather than showing an error.
-    return NextResponse.redirect(new URL('/login', origin))
+    // Either it isn't a payment we can vouch for, or Polar wouldn't answer —
+    // a rejected access token lands here too. The webhook still creates the
+    // account and mails them, so send them to a page that says the payment
+    // worked instead of a bare sign-in form.
+    return NextResponse.redirect(new URL('/login?paid=1', origin))
   }
 
   // One id, one sign-in. A refresh or a shared URL lands on the dashboard,

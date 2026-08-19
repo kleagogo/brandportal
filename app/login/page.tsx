@@ -19,10 +19,17 @@ export default function LoginPage() {
   const [devLink, setDevLink] = useState('')
   const [error, setError] = useState('')
 
+  const [paid, setPaid] = useState(false)
+
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).has('invalid')) {
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('invalid')) {
       setError('That link is invalid or already used. Request a fresh one.')
     }
+    // Sent here from a completed checkout: their payment went through but we
+    // couldn't sign them in on the spot. Say so, rather than showing a bare
+    // sign-in form to someone who has just handed over money.
+    if (params.has('paid')) setPaid(true)
   }, [])
 
   async function submit(e: React.FormEvent) {
@@ -95,7 +102,9 @@ export default function LoginPage() {
             <Card className="bg-[#0E131D] border-white/10">
               <CardContent>
               <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-5">
-                We’ll email you a link to sign up.
+                {paid
+                  ? 'Payment received, thank you. Your account is ready. Enter the email you paid with and we’ll send your way in.'
+                  : 'We’ll email you a link to sign up.'}
               </p>
 
               <form onSubmit={submit}>
