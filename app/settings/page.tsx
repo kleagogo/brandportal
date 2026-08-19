@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { getSessionUser } from '@/lib/auth'
 import { listHubsForUser } from '@/lib/store'
 import { AccountMenu } from '@/app/dashboard/parts'
-import { ChangeEmail, LeaveHubButton, DeleteAccount } from './parts'
+import { ChangeEmail, LeaveHubButton, DeleteAccount, TeamMembers } from './parts'
 import { Logo } from '@/app/components/Logo'
 
 export const dynamic = 'force-dynamic'
@@ -41,6 +41,15 @@ export default async function SettingsPage() {
           </div>
           <p className="text-[14px] text-muted-foreground mb-4">{user.email}</p>
           <ChangeEmail />
+        </section>
+
+        {/* Team */}
+        <section className="bg-card border border-border rounded-2xl p-6 mb-4">
+          <p className="text-[13px] font-medium text-foreground mb-1">Team</p>
+          <p className="text-[12.5px] text-muted-foreground mb-4">
+            Added once, on every hub you own — including ones you make later.
+          </p>
+          <TeamMembers />
         </section>
 
         {/* Hub memberships */}

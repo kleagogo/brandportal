@@ -136,3 +136,113 @@ export function DeleteAccount({ email }: { email: string }) {
     </button>
   )
 }
+
+/**
+ * The account's team.
+ *
+ * A teammate added here reaches every hub the account owns, including ones
+ * created later — which is the whole point. Per-hub editors still exist for
+ * the narrower case: giving one client's contact access to their space alone.
+ */
+export function TeamMembers() {
+  const [members, setMembers] = useState<string[]>([])
+  const [email, setEmail] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [loaded, setLoaded] = useState(false)
+  const { confirm, confirmDialog } = useConfirm()
+
+  useEffect(() => {
+    fetch('/api/account/team')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d) setMembers(d.members || []) })
+      .catch(() => {})
+      .finally(() => setLoaded(true))
+  }, [])
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim() || busy) return
+    setBusy(true)
+    setError('')
+    try {
+      const res = await fetch('/api/account/team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Couldn’t add them')
+      setMembers(data.members || [])
+      setEmail('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Couldn’t add them')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function remove(target: string) {
+    const ok = await confirm({
+      title: `Remove ${target}?`,
+      description: 'They lose access to every hub on this account, including any they were invited to individually.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    })
+    if (!ok) return
+    const res = await fetch('/api/account/team', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: target }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok) setMembers(data.members || [])
+    else setError(data.error || 'Couldn’t remove them')
+  }
+
+  if (!loaded) return null
+
+  return (
+    <>
+      {confirmDialog}
+      <form onSubmit={add} className="flex gap-2 mb-3">
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="colleague@yourstudio.com"
+          className="flex-1 text-[13px] px-3 py-2 rounded-xl border-[1.5px] border-border outline-none focus:border-ring transition-colors placeholder:text-muted-foreground/60"
+        />
+        <button
+          type="submit"
+          disabled={busy}
+          className="text-[13px] font-semibold border-[1.5px] border-foreground text-foreground px-3.5 py-2 rounded-xl hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 whitespace-nowrap"
+        >
+          {busy ? 'Adding…' : 'Add'}
+        </button>
+      </form>
+
+      {members.length === 0 ? (
+        <p className="text-[13px] text-muted-foreground">
+          Just you. Anyone you add here can edit every hub on the account.
+        </p>
+      ) : (
+        <div className="space-y-1">
+          {members.map(m => (
+            <div key={m} className="flex items-center justify-between gap-3 py-1">
+              <span className="text-[14px] text-foreground truncate">{m}</span>
+              <button
+                onClick={() => remove(m)}
+                className="text-[12px] text-muted-foreground hover:text-destructive transition-colors shrink-0"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="text-[12.5px] text-destructive mt-2">{error}</p>}
+    </>
+  )
+}

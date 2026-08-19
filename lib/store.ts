@@ -15,6 +15,7 @@ import { assetKey } from './uploads'
 import { pinCookieName, pinCookieValue } from './auth'
 import { deletePortalStats } from './analytics'
 import { migrateHub } from './migrate-hub'
+import { editorsForNewHub } from './team'
 
 /** Slugs that can never be hub addresses — they collide with app routes. */
 const RESERVED_SLUGS = new Set(['api', 'preview', 'hub', 'admin', 'login', 'signup', 'settings', 'dashboard', 'pricing', 'brand', 's', '_next'])
@@ -50,7 +51,10 @@ export async function createHub(
     slug = `${base}-${n++}`
   }
   const hub = await saveHub({ ...config, slug })
-  await saveMeta({ slug, ownerId, editors: [], pin: null, createdAt: new Date().toISOString(), ...extra })
+  // A new hub starts with the account's team already on it, so someone
+  // invited last month doesn't have to be invited again for this one.
+  const editors = await editorsForNewHub(ownerId)
+  await saveMeta({ slug, ownerId, editors, pin: null, createdAt: new Date().toISOString(), ...extra })
   return hub
 }
 
