@@ -67,14 +67,30 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
   // some: a heading over nothing is just a word.
   const studioHub = spaces.find(s => s.studio && s.slug !== currentSlug) || null
   const others = spaces.filter(s => !s.studio && s.slug !== currentSlug)
-  // In the demo the visitor owns nothing, so `others` is empty and the menu
-  // opens onto a bare heading. The shipped example hubs stand in, which is the
-  // only place the one-hub-per-client shape is visible before signing up.
-  //
-  // Signed in, they come out again: an account's spaces are its own, and a
-  // demo sitting among them is somebody else's brand in your list.
-  const exampleHubs = demoHubs.filter(h => h.slug !== currentSlug)
-  const showExamples = !signedIn && exampleHubs.length > 0
+
+  /**
+   * The shipped hubs have the same shape as a real account: the first is the
+   * agency, the rest are its clients.
+   *
+   * That shape was being flattened into one list, so the agency read as a
+   * client of itself — and once you were inside a client space the agency was
+   * filtered out along with the hub you were standing in, leaving no way
+   * back to it. On a demo hub this hierarchy is the one on screen, whether or
+   * not anyone is signed in; their own spaces are still a click away under
+   * All spaces.
+   */
+  const inDemo = sandbox && demoHubs.length > 0
+  const demoRoot = demoHubs[0] || null
+  const demoClients = demoHubs.slice(1)
+
+  const rootHub = inDemo
+    ? (demoRoot && demoRoot.slug !== currentSlug ? demoRoot : null)
+    : studioHub
+  const clientHubs = inDemo ? demoClients.filter(h => h.slug !== currentSlug) : []
+  // Signed out and away from the demo, the examples are the only place the
+  // one-hub-per-client shape is visible before signing up.
+  const exampleHubs = inDemo ? [] : demoHubs.filter(h => h.slug !== currentSlug)
+  const showExamples = !signedIn && !inDemo && exampleHubs.length > 0
 
   async function pickLogo(file: File) {
     setLogoBusy(true)
@@ -190,24 +206,37 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
             sideOffset={6}
           >
             <DropdownMenuGroup>
-              {studioHub && (
-                <DropdownMenuItem onClick={() => router.push(`/${studioHub.slug}`)} className="gap-2 p-2">
+              {rootHub && (
+                <DropdownMenuItem onClick={() => router.push(`/${rootHub.slug}`)} className="gap-2 p-2">
                   <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden shrink-0">
-                    {studioHub.logoUrl ? (
+                    {rootHub.logoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={studioHub.logoUrl} alt="" className="size-full object-contain" />
+                      <img src={rootHub.logoUrl} alt="" className="size-full object-contain" />
                     ) : (
-                      <span className="text-[10px] font-bold">{studioHub.name.charAt(0).toUpperCase()}</span>
+                      <span className="text-[10px] font-bold">{rootHub.name.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
-                  <span className="truncate font-medium">{studioHub.name}</span>
+                  <span className="truncate font-medium">{rootHub.name}</span>
                 </DropdownMenuItem>
               )}
-              {(others.length > 0 || showExamples) && (
+              {(others.length > 0 || clientHubs.length > 0 || showExamples) && (
                 <DropdownMenuLabel className="text-muted-foreground text-xs">
-                  {others.length ? 'Client spaces' : 'Example client hubs'}
+                  {showExamples ? 'Example client hubs' : 'Client spaces'}
                 </DropdownMenuLabel>
               )}
+              {clientHubs.map(h => (
+                <DropdownMenuItem key={h.slug} onClick={() => router.push(`/${h.slug}`)} className="gap-2 p-2">
+                  <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden shrink-0">
+                    {h.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={h.logoUrl} alt="" className="size-full object-contain" />
+                    ) : (
+                      <span className="text-[10px] font-bold">{h.name.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <span className="truncate">{h.name}</span>
+                </DropdownMenuItem>
+              ))}
               {showExamples && exampleHubs.map(h => (
                 <DropdownMenuItem key={h.slug} onClick={() => router.push(`/${h.slug}`)} className="gap-2 p-2">
                   <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden shrink-0">
@@ -235,7 +264,7 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
               </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
-            {(others.length > 0 || signedIn || showExamples || studioHub) && <DropdownMenuSeparator />}
+            {(others.length > 0 || signedIn || showExamples || clientHubs.length > 0 || rootHub) && <DropdownMenuSeparator />}
             {/* Shown signed out as well. A visitor asking "can each client have
                 their own?" got no answer here, and the demo is where they ask.
                 Without an account there is nothing to create yet, so it opens
