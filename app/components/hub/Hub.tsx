@@ -358,7 +358,10 @@ function HubSidebar({
 }) {
   const { config, active, setActive } = useHub()
 
-  const kindLabel = access.demo ? 'Demo hub' : access.studio ? 'Studio hub' : 'Client space'
+  // One vocabulary everywhere: the account's own hub is the main account, the
+  // rest are client spaces. The demo said one thing and a real account another
+  // for the same idea.
+  const kindLabel = access.demo ? 'Demo hub' : access.studio ? 'Main account' : 'Client space'
 
   const GROUPS = [
     ['main', ''],
