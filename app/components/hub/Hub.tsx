@@ -580,6 +580,9 @@ function HubSidebarItem({
             size={1}
             onChange={e => update(c => { c.sections[index].label = e.target.value })}
             onKeyDown={e => e.key === 'Enter' && setEditingSection(null)}
+            // Clicking away commits too. Enter is the documented way out, but
+            // a name typed and then abandoned is a name someone meant to keep.
+            onBlur={() => setEditingSection(null)}
             className="mr-7 w-0 min-w-0 flex-1 rounded-md bg-background px-1.5 py-0.5 text-foreground ring-1 ring-border outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </SidebarMenuButton>

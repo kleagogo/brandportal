@@ -216,6 +216,9 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
             sideOffset={6}
           >
             <DropdownMenuGroup>
+              {/* The way back. Named as what it is, because a bare brand name
+                  in a list of brand names is not a way home — from inside a
+                  client space this row was indistinguishable from a client. */}
               {rootHub && (
                 <DropdownMenuItem onClick={() => router.push(`/${rootHub.slug}`)} className="gap-2 p-2">
                   <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden shrink-0">
@@ -226,7 +229,10 @@ export function SpaceSwitcher({ currentSlug, kindLabel }: { currentSlug: string;
                       <span className="text-[10px] font-bold">{rootHub.name.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
-                  <span className="truncate font-medium">{rootHub.name}</span>
+                  <div className="grid min-w-0 flex-1 leading-tight">
+                    <span className="truncate font-medium">{rootHub.name}</span>
+                    <span className="truncate text-xs text-muted-foreground">Main account</span>
+                  </div>
                 </DropdownMenuItem>
               )}
               {(others.length > 0 || clientHubs.length > 0 || showExamples) && (

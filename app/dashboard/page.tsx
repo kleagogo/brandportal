@@ -6,7 +6,7 @@ import { createHub, getStudioHub, isExpired, listHubsForUser } from '@/lib/store
 import { blankHubConfig } from '@/lib/brand-builder'
 import { limitsFor } from '@/lib/limits'
 import { labelsFor } from '@/lib/labels'
-import { NewHubButton, AccountMenu, StudioSetup } from './parts'
+import { NewHubButton, AccountMenu } from './parts'
 import { HubCardStack } from './HubCardStack'
 import { Logo } from '@/app/components/Logo'
 
@@ -35,7 +35,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const user = await getSessionUser()
   if (!user) redirect('/login')
 
-  const hubs = await listHubsForUser(user)
+  let hubs = await listHubsForUser(user)
 
   // A brand-new account skips setup questions entirely: their hub is made for
   // them and they land in it, on the Logo drop zone. Naming and everything
@@ -47,6 +47,16 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     // one shouldn't replay it.
     const hub = await createHub(blankHubConfig('Our studio', { kind: 'studio' }), user.id, { studio: true })
     redirect(`/${hub.slug}?new=1`)
+  }
+
+  // Every account has a main account hub: it is the brand client spaces copy
+  // their layout from, and the home the switcher offers from inside a client
+  // space. Accounts that made a client space first never got one and were met
+  // by a setup form on the dashboard instead — making this hub is not a
+  // decision worth a screen, so it is simply made. Naming happens inside it.
+  if (!hubs.some(h => h.role === 'owner' && h.meta.studio)) {
+    await createHub(blankHubConfig('Our studio', { kind: 'studio' }), user.id, { studio: true })
+    hubs = await listHubsForUser(user)
   }
 
   // One hub is not a choice. With only the studio hub and no client spaces,
@@ -78,6 +88,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
         <>
             {/* ── The account's own brand — hub zero ────────────────────────── */}
+            {/* Hub zero, when there is one. A brand-new account gets no setup
+                form here: the way in is the dashboard itself, not a wall. */}
             <section>
               <div className="mb-4">
                 <h2 className="text-[13px] font-medium text-muted-foreground">{labels.ownHeading}</h2>
@@ -108,9 +120,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     </div>
                   </div>
                 </Link>
-              ) : (
-                <StudioSetup labels={labels} />
-              )}
+              ) : null}
             </section>
 
             {/* ── Everything else ──────────────────────────────────────────── */}

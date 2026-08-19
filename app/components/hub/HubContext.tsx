@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { BrandConfig } from '@/app/types/brand'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
@@ -107,15 +107,27 @@ export function HubProvider({ initial, children, canEdit = false, sandbox = fals
   }, [flush, sandbox])
 
   const setEditingSection = useCallback((id: string | null) => {
-    setEditingSectionState(prev => {
-      // The snapshot is taken when editing begins and dropped when it ends;
-      // switching sections mid-edit keeps the original, so one Escape undoes
-      // the whole editing session.
-      if (prev === null && id !== null) snapshot.current = structuredClone(configRef.current)
-      if (id === null) snapshot.current = null
-      return id
-    })
+    setEditingSectionState(id)
+    if (id === null) snapshot.current = null
   }, [])
+
+  /**
+   * Take the undo snapshot after the commit, not during the click.
+   *
+   * Adding a section and naming it is one gesture: `update()` queues the new
+   * section and `setEditingSection()` opens its name for editing in the same
+   * handler. Snapshotting inside that handler read the config from *before*
+   * the section existed, so one Escape deleted the section — and, because the
+   * revert autosaves, deleted it on the server along with anything else saved
+   * since edit mode began. Reading it here means the snapshot always includes
+   * the change that opened the editor. Layout effect, not a passive one, so it
+   * lands before anyone can type.
+   */
+  useLayoutEffect(() => {
+    if (editingSection !== null && snapshot.current === null) {
+      snapshot.current = structuredClone(configRef.current)
+    }
+  }, [editingSection])
 
   const cancelEditing = useCallback(() => {
     const snap = snapshot.current
