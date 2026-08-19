@@ -79,6 +79,54 @@ export function createCheckout(opts: {
   })
 }
 
+/** What a checkout looks like coming back. The success redirect carries only its id. */
+export interface PolarCheckout {
+  id: string
+  status: string
+  product_id?: string | null
+  customer_email?: string | null
+}
+
+/**
+ * Read a checkout back by id.
+ *
+ * Someone returning from a payment has proof of purchase in their hands but no
+ * session, so this is what turns that id into "who paid, for what, and did it
+ * actually succeed". Never trust the redirect alone — ask Polar.
+ */
+export async function getCheckout(id: string): Promise<PolarCheckout | null> {
+  const res = await fetch(`${apiBase()}/checkouts/${encodeURIComponent(id)}`, {
+    headers: { Authorization: `Bearer ${process.env.POLAR_ACCESS_TOKEN}` },
+  })
+  if (!res.ok) {
+    console.error(`[billing] Could not read checkout ${id} from Polar (${res.status})`)
+    return null
+  }
+  return (await res.json()) as PolarCheckout
+}
+
+/** A paid checkout — the only kind that earns an account. */
+export function checkoutSucceeded(checkout: PolarCheckout): boolean {
+  return checkout.status === 'succeeded' || checkout.status === 'confirmed'
+}
+
+/**
+ * Is the access token actually accepted? A cheap read used by /api/billing/health
+ * so a broken token is visible without a person having to attempt a purchase.
+ */
+export async function polarTokenStatus(): Promise<'ok' | 'unauthorized' | 'unreachable'> {
+  if (!process.env.POLAR_ACCESS_TOKEN) return 'unauthorized'
+  try {
+    const res = await fetch(`${apiBase()}/products/?limit=1`, {
+      headers: { Authorization: `Bearer ${process.env.POLAR_ACCESS_TOKEN}` },
+    })
+    if (res.status === 401 || res.status === 403) return 'unauthorized'
+    return res.ok ? 'ok' : 'unreachable'
+  } catch {
+    return 'unreachable'
+  }
+}
+
 /**
  * Polar's hosted account page: invoices, payment method, cancel. Addressed by
  * our user id, so it works with nothing stored on our side.

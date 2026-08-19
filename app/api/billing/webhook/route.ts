@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { planForProduct, statusEntitles, verifyWebhook } from '@/lib/polar'
 import { ensureUser, getUserByEmail, getUserById, setBilling, type User } from '@/lib/users'
-import { createToken } from '@/lib/tokens'
-import { sendMagicLink } from '@/lib/email'
+import { sendWelcomeOnce } from '@/lib/welcome'
 
 /**
  * Polar telling us money moved.
@@ -72,7 +71,6 @@ export async function POST(req: NextRequest) {
   // A plan set by hand outranks the machinery: a routine renewal event on an
   // old Founding subscription must not quietly erase a Studio grant. A real
   // *paid* upgrade still wins — money talks — but downgrades don't touch it.
-  const alreadyPaid = current.plan === 'pro' || current.plan === 'studio'
   const status = sub.status || 'unknown'
   const paidPlan = sub.product_id ? planForProduct(sub.product_id) : null
   const endsAt = sub.ends_at || sub.current_period_end || undefined
@@ -95,23 +93,10 @@ export async function POST(req: NextRequest) {
     subscriptionEndsAt: entitled ? endsAt : undefined,
   })
 
-  // Someone who bought from the marketing site has an account now but no way
-  // into it, so send the way in. Guarded on "wasn't already paid" because Polar
-  // retries: the first delivery to succeed mails them, the rest stay quiet.
-  if (fromPaymentEmail && entitled && !alreadyPaid) {
-    try {
-      const token = await createToken({ purpose: 'login', email: current.email, redirect: '/dashboard' })
-      await sendMagicLink({
-        to: current.email,
-        url: `${req.nextUrl.origin}/api/auth/verify?token=${token}`,
-        kind: 'welcome',
-      })
-    } catch (err) {
-      // The plan is already on the account; a failed email is not worth a
-      // retry storm from Polar, and they can still sign in from the login page.
-      console.error('[billing] Could not send the welcome link:', err)
-    }
-  }
+  // Someone who bought from the marketing site has an account now but may have
+  // no way into it — they might never come back through the success redirect.
+  // sendWelcomeOnce is the guard against Polar's retries mailing them twice.
+  if (fromPaymentEmail && entitled) await sendWelcomeOnce(current, req.nextUrl.origin)
 
   return NextResponse.json({ received: true })
 }

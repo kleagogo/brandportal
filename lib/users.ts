@@ -23,6 +23,8 @@ export interface User {
   subscriptionStatus?: string
   /** When the current period ends — what "cancels on" means to a person. */
   subscriptionEndsAt?: string
+  /** When the one "your account is ready" email went out. Absent means never. */
+  welcomedAt?: string
   accountType?: AccountType
 }
 
@@ -92,7 +94,19 @@ export async function ensureUser(email: string): Promise<User> {
   return user
 }
 
-/** Record what Stripe told us about this account's subscription. */
+/**
+ * Mark the welcome email as sent, so the two paths that can trigger it — the
+ * webhook and the return from checkout — never send it twice.
+ */
+export async function markWelcomed(id: string): Promise<void> {
+  const users = await readUsers()
+  const user = users[id]
+  if (!user || user.welcomedAt) return
+  users[id] = { ...user, welcomedAt: new Date().toISOString() }
+  await writeUsers(users)
+}
+
+/** Record what the payment provider told us about this account's subscription. */
 export async function setBilling(
   id: string,
   patch: Partial<Pick<User, 'plan' | 'subscriptionStatus' | 'subscriptionEndsAt'>>
