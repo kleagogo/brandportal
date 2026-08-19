@@ -30,7 +30,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 /** The slice of Cloudflare's R2Bucket this app actually uses. */
 interface R2BucketBinding {
   get(key: string): Promise<{ arrayBuffer(): Promise<ArrayBuffer> } | null>
-  put(key: string, value: ArrayBuffer, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>
+  put(key: string, value: ArrayBuffer | ReadableStream, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>
   delete(key: string): Promise<void>
 }
 
@@ -146,6 +146,30 @@ export async function r2Put(name: string, data: Buffer, contentType?: string): P
     headers: contentType ? { 'Content-Type': contentType } : {},
   })
   if (!res.ok) throw new Error(`R2 rejected the upload (${res.status})`)
+}
+
+/** Is the R2 binding present, so a body can be piped straight to the bucket? */
+export function r2StreamUploads(): boolean {
+  return bucketBinding() !== null
+}
+
+/**
+ * Store a request body without ever holding it.
+ *
+ * The buffered path reads the whole upload into the isolate twice — once to
+ * parse the form, once to copy it out — and a Worker isolate has 128MB to
+ * live in, so a file anywhere near the advertised limit killed the request
+ * instead of storing it. R2 bindings take a stream, so the body goes to the
+ * bucket as it arrives and peak memory stops tracking file size.
+ */
+export async function r2PutStream(
+  name: string,
+  body: ReadableStream,
+  contentType?: string
+): Promise<void> {
+  const bucket = bucketBinding()
+  if (!bucket) throw new Error('Streaming uploads need the R2 bucket binding')
+  await bucket.put(name, body, contentType ? { httpMetadata: { contentType } } : undefined)
 }
 
 export async function r2Delete(name: string): Promise<void> {

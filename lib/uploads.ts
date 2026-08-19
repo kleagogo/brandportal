@@ -18,7 +18,11 @@ import crypto from 'crypto'
  */
 export function serverUploadLimit(): number {
   if (process.env.VERCEL) return 4 * 1024 * 1024
-  return Math.min(maxUploadBytes(), 100 * 1024 * 1024)
+  // A multipart POST is read into memory to be parsed and copied again to be
+  // stored, and a Worker isolate has 128MB for both plus the runtime. 100MB
+  // was never deliverable here; anything bigger than this goes to
+  // /api/upload/stream, which never holds the file at all.
+  return Math.min(maxUploadBytes(), 24 * 1024 * 1024)
 }
 
 /** Largest file overall. Raise with UPLOAD_MAX_MB (blob storage only). */

@@ -20,6 +20,8 @@ export interface UploadResult {
 interface UploadConfig {
   /** Cloudflare R2 — presigned PUT straight from the browser. */
   r2: boolean
+  /** The server can pipe a raw body straight into the bucket. */
+  stream: boolean
   /** Vercel Blob — the same idea, different provider. */
   blob: boolean
   directLimit: number
@@ -33,7 +35,7 @@ export function uploadConfig(): Promise<UploadConfig> {
   if (!cached) {
     cached = fetch('/api/upload/config')
       .then(r => r.json())
-      .catch(() => ({ r2: false, blob: false, directLimit: 4 * 1024 * 1024, maxBytes: 4 * 1024 * 1024, allowed: [] }))
+      .catch(() => ({ r2: false, stream: false, blob: false, directLimit: 4 * 1024 * 1024, maxBytes: 4 * 1024 * 1024, allowed: [] }))
   }
   return cached
 }
@@ -112,6 +114,22 @@ export async function uploadAsset(
         ? `${file.name} is too large (max ${humanSize(config.maxBytes)})`
         : `${file.name} is ${humanSize(file.size)}. Files over ${humanSize(config.directLimit)} need blob storage connected.`
     )
+  }
+
+  // Straight into the bucket, nothing buffered on the way. Preferred for
+  // anything the multipart route would have to hold in memory.
+  if (config.stream && !config.r2 && file.size > config.directLimit) {
+    onProgress?.(0)
+    const query = new URLSearchParams({ slug, name: file.name })
+    const res = await fetch(`/api/upload/stream?${query}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: file,
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || `Couldn’t upload ${file.name}`)
+    onProgress?.(100)
+    return data as UploadResult
   }
 
   if (config.r2 && file.size > config.directLimit) {
