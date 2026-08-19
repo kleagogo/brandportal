@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { checkoutSucceeded, getCheckout, planForProduct } from '@/lib/polar'
-import { ensureUser, getUserByEmail, setBilling } from '@/lib/users'
+import { checkoutSucceeded, getCheckout } from '@/lib/polar'
+import { getUserById } from '@/lib/users'
 import { SESSION_COOKIE, createSessionValue } from '@/lib/auth'
-import { getStorage } from '@/lib/db'
-import { sendWelcomeOnce } from '@/lib/welcome'
+import { readClaim, recordClaim, redeemClaim, waitForClaim, type CheckoutClaim } from '@/lib/checkout-claim'
+import { accountForPayment, sendWelcomeOnce } from '@/lib/welcome'
 
 /**
  * Where Polar sends someone the moment they've paid.
@@ -11,11 +11,13 @@ import { sendWelcomeOnce } from '@/lib/welcome'
  * They bought from the marketing site, so they have a receipt and no account.
  * Making them go and find an email before they can see what they just paid for
  * is the wrong first minute, so this creates the account, signs them in, and
- * drops them on the dashboard. The email still goes out, as their record of it.
+ * drops them on the dashboard.
  *
- * The checkout id in the URL is the proof, and it is treated like one: Polar is
- * asked whether that checkout really succeeded, and the id only works once, so
- * a link that leaks later opens nothing.
+ * The checkout id in the URL is the only thing the browser carries, so it is
+ * treated as the credential it is. Proof that it was paid comes from Polar's
+ * signed webhook, recorded against the id — no access token in this path, so a
+ * broken token can't cost someone their first minute. Asking Polar directly is
+ * kept as a shortcut for when the webhook is still in flight.
  */
 export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin
@@ -23,34 +25,35 @@ export async function GET(req: NextRequest) {
   const dashboard = NextResponse.redirect(new URL('/dashboard', origin))
   if (!id) return dashboard
 
-  const checkout = await getCheckout(id)
-  if (!checkout || !checkoutSucceeded(checkout) || !checkout.customer_email) {
-    // Either it isn't a payment we can vouch for, or Polar wouldn't answer —
-    // a rejected access token lands here too. The webhook still creates the
-    // account and mails them, so send them to a page that says the payment
-    // worked instead of a bare sign-in form.
+  let claim: CheckoutClaim | null = await readClaim(id)
+  // Already redeemed: a refresh, or a link that has been passed around. They
+  // have their session from the first time; anyone else gets a sign-in page.
+  if (claim?.usedAt) return dashboard
+
+  // The webhook hasn't landed yet. If the access token happens to work, Polar
+  // can confirm the payment right now instead of making them wait.
+  if (!claim) {
+    const checkout = await getCheckout(id)
+    if (checkout && checkoutSucceeded(checkout) && checkout.customer_email) {
+      const user = await accountForPayment(checkout.customer_email, checkout.product_id)
+      await recordClaim(id, user.id)
+      await sendWelcomeOnce(user, origin)
+      claim = { userId: user.id }
+    }
+  }
+
+  // Otherwise give the webhook a couple of seconds to arrive.
+  if (!claim) claim = await waitForClaim(id)
+
+  const user = claim ? await getUserById(claim.userId) : null
+  if (!claim || !user) {
+    // The payment is real but we can't tie it to an account yet. The webhook
+    // still creates it and mails them, so send them to a page that opens with
+    // "payment received" rather than a blank sign-up form.
     return NextResponse.redirect(new URL('/login?paid=1', origin))
   }
 
-  // One id, one sign-in. A refresh or a shared URL lands on the dashboard,
-  // which asks for a session of its own if they haven't got one.
-  const seen = await getStorage().getJSON<{ usedAt: string }>('checkout', id)
-  if (seen) return dashboard
-  await getStorage().putJSON('checkout', id, { usedAt: new Date().toISOString() })
-
-  const existing = await getUserByEmail(checkout.customer_email)
-  const user = existing || (await ensureUser(checkout.customer_email))
-
-  // The webhook is the authority on subscription status over time; this just
-  // makes sure they aren't staring at a free plan in the seconds before it
-  // arrives. A hand-set plan is left exactly as it is.
-  const plan = checkout.product_id ? planForProduct(checkout.product_id) : null
-  if (plan && user.subscriptionStatus !== 'granted') {
-    await setBilling(user.id, { plan, subscriptionStatus: 'active' })
-  }
-
-  await sendWelcomeOnce(user, origin)
-
+  await redeemClaim(id, claim)
   dashboard.cookies.set(SESSION_COOKIE, await createSessionValue(user.id), {
     httpOnly: true,
     sameSite: 'lax',

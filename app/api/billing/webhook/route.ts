@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { planForProduct, statusEntitles, verifyWebhook } from '@/lib/polar'
 import { ensureUser, getUserByEmail, getUserById, setBilling, type User } from '@/lib/users'
-import { sendWelcomeOnce } from '@/lib/welcome'
+import { accountForPayment, sendWelcomeOnce } from '@/lib/welcome'
+import { recordClaim } from '@/lib/checkout-claim'
 
 /**
  * Polar telling us money moved.
@@ -38,8 +39,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Not JSON' }, { status: 400 })
   }
 
+  // A paid checkout is the earliest signed word that money moved, and it
+  // carries the id the buyer's browser is holding. Recording it here is what
+  // lets the success page sign them in without asking Polar anything.
+  if (event.type?.startsWith('checkout.')) {
+    const checkout = event.data as {
+      id?: string
+      status?: string
+      customer_email?: string | null
+      product_id?: string | null
+      products?: Array<{ id?: string }>
+    }
+    const paid = checkout.status === 'succeeded' || checkout.status === 'confirmed'
+    if (paid && checkout.id && checkout.customer_email) {
+      const product = checkout.product_id || checkout.products?.[0]?.id || null
+      const user = await accountForPayment(checkout.customer_email, product)
+      await recordClaim(checkout.id, user.id)
+      await sendWelcomeOnce(user, req.nextUrl.origin)
+    }
+    return NextResponse.json({ received: true })
+  }
+
   if (!event.type?.startsWith('subscription.')) {
-    // Orders, checkouts, benefits — acknowledged so Polar stops retrying.
+    // Orders, benefits — acknowledged so Polar stops retrying.
     return NextResponse.json({ received: true })
   }
 

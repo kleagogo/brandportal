@@ -9,7 +9,27 @@
 
 import { createToken } from './tokens'
 import { sendMagicLink } from './email'
-import { markWelcomed, type User } from './users'
+import { ensureUser, getUserByEmail, markWelcomed, setBilling, type User } from './users'
+import { planForProduct } from './polar'
+
+/**
+ * The account a payment belongs to, created if this is their first contact.
+ *
+ * Used by both paths into the product: the webhook, and the person's own
+ * return from checkout. Idempotent, because both usually happen.
+ */
+export async function accountForPayment(email: string, productId?: string | null): Promise<User> {
+  const existing = await getUserByEmail(email)
+  const user = existing || (await ensureUser(email))
+  const plan = productId ? planForProduct(productId) : null
+  // A plan set by hand is left alone; the webhook stays the authority on
+  // status over time. This only stops a new customer seeing "Free plan" in
+  // the seconds between paying and the webhook landing.
+  if (plan && user.subscriptionStatus !== 'granted' && user.plan !== plan) {
+    await setBilling(user.id, { plan, subscriptionStatus: 'active' })
+  }
+  return user
+}
 
 export async function sendWelcomeOnce(user: User, origin: string): Promise<void> {
   if (user.welcomedAt) return
