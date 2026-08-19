@@ -18,7 +18,9 @@
   // on the next push, which is how sign-in email broke on 2026-08-18.
   // Secrets are stored separately by Cloudflare and survive a deploy.
   "vars": {
-    "EMAIL_FROM": "Pitho <hello@pitho.io>",
+    // A person, not a department. Replies land in the founder's inbox via
+    // Cloudflare Email Routing; hello@ still forwards there too.
+    "EMAIL_FROM": "Hermione from Pitho <hermione@pitho.io>",
     // 500MB is what Cloudflare accepts as a request body on the Paid plan.
     // Deliverable brand film sits under it; a ProRes master never will, and
     // belongs somewhere built for masters rather than in a brand hub.
