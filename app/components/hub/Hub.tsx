@@ -227,14 +227,18 @@ function HubShell({ access }: { access: HubAccess }) {
                 the section it acts on, in the section's own header. */}
             {access.canEdit || access.sandbox ? (
               <div className="ml-auto flex items-center gap-2">
-                <Button size="icon-sm" variant="ghost" onClick={() => setSearchOpen(true)} title="Search (⌘K)" aria-label="Search">
-                  <Icon name="search" size={14} />
+                {/* Medium, not small: this bar is 64px tall and the buttons in
+                    it were the same height as the ones tucked beside a section
+                    heading, so the hub's own controls read as an afterthought
+                    in a lot of empty space. */}
+                <Button size="icon" variant="ghost" onClick={() => setSearchOpen(true)} title="Search (⌘K)" aria-label="Search">
+                  <Icon name="search" size={15} />
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setShareSection('')}>
-                  <Icon name="share" size={13} /> Share
+                <Button variant="outline" onClick={() => setShareSection('')}>
+                  <Icon name="share" size={14} /> Share
                 </Button>
-                <Button size="sm" onClick={() => setImportOpen(true)}>
-                  <Icon name="upload" size={13} /> Add files
+                <Button onClick={() => setImportOpen(true)}>
+                  <Icon name="upload" size={14} /> Add files
                 </Button>
               </div>
             ) : (
@@ -431,9 +435,6 @@ function HubSidebar({
             </SidebarMenuItem>
           )}
         </SidebarMenu>
-        <Link href="/" className="px-2 text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden">
-          Made with Pitho
-        </Link>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
