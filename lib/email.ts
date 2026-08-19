@@ -22,24 +22,27 @@ export interface SendResult {
   error?: string
 }
 
-type Kind = 'login' | 'invite' | 'transfer'
+type Kind = 'login' | 'invite' | 'transfer' | 'welcome'
 
 const SUBJECTS: Record<Kind, (hub?: string) => string> = {
   login: () => 'Your Pitho sign-in link',
   invite: hub => `You've been invited to edit ${hub || 'a brand hub'}`,
   transfer: hub => `You've been offered ownership of ${hub || 'a brand hub'}`,
+  welcome: () => 'Your Pitho account is ready',
 }
 
 const ACTIONS: Record<Kind, string> = {
   login: 'Sign in',
   invite: 'Accept invite',
   transfer: 'Accept ownership',
+  welcome: 'Open Pitho',
 }
 
 const LEADS: Record<Kind, (hub?: string) => string> = {
   login: () => 'Click below to sign in. No password needed.',
   invite: hub => `You can now edit ${hub || 'a brand hub'}: colors, type, logos, and files.`,
   transfer: hub => `Accept to become the owner of ${hub || 'this brand hub'}. The current owner stays on as an editor.`,
+  welcome: () => 'Thanks for subscribing. Click below to open your account and build your first hub.',
 }
 
 /** Are dev links (a magic link returned to the browser) acceptable here? */

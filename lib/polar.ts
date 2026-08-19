@@ -108,24 +108,46 @@ export async function verifyWebhook(
   const age = Math.abs(Date.now() / 1000 - Number(headers.timestamp))
   if (!Number.isFinite(age) || age > 300) return false
 
-  const rawSecret = secret.startsWith('whsec_') ? secret.slice(6) : secret
-  const keyBytes = Uint8Array.from(atob(rawSecret), c => c.charCodeAt(0))
-  const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-  const mac = await crypto.subtle.sign(
-    'HMAC', key,
-    new TextEncoder().encode(`${headers.id}.${headers.timestamp}.${rawBody}`)
-  )
-  const expected = btoa(String.fromCharCode(...new Uint8Array(mac)))
+  const signed = new TextEncoder().encode(`${headers.id}.${headers.timestamp}.${rawBody}`)
 
-  // The header may carry several space-separated "v1,<sig>" candidates.
-  for (const part of headers.signature.split(' ')) {
-    const candidate = part.startsWith('v1,') ? part.slice(3) : part
-    if (candidate.length !== expected.length) continue
-    let diff = 0
-    for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ candidate.charCodeAt(i)
-    if (diff === 0) return true
+  for (const keyBytes of secretKeys(secret)) {
+    const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+    const mac = await crypto.subtle.sign('HMAC', key, signed)
+    const expected = btoa(String.fromCharCode(...new Uint8Array(mac)))
+
+    // The header may carry several space-separated "v1,<sig>" candidates.
+    for (const part of headers.signature.split(' ')) {
+      const candidate = part.startsWith('v1,') ? part.slice(3) : part
+      if (candidate.length !== expected.length) continue
+      let diff = 0
+      for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ candidate.charCodeAt(i)
+      if (diff === 0) return true
+    }
   }
   return false
+}
+
+/**
+ * The HMAC keys worth trying for a signing secret.
+ *
+ * Polar's secret is a plain string with no `whsec_` prefix, and its SDK
+ * base64-*encodes* it before handing it to a Standard Webhooks verifier, which
+ * decodes it straight back — so the key is the secret's own bytes. Providers
+ * that ship a `whsec_<base64>` secret mean the decoded payload instead.
+ * Decoding unconditionally is what broke this: `atob` throws on Polar's secret,
+ * and an uncaught throw turned every delivery into a 500 instead of a verdict.
+ */
+function secretKeys(secret: string): Uint8Array<ArrayBuffer>[] {
+  const body = secret.startsWith('whsec_') ? secret.slice(6) : secret
+  const bytes = (s: string) => Uint8Array.from(new TextEncoder().encode(s))
+  const keys = [bytes(secret)]
+  if (body !== secret) keys.push(bytes(body))
+  try {
+    keys.push(Uint8Array.from(atob(body), c => c.charCodeAt(0)))
+  } catch {
+    // Not base64. Polar's secrets aren't, and that's the common case.
+  }
+  return keys
 }
 
 /** The subscription statuses that mean "keep the paid plan on". past_due
