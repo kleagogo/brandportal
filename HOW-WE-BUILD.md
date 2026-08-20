@@ -93,6 +93,85 @@ should name the next action.
 - **Clean up after testing.** Delete the test records, revoke the test keys,
   refund the test payment.
 
+## Working with an agent
+
+Most of this was built by an agent working in the repo. What makes that go well:
+
+- **Put the house rules in a file the agent always reads.** One short file at
+  the repo root, saying what is different about this project and what to check
+  before writing code. It is the difference between an agent that reads your
+  framework's docs and one that writes last year's API from memory.
+- **Ask for evidence, not confidence.** "It works" means nothing. "Here is the
+  request I sent and the status it returned" means something. An agent that
+  cannot show you the check has not done it.
+- **Let it reproduce the bug before it fixes the bug.** Same rule as for people,
+  and easier to enforce, because you can ask to see the failing measurement.
+- **Never hand it credentials.** Not in chat, not in a file it can read. It can
+  do everything around a secret: name it, wire it, tell you which command to
+  run, verify afterwards that the system accepted it.
+- **Expect it to be wrong sometimes, and make that cheap.** Small commits with
+  honest messages, so a bad change is one revert rather than an archaeology
+  project.
+
+## Data that changes shape
+
+The shape of stored records changes as the product grows, and there is never a
+good moment to stop and migrate everything.
+
+- **Migrate lazily, on read.** Stamp records with a version. When one is read,
+  bring it up to date in memory and save the new shape the next time it is
+  written. No downtime, no migration script, no big-bang.
+- **Remember what was deleted.** If a migration adds missing pieces, it will
+  helpfully re-add the thing the user deliberately removed. Deletions have to be
+  recorded, or they undo themselves.
+- **Keep the storage interface tiny.** Ours is get, put, delete, list, plus the
+  same for files. A small interface is one you can reimplement on a different
+  database in an afternoon.
+
+## Limits, quotas, and honest promises
+
+- **Never advertise a limit the platform cannot deliver.** Check the real
+  ceiling of your host before publishing a number. We shipped a limit once that
+  the runtime refused to accept, which turns every attempt into a support
+  ticket.
+- **Sum, do not count.** Work out usage by adding up what is actually stored,
+  not by keeping a counter. Counters drift the first time something fails
+  halfway.
+- **Refuse before you store, and say what is left.** "That file is 40MB and you
+  have 12MB free" is a useful refusal. "Upload failed" is not.
+- **Stream large files straight through.** Reading a whole upload into memory
+  costs twice its size and fails at the worst time. Pass the stream to storage.
+- **Know what a customer costs you.** Storage and bandwidth per account, times
+  the number you hope to have. It decides the price, and it is easier to decide
+  before anyone is paying.
+
+## Sessions on real devices
+
+- **Links opened in an app open in that app's browser.** A sign-in link tapped
+  inside a mail client creates the session in that client's own browser, with
+  its own cookies. The user then opens the normal browser and appears logged
+  out. Nothing is broken, and it will still read as broken to them.
+- **Assume the session is missing.** Any page reachable from an email or a
+  shared link should work, or explain itself, without one.
+
+## Undo and destructive actions
+
+- **Take the undo snapshot after the change lands, not while the click is
+  handled.** Otherwise "undo" reverts past the thing you just did. Ours deleted
+  a whole section, and saved that deletion, on a single Escape.
+- **Destructive actions get confirmed, and never sit on the primary target.**
+  On touch there is no hover to hide them behind, so they belong in a menu.
+- **Autosave and undo have to agree.** If a revert writes to the server, then a
+  wrong revert is data loss rather than an inconvenience.
+
+## Know what you are not doing
+
+Write down the gaps you are choosing to live with, and why, in the repo. Rate
+limits that only hold per instance, a check that is enforced in the UI but not
+the API, a plan whose limits are not yet different. Written down, they are
+decisions you can revisit. Undocumented, they get rediscovered every few weeks
+and argued about again.
+
 ## What stays human
 
 Some steps do not get automated, not because they are hard but because the cost
