@@ -191,7 +191,9 @@ const config: BrandConfig = {
     video: [
       { name: 'Brand film', file: '/brand/pitho-hero.mp4', format: ['MP4'], usage: 'The hero film from the site. Muted, loops, no sound design', ratio: 'wide', subgroup: 'Hero', tags: ['video', 'hero'] },
     ],
-    templates: [],
+    templates: [
+      { name: 'How I build Pitho - Hermione Gogou', file: '/brand/how-i-build-pitho.pdf', preview: '/brand/how-i-build-pitho-cover.png', format: ['PDF'], usage: 'The process, the tools, and the rules learned by breaking things', ratio: 'portrait', tags: ['guide', 'process'] },
+    ],
     inspiration: [],
   },
 

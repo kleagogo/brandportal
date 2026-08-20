@@ -551,7 +551,16 @@ function AssetCard({ asset, index, sectionId, view = 'grid' }: {
 
   /** What this asset looks like — on the tile, and again larger in the detail,
    *  so a brand film is a film in both places and not a file icon in one. */
-  const preview = isVideo(asset.file) ? (
+  const preview = asset.preview ? (
+    // A file that can't show itself, carrying an image that can.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={asset.preview}
+      alt={asset.name}
+      className="w-full h-full object-cover object-top"
+      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+    />
+  ) : isVideo(asset.file) ? (
     <video src={asset.file} className="w-full h-full object-cover" muted loop playsInline autoPlay preload="metadata" />
   ) : isImage(asset.file) ? (
     // eslint-disable-next-line @next/next/no-img-element

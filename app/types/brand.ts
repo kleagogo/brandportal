@@ -115,6 +115,12 @@ export interface AssetFile {
   subgroup?: string
   /** Aspect hint for the preview tile: 'wide' (16:9) or 'portrait' (9:16). */
   ratio?: 'square' | 'wide' | 'portrait'
+  /**
+   * An image to show for a file that cannot show itself — a PDF's first page,
+   * a font specimen, a zip's contents. Without one these fall back to a file
+   * icon, which tells you nothing about what you are about to download.
+   */
+  preview?: string
   /** Open in a new tab instead of downloading (Figma templates etc.). */
   external?: boolean
   platform?: string
