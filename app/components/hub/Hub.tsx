@@ -217,13 +217,27 @@ function HubShell({ access }: { access: HubAccess }) {
         />
 
         <SidebarInset className="flex flex-col min-w-0 min-h-0">
-          {access.sandbox && <SandboxNotice />}
           {/* The trigger lives in a header rather than floating over the
               content, as upstream's sidebar blocks have it. It sits outside the
               rail, which is what lets it expand a collapsed one. `shrink-0`
               keeps it in place while `main` scrolls under it. */}
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
+            {/* Whose hub this is. The sidebar says so on desktop, but on a
+                phone it's behind the drawer, so a client opening a share link
+                had nothing on screen naming the brand they were looking at.
+                `md:hidden` keeps the desktop bar exactly as it was. */}
+            <div className="flex min-w-0 items-center gap-2 md:hidden">
+              {config.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={config.logoUrl} alt="" className="h-6 w-auto max-w-[92px] object-contain" />
+              ) : (
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-[11px] font-bold text-primary-foreground">
+                  {config.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span className="truncate text-[13px] font-medium">{config.name}</span>
+            </div>
             {/* The hub's own controls. Everything below this bar now acts on
                 one section with quiet outline buttons, so this is the one place
                 a solid button means something: adding files is what someone
@@ -288,35 +302,6 @@ function HubShell({ access }: { access: HubAccess }) {
           onAddFiles={() => setImportAfterWelcome(true)}
         />
       )}
-    </div>
-  )
-}
-
-/**
- * Says out loud that this is a sandbox.
- *
- * Without it, edits vanishing on reload reads as a bug rather than the point.
- *
- * It sits inside the inset rather than spanning the window. Stacked above the
- * provider it looked full width in the markup, but the sidebar is
- * `fixed inset-y-0`, so it pins itself to the top of the viewport and paints
- * over the notice's first half. The sentence then began mid-word.
- */
-function SandboxNotice() {
-  const [open, setOpen] = useState(true)
-  if (!open) return null
-  return (
-    <div className="shrink-0 flex items-center gap-3 border-b border-border bg-muted px-4 sm:px-6 py-2 text-[12.5px]">
-      <span className="text-muted-foreground shrink-0"><Icon name="sparkles" size={13} /></span>
-      <span className="text-muted-foreground flex-1 min-w-0">
-        Try anything here. This demo resets when you reload, so nothing you change is saved or shared.
-      </span>
-      <Link href="/login" className="font-semibold text-foreground whitespace-nowrap hover:opacity-70 transition-opacity">
-        Start a free hub
-      </Link>
-      <button onClick={() => setOpen(false)} className="text-muted-foreground/60 hover:text-foreground shrink-0" title="Dismiss">
-        <Icon name="close" size={12} />
-      </button>
     </div>
   )
 }
@@ -595,9 +580,15 @@ function HubSidebarItem({
 
       {/* Each section carries its own actions, revealed on hover — there is no
           top bar, and an action that belongs to one section shouldn't live in
-          chrome shared by all of them. */}
+          chrome shared by all of them.
+
+          Hover is a pointer idea, so on touch those same two icons sat visible
+          beside every row, putting a delete a thumb-width from every section
+          name. Below md they collapse into the menu underneath; `md:contents`
+          makes this wrapper vanish from layout above it, so the desktop rows
+          are laid out exactly as before. */}
       {canEdit && (
-        <>
+        <span className="hidden md:contents">
           <SidebarMenuAction
             showOnHover
             className="right-7 md:translate-x-1 group-hover/menu-item:translate-x-0 transition-all [&>svg]:size-3"
@@ -624,7 +615,42 @@ function HubSidebarItem({
           >
             <Icon name="trash" size={11} />
           </SidebarMenuAction>
-        </>
+        </span>
+      )}
+
+      {/* Touch gets one target instead of two, and the destructive one has to
+          be asked for. */}
+      {canEdit && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <SidebarMenuAction className="md:hidden [&>svg]:size-3.5" title={`Actions for ${section.label}`}>
+                <Icon name="more" size={14} />
+              </SidebarMenuAction>
+            }
+          />
+          <DropdownMenuContent align="end" side="bottom" className="min-w-40">
+            <DropdownMenuItem onClick={() => onShare(section.id)}>
+              <Icon name="share" size={13} /> Share section
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `Delete the "${section.label}" section?`,
+                  description: 'Everything filed under it goes too.',
+                  confirmLabel: 'Delete section',
+                  destructive: true,
+                })
+                if (!ok) return
+                if (editingSection === section.id) setEditingSection(null)
+                update(c => { c.sections.splice(index, 1) })
+              }}
+            >
+              <Icon name="trash" size={13} /> Delete section
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </SidebarMenuItem>
   )

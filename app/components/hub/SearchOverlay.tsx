@@ -370,8 +370,12 @@ export function SearchOverlay({ onNavigate, onClose }: { onNavigate: (sectionId:
           )}
         </CommandList>
 
-        {/* Each half names the other one, so the switch is never hidden. */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 px-3 py-2">
+        {/* Each half names the other one, so the switch is never hidden.
+
+            Hidden on touch: it names two keys a phone hasn't got. The switch
+            itself stays reachable there through the pill at the top and the
+            "Ask AI a question instead" row. */}
+        <div className="hidden shrink-0 items-center justify-between gap-3 border-t border-border/60 px-3 py-2 md:flex">
           <span className="flex items-center gap-2 text-muted-foreground">
             <kbd className="rounded-md bg-foreground/10 px-1.5 py-0.5 font-medium text-foreground">Tab</kbd>
             {mode === 'search' ? 'Ask AI' : 'Search commands'}
