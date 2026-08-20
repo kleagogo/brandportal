@@ -51,9 +51,11 @@ export function useHub() {
 
 const SAVE_DEBOUNCE_MS = 800
 
-export function HubProvider({ initial, children, canEdit = false, sandbox = false, allowDownload = true, portalId }: { initial: BrandConfig; children: React.ReactNode; canEdit?: boolean; sandbox?: boolean; allowDownload?: boolean; portalId?: string }) {
+export function HubProvider({ initial, children, openSection, canEdit = false, sandbox = false, allowDownload = true, portalId }: { initial: BrandConfig; children: React.ReactNode; openSection?: string; canEdit?: boolean; sandbox?: boolean; allowDownload?: boolean; portalId?: string }) {
   const [config, setConfig] = useState<BrandConfig>(initial)
-  const [active, setActive] = useState(initial.sections[0]?.id || '')
+  // `openSection` comes from the URL, already checked against this hub's own
+  // sections, so a link can land on the part of the hub it is about.
+  const [active, setActive] = useState(openSection || initial.sections[0]?.id || '')
   const [editingSection, setEditingSectionState] = useState<string | null>(null)
   const editing = editingSection !== null && editingSection === active
   const [saveState, setSaveState] = useState<SaveState>('idle')

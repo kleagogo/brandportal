@@ -47,7 +47,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-export default async function HubPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function HubPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ section?: string }>
+}) {
   const { slug } = await params
   const hub = await getHub(slug)
   if (!hub) notFound()
@@ -72,9 +78,17 @@ export default async function HubPage({ params }: { params: Promise<{ slug: stri
     if (!unlocked) return <PinGate slug={slug} name={hub.name} logoUrl={hub.logoUrl} />
   }
 
+  // A link can name the section it means, so "look at this bit of the hub"
+  // is one URL rather than an instruction to click around after arriving.
+  // Resolved here rather than on the client, so the right section is in the
+  // first paint instead of a flash of the wrong one.
+  const { section } = await searchParams
+  const openSection = hub.sections.some(s => s.id === section) ? section : undefined
+
   return (
     <Hub
       initial={hub}
+      openSection={openSection}
       canEdit={canEdit || sandbox}
       sandbox={sandbox}
       isOwner={isOwner}

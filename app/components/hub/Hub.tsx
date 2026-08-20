@@ -75,9 +75,18 @@ export interface HubAccess {
   sandbox?: boolean
 }
 
-export default function Hub({ initial, ...access }: { initial: BrandConfig } & HubAccess) {
+export default function Hub({
+  initial,
+  openSection,
+  ...access
+}: { initial: BrandConfig; openSection?: string } & HubAccess) {
   return (
-    <HubProvider initial={initial} canEdit={Boolean(access.canEdit)} sandbox={Boolean(access.sandbox)}>
+    <HubProvider
+      initial={initial}
+      openSection={openSection}
+      canEdit={Boolean(access.canEdit)}
+      sandbox={Boolean(access.sandbox)}
+    >
       <HubShell access={access} />
     </HubProvider>
   )
