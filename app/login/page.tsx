@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -131,6 +132,29 @@ export default function LoginPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* The other door.
+              Everyone who isn't signed in arrives here, including people who
+              have just watched the product and want to see it for themselves.
+              Offering them only a form asks for an email and an inbox trip
+              before they have touched anything — and the strongest thing we
+              own is a real, filled, editable hub that costs them nothing.
+              Below the form on purpose: signing in stays the primary action
+              for the people who came here to do it. */}
+          <div className="mt-6 pt-5 border-t border-white/10 text-center">
+            <p className="text-[12.5px] text-muted-foreground leading-relaxed">
+              Want to look around first?{' '}
+              <Link
+                href="/demo"
+                className="text-foreground underline underline-offset-2 hover:text-white transition-colors"
+              >
+                Open a live brand hub
+              </Link>
+              <span className="block text-muted-foreground/60 mt-1">
+                Real hub, fully editable, no account needed.
+              </span>
+            </p>
+          </div>
 
           <p className="text-[12px] text-muted-foreground/60 text-center mt-5">by Pitho.io</p>
         </div>
