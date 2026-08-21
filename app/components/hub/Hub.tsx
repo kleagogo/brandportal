@@ -29,6 +29,7 @@ import { SpaceSwitcher } from './SpaceSwitcher'
 import { SearchOverlay } from './SearchOverlay'
 import { ImportModal } from './ImportModal'
 import { WelcomeModal } from './WelcomeModal'
+import { SandboxKeepBar } from './SandboxKeepBar'
 import { useConfirm } from './useConfirm'
 import { customFontFaceCss } from './font-files'
 import { Button } from '@/components/ui/button'
@@ -311,6 +312,9 @@ function HubShell({ access }: { access: HubAccess }) {
           onAddFiles={() => setImportAfterWelcome(true)}
         />
       )}
+
+      {/* Renders itself only once a sandbox visitor has changed something. */}
+      <SandboxKeepBar />
     </div>
   )
 }
