@@ -37,7 +37,7 @@ import { IconSwap, TextSwap } from '../transitions'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuAction,
-  SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger,
+  SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger, useSidebar,
 } from '@/components/ui/sidebar'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
@@ -544,7 +544,20 @@ function HubSidebarItem({
 }) {
   const { editingSection, setEditingSection, update } = useHub()
   const { confirm, confirmDialog } = useConfirm()
+  const { isMobile, setOpenMobile } = useSidebar()
   const isEditing = editingSection === section.id
+
+  /**
+   * On a phone the sidebar is a sheet covering the whole screen, so choosing a
+   * section used to change what was underneath and leave the sheet sitting on
+   * top of it. Nothing appeared to happen, and getting to the thing you asked
+   * for meant knowing to dismiss the sheet yourself. On a pointer the sidebar
+   * is beside the content and there is nothing to close.
+   */
+  function select(id: string) {
+    onSelect(id)
+    if (isMobile) setOpenMobile(false)
+  }
 
   // External links are just links; they have nothing to edit or share.
   if (section.type === 'link' && section.url) {
@@ -585,7 +598,7 @@ function HubSidebarItem({
           />
         </SidebarMenuButton>
       ) : (
-        <SidebarMenuButton isActive={active} onClick={() => onSelect(section.id)} tooltip={section.label}>
+        <SidebarMenuButton isActive={active} onClick={() => select(section.id)} tooltip={section.label}>
           <Icon name={section.icon} size={14} />
           <span>{section.label}</span>
         </SidebarMenuButton>
