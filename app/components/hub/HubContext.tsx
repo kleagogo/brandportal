@@ -35,6 +35,15 @@ interface HubContextValue {
    * Sections still render their edit controls; nothing survives a reload.
    */
   sandbox: boolean
+  /**
+   * Has this visitor changed anything in the sandbox? Always false outside it.
+   *
+   * The demo exists to convert, and the only moment worth asking someone for
+   * an account is the one after they've made the hub theirs. Nothing else in
+   * the sandbox leaves a trace — there is no request, no save state, no dirty
+   * buffer — so without this flag that moment is invisible.
+   */
+  touched: boolean
   /** Show download controls. Share portals can turn downloads off. */
   allowDownload: boolean
   /** Set when the hub is being viewed through a share portal (/s/<id>). */
@@ -59,6 +68,7 @@ export function HubProvider({ initial, children, openSection, canEdit = false, s
   const [editingSection, setEditingSectionState] = useState<string | null>(null)
   const editing = editingSection !== null && editingSection === active
   const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [touched, setTouched] = useState(false)
 
   // What the hub looked like when edit mode began, so Escape can put it back.
   const snapshot = useRef<BrandConfig | null>(null)
@@ -94,6 +104,10 @@ export function HubProvider({ initial, children, openSection, canEdit = false, s
   }, [])
 
   const update = useCallback((mutate: (draft: BrandConfig) => void) => {
+    // Set outside the updater below: React invokes that function twice under
+    // StrictMode, and state setters do not belong in it. Here it runs once per
+    // edit, which is all a one-way flag needs.
+    if (sandbox) setTouched(true)
     setConfig(prev => {
       const next = structuredClone(prev)
       mutate(next)
@@ -152,7 +166,7 @@ export function HubProvider({ initial, children, openSection, canEdit = false, s
   }, [])
 
   return (
-    <HubContext.Provider value={{ config, active, setActive, editingSection, setEditingSection, cancelEditing, editing, saveState, update, canEdit, sandbox, allowDownload, portalId }}>
+    <HubContext.Provider value={{ config, active, setActive, editingSection, setEditingSection, cancelEditing, editing, saveState, update, canEdit, sandbox, touched, allowDownload, portalId }}>
       {children}
     </HubContext.Provider>
   )
