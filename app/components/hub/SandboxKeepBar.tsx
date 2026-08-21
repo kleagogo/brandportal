@@ -32,36 +32,53 @@ export function SandboxKeepBar() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-4 pointer-events-none">
-      <div className="pointer-events-auto flex items-center gap-3 rounded-xl bg-popover/95 px-4 py-3 shadow-lg ring-1 ring-foreground/10 backdrop-blur-sm max-w-[min(560px,100%)] animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
-        <span className="hidden sm:block shrink-0 text-muted-foreground">
-          <Icon name="sparkles" size={15} />
-        </span>
-
-        <p className="text-[13px] leading-snug text-foreground min-w-0">
-          You’re editing the demo —{' '}
-          <span className="text-muted-foreground">
-            this resets when you reload. Start a space of your own and build the real one.
+      {/* Stacked on a phone, in a row from sm up. Side by side at 390px the
+          sentence wrapped to five lines beside a button, which is a paragraph
+          with something stuck to it rather than a prompt. */}
+      <div className="pointer-events-auto w-full sm:w-auto max-w-[560px] rounded-xl bg-popover/95 px-4 py-3 shadow-lg ring-1 ring-foreground/10 backdrop-blur-sm animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
+        <div className="flex items-start sm:items-center gap-3">
+          <span className="hidden sm:block shrink-0 text-muted-foreground">
+            <Icon name="sparkles" size={15} />
           </span>
-        </p>
 
+          <p className="flex-1 min-w-0 text-[13px] leading-snug text-foreground">
+            You’re editing the demo —{' '}
+            <span className="text-muted-foreground">
+              this resets when you reload.{' '}
+              <span className="hidden sm:inline">Start a space of your own and build the real one.</span>
+            </span>
+          </p>
+
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Dismiss"
+            onClick={() => setDismissed(true)}
+            className="shrink-0 -mt-0.5 sm:mt-0 sm:order-last text-muted-foreground"
+          >
+            <Icon name="close" size={13} />
+          </Button>
+
+          <Button
+            nativeButton={false}
+            render={<Link href="/login" />}
+            variant="default"
+            size="lg"
+            className="hidden sm:inline-flex shrink-0"
+          >
+            Create my space
+          </Button>
+        </div>
+
+        {/* Full width under the text on a phone, where a thumb expects it. */}
         <Button
           nativeButton={false}
           render={<Link href="/login" />}
           variant="default"
           size="lg"
-          className="shrink-0"
+          className="sm:hidden mt-3 w-full"
         >
           Create my space
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Dismiss"
-          onClick={() => setDismissed(true)}
-          className="shrink-0 text-muted-foreground"
-        >
-          <Icon name="close" size={13} />
         </Button>
       </div>
     </div>
